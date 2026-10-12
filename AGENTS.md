@@ -29,13 +29,22 @@ Run lint and typecheck before declaring any task done.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
 - Docs: https://docs.expo.dev/router/introduction.md
 
-## Building with EAS
+## Building
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+Builds are local only. Do not use EAS Build, Submit, or Update. Develop with `npx expo run:android`. For a release APK, run `npx expo prebuild -p android` and then `./gradlew assembleRelease` in `android/`.
 
 ## Rules
 
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
+- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Spec-driven workflow
+
+This project follows GitHub Spec Kit. The constitution at `.specify/memory/constitution.md` takes precedence over defaults.
+
+- Branches: `main` = releases only, `develop` = integration. Feature branches (`NNN-name`) are created from `develop` and merged back via PR. Never commit directly to `main`.
+- No feature code without a spec in `specs/NNN-name/` (spec.md → plan.md → tasks.md).
+- Use the `/speckit-*` skills in `.claude/skills/`. Stop after `clarify` and after `plan` for human review.
+- Builds are local only (`npx expo run:android`, Gradle). Never use EAS Build/Submit/Update.
+- TypeScript strict. No `any` without a comment that justifies it.
