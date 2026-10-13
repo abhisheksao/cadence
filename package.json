@@ -52,6 +52,28 @@
     ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "testMatch": [
+      "<rootDir>/src/**/*.test.[jt]s?(x)",
+      "<rootDir>/scripts/**/*.test.mjs"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "mjs",
+      "json"
+    ],
+    "transform": {
+      "^.+\\.mjs$": [
+        "babel-jest",
+        {
+          "presets": [
+            "expo/internal/babel-preset"
+          ]
+        }
+      ]
     }
   }
 }
