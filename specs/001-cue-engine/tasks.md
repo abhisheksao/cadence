@@ -32,18 +32,18 @@ its own.
 
 **Purpose**: Router, test tooling, lint, native config, and sound assets. No behaviour yet.
 
-- [ ] T001 Install Expo Router and its peers with `npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar`; set `"main": "expo-router/entry"` in package.json; delete App.tsx and index.ts
-- [ ] T002 Install runtime modules with `npx expo install expo-audio expo-speech expo-keep-awake expo-intent-launcher expo-sqlite react-native-background-actions` (package.json)
-- [ ] T003 Install test tooling with `npx expo install jest-expo jest @types/jest @testing-library/react-native -- --dev`; add `"jest": { "preset": "jest-expo" }` to package.json, plus the transformIgnorePatterns entry from the Expo unit-testing guide extended with `react-native-background-actions`
-- [ ] T004 Run `npx expo lint` once to generate the ESLint config (eslint.config.js); keep the Expo defaults
-- [ ] T005 Update tsconfig.json: keep `strict: true`, add `"types": ["jest"]` and `"paths": { "@/*": ["./src/*"] }`
-- [ ] T006 Add npm scripts to package.json: `test` (`jest`), `test:watch` (`jest --watch`), `lint` (`expo lint`), `typecheck` (`tsc --noEmit`), `check` (`npm run lint && npm run typecheck && npm test`), `sounds` (`node scripts/gen-sounds.mjs`), `timing-report` (`node scripts/timing-report.mjs`)
-- [ ] T007 Write a smoke test src/test-utils/smoke.test.ts (`expect(1 + 1).toBe(2)`) and confirm `npm run check` passes; delete the smoke test once the first real test lands (T014)
-- [ ] T008 [P] Create the config plugin plugins/withBackgroundActions.js that declares `com.asterinet.react.bgactions.RNBackgroundActionsTask` as a service with `android:foregroundServiceType="mediaPlayback"` and `android:exported="false"` via `withAndroidManifest` (research R5)
-- [ ] T009 Update app.json: `name` "Cadence", `slug` "cadence", `userInterfaceStyle` "automatic", `experiments.typedRoutes: true`; plugins `expo-router`, `["expo-audio", { "enableBackgroundPlayback": true }]`, `./plugins/withBackgroundActions`, `expo-sqlite`; `android.permissions` POST_NOTIFICATIONS, WAKE_LOCK, FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (research R5)
-- [ ] T010 [P] Write scripts/gen-sounds.mjs: 44.1 kHz 16-bit mono WAV writer plus sine tones with a short attack and exponential decay; output assets/sounds/beep.wav (short mid tone), beep-last.wav (longer, higher tone), chime.wav (two-note rising chime), silence.wav (1 s of zeros) (research R11)
-- [ ] T011 Run `npm run sounds` and commit the four files in assets/sounds/
-- [ ] T012 Run `npx expo prebuild -p android --clean` into a throwaway check: confirm the merged AndroidManifest has the service type and permissions, then delete android/ (it stays git-ignored, Principle V)
+- [X] T001 Install Expo Router and its peers with `npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar`; set `"main": "expo-router/entry"` in package.json; delete App.tsx and index.ts
+- [X] T002 Install runtime modules with `npx expo install expo-audio expo-speech expo-keep-awake expo-intent-launcher expo-sqlite react-native-background-actions` (package.json)
+- [X] T003 Install test tooling with `npx expo install jest-expo jest @types/jest @testing-library/react-native -- --dev`; add `"jest": { "preset": "jest-expo" }` to package.json, plus the transformIgnorePatterns entry from the Expo unit-testing guide extended with `react-native-background-actions`
+- [X] T004 Run `npx expo lint` once to generate the ESLint config (eslint.config.js); keep the Expo defaults
+- [X] T005 Update tsconfig.json: keep `strict: true`, add `"types": ["jest"]` and `"paths": { "@/*": ["./src/*"] }`
+- [X] T006 Add npm scripts to package.json: `test` (`jest`), `test:watch` (`jest --watch`), `lint` (`expo lint`), `typecheck` (`tsc --noEmit`), `check` (`npm run lint && npm run typecheck && npm test`), `sounds` (`node scripts/gen-sounds.mjs`), `timing-report` (`node scripts/timing-report.mjs`)
+- [X] T007 Write a smoke test src/test-utils/smoke.test.ts (`expect(1 + 1).toBe(2)`) and confirm `npm run check` passes; delete the smoke test once the first real test lands (T014)
+- [X] T008 [P] Create the config plugin plugins/withBackgroundActions.js that declares `com.asterinet.react.bgactions.RNBackgroundActionsTask` as a service with `android:foregroundServiceType="mediaPlayback"` and `android:exported="false"` via `withAndroidManifest` (research R5)
+- [X] T009 Update app.json: `name` "Cadence", `slug` "cadence", `userInterfaceStyle` "automatic", `experiments.typedRoutes: true`; plugins `expo-router`, `["expo-audio", { "enableBackgroundPlayback": true }]`, `./plugins/withBackgroundActions`, `expo-sqlite`; `android.permissions` POST_NOTIFICATIONS, WAKE_LOCK, FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (research R5)
+- [X] T010 [P] Write scripts/gen-sounds.mjs: 44.1 kHz 16-bit mono WAV writer plus sine tones with a short attack and exponential decay; output assets/sounds/beep.wav (short mid tone), beep-last.wav (longer, higher tone), chime.wav (two-note rising chime), silence.wav (1 s of zeros) (research R11)
+- [X] T011 Run `npm run sounds` and commit the four files in assets/sounds/
+- [X] T012 Run `npx expo prebuild -p android --clean` into a throwaway check: confirm the merged AndroidManifest has the service type and permissions, then delete android/ (it stays git-ignored, Principle V)
 
 **Checkpoint**: `npm run check` is green, and the app config generates a valid manifest.
 

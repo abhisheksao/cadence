@@ -83,6 +83,11 @@ reference device, is used as evidence where noted ("prior implementation").
   foreground service without a declared type, which the plugin adds without editing `android/`
   (Principle V). The library can set title, text, and a progress bar, but not a system-run
   countdown, which is why that moved to 006.
+- **Permissions removed**: `expo-audio` adds `RECORD_AUDIO` by default and the template adds
+  external storage and `SYSTEM_ALERT_WINDOW`. None are needed: the expo-audio plugin gets
+  `recordAudioAndroid: false`, and `android.blockedPermissions` removes the rest. Remaining
+  defaults: `INTERNET` (development builds load JS from the dev server; the app makes no network
+  calls), `MODIFY_AUDIO_SETTINGS` (expo-audio), `VIBRATE` (template default, harmless).
 - **Permissions justification (Principle III)**: notifications (show the required ongoing
   notification), wake lock and foreground service (keep running with the screen off), battery
   exemption request (OEM kills; asked once, user can decline).
