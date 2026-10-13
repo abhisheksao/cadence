@@ -24,6 +24,8 @@ export class Engine {
   /** The next cue opportunity to hand out. Can run ahead of `index` by LOOKAHEAD_MS. */
   private cursor = { index: 0, sec: 0 };
   private completionSent = false;
+  /** Announce the current phase on the next resume: a session recovered while paused. */
+  private announceOnResume = false;
   /** Wall time the session was paused, while paused. */
   private pausedAt = 0;
   /** Latest clock reading, to detect the clock going backwards. */
@@ -50,6 +52,32 @@ export class Engine {
     this.tick();
   }
 
+  /**
+   * Starts at a recovered position (FR-024). The phase is announced as a phase start, now or,
+   * when paused, on resume; later seconds keep the grid of the original phase start.
+   */
+  startAt(position: { index: number; phaseElapsedMs: number; paused: boolean }) {
+    const { index, phaseElapsedMs, paused } = position;
+    if (this.status !== 'idle' || index < 0 || index >= this.phases.length) return;
+    this.index = index;
+    this.lastNow = this.deps.clock.now();
+    this.phaseStartAt = this.lastNow - phaseElapsedMs;
+    this.completedMs = this.phases.slice(0, index).reduce((sum, p) => sum + (p.durationSec ?? 0) * 1_000, 0);
+    this.cancelTick = this.deps.scheduler.every(TICK_MS, () => this.tick());
+    if (paused) {
+      this.pausedAt = this.lastNow;
+      this.announceOnResume = true;
+      this.setStatus('paused');
+      this.events.onPhaseChange?.(this.phases[index], index);
+      this.emit();
+      return;
+    }
+    this.setStatus('running');
+    this.events.onPhaseChange?.(this.phases[index], index);
+    this.announce(this.lastNow);
+    this.tick();
+  }
+
   pause() {
     if (this.status !== 'running') return;
     this.events.onCancelPending?.();
@@ -65,8 +93,13 @@ export class Engine {
 
   resume() {
     if (this.status !== 'paused') return;
-    this.phaseStartAt += this.now() - this.pausedAt;
+    const now = this.now();
+    this.phaseStartAt += now - this.pausedAt;
     this.setStatus('running');
+    if (this.announceOnResume) {
+      this.announceOnResume = false;
+      this.announce(now);
+    }
     this.tick();
   }
 
@@ -132,6 +165,8 @@ export class Engine {
     this.index = index;
     this.phaseStartAt = now;
     this.cursor = { index, sec: 0 };
+    // The new phase gets its own start cue, so a pending recovery announcement is not needed.
+    this.announceOnResume = false;
     this.events.onPhaseChange?.(this.phases[index], index);
     if (this.status === 'running') this.tick();
     else this.emit();
@@ -212,8 +247,15 @@ export class Engine {
     }
   }
 
-  private offer(index: number, sec: number, at: number, now: number) {
-    const isPhaseStart = sec === 0;
+  /** Offers the current second as a phase start, due now; the regular seconds resume after it. */
+  private announce(now: number) {
+    const sec = Math.floor((now - this.phaseStartAt) / 1_000);
+    this.offer(this.index, sec, now, now, true);
+    this.cursor = { index: this.index, sec: sec + 1 };
+  }
+
+  private offer(index: number, sec: number, at: number, now: number, announce = false) {
+    const isPhaseStart = announce || sec === 0;
     let due = at;
     if (at < now - STALE_MS) {
       // After a long gap, announce the phase we landed in (now) and drop everything else.

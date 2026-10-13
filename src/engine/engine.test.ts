@@ -465,6 +465,14 @@ describe('Engine: recovery', () => {
     ]);
   });
 
+  it('E16: skipping a paused recovered phase announces only the new phase', () => {
+    const { engine, ops } = setupWithEvents([timed('A', 10), timed('B', 30)]);
+    engine.startAt({ index: 0, phaseElapsedMs: 5_000, paused: true });
+    engine.skip();
+    engine.resume();
+    expect(ops.filter((op) => op.isPhaseStart).map((op) => [op.index, op.sec])).toEqual([[1, 0]]);
+  });
+
   it('E16: an untimed phase recovers with its elapsed time', () => {
     const { engine, scheduler } = setupWithEvents([timed('A', 10), untimed('Wait')]);
     engine.startAt({ index: 1, phaseElapsedMs: 90_000, paused: false });

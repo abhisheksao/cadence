@@ -220,19 +220,19 @@ device, D1 passes.
 
 ### Tests first (write first, confirm they fail) ⚠️
 
-- [ ] T075 [P] Write src/session/record.test.ts: `toRecord`/`parseRecord` round-trip; `parseRecord` rejects bad JSON or another `version`; table tests for `assessRecord(record, now)` covering: none; `now < writtenAt` → interrupted('clock'); `writtenAt` > 60 min ago → interrupted('stale'); paused record → resume paused at the same elapsed; running in a timed phase → resume at the clock position; running past several timed phases → correct later phase; stops at an untimed phase; past the end → interrupted('finished') (data-model "Recovery assessment")
-- [ ] T076 [P] Add block "recovery" to src/engine/engine.test.ts: E16 (`startAt({index, phaseElapsedMs, paused})` resumes there; the phase start cue fires once; later `at` values line up with the recovered anchor)
-- [ ] T077 [P] Add block "recovery" to src/session/controller.test.ts: C4 (record written on start, pause, resume, skip, back, and phase change; refreshed every 60 s while running; cleared on done and stop) and C8 (`checkForInterrupted()` returns the `assessRecord` result; `resumeInterrupted()` rebuilds cues through the mode registry, restarts background and notification, and plays the landing phase start; Discard clears the record)
-- [ ] T078 [P] Write src/components/ResumePrompt.test.tsx: for a resume offer shows the session title, phase, and Resume/Discard buttons wired to callbacks; for an interrupted result shows "Your session '<title>' was interrupted at <time>" with an OK button
-- [ ] T079 [P] Write src/components/LaunchCheck.test.tsx (session module mocked): with a resume offer from `checkForInterrupted`, ResumePrompt shows; Resume calls `controller.resumeInterrupted` and navigates to /sample; Discard clears the record; for an interrupted result, OK clears it; with `none`, the stack renders directly
+- [x] T075 [P] Write src/session/record.test.ts: `toRecord`/`parseRecord` round-trip; `parseRecord` rejects bad JSON or another `version`; table tests for `assessRecord(record, now)` covering: none; `now < writtenAt` → interrupted('clock'); `writtenAt` > 60 min ago → interrupted('stale'); paused record → resume paused at the same elapsed; running in a timed phase → resume at the clock position; running past several timed phases → correct later phase; stops at an untimed phase; past the end → interrupted('finished') (data-model "Recovery assessment")
+- [x] T076 [P] Add block "recovery" to src/engine/engine.test.ts: E16 (`startAt({index, phaseElapsedMs, paused})` resumes there; the phase start cue fires once; later `at` values line up with the recovered anchor)
+- [x] T077 [P] Add block "recovery" to src/session/controller.test.ts: C4 (record written on start, pause, resume, skip, back, and phase change; refreshed every 60 s while running; cleared on done and stop) and C8 (`checkForInterrupted()` returns the `assessRecord` result; `resumeInterrupted()` rebuilds cues through the mode registry, restarts background and notification, and plays the landing phase start; Discard clears the record)
+- [x] T078 [P] Write src/components/ResumePrompt.test.tsx: for a resume offer shows the session title, phase, and Resume/Discard buttons wired to callbacks; for an interrupted result shows "Your session '<title>' was interrupted at <time>" with an OK button
+- [x] T079 [P] Write src/components/LaunchCheck.test.tsx (session module mocked): with a resume offer from `checkForInterrupted`, ResumePrompt shows; Resume calls `controller.resumeInterrupted` and navigates to /sample; Discard clears the record; for an interrupted result, OK clears it; with `none`, the stack renders directly
 
 ### Implementation
 
-- [ ] T080 Implement src/session/record.ts to pass T075
-- [ ] T081 Implement `Engine.startAt` in src/engine/engine.ts to pass T076
-- [ ] T082 Implement record writing, the 60 s refresh, `checkForInterrupted`, `resumeInterrupted`, and discard in src/session/controller.ts to pass T077
-- [ ] T083 Implement src/components/ResumePrompt.tsx to pass T078
-- [ ] T084 Implement src/components/LaunchCheck.tsx to pass T079 and render it from src/app/_layout.tsx (read the record synchronously before first render; show ResumePrompt; on Resume call `controller.resumeInterrupted` and navigate to the session's screen, /sample in this spec)
+- [x] T080 Implement src/session/record.ts to pass T075
+- [x] T081 Implement `Engine.startAt` in src/engine/engine.ts to pass T076
+- [x] T082 Implement record writing, the 60 s refresh, `checkForInterrupted`, `resumeInterrupted`, and discard in src/session/controller.ts to pass T077
+- [x] T083 Implement src/components/ResumePrompt.tsx to pass T078
+- [x] T084 Implement src/components/LaunchCheck.tsx to pass T079 and render it from src/app/_layout.tsx (read the record synchronously before first render; show ResumePrompt; on Resume call `controller.resumeInterrupted` and navigate to the session's screen, /sample in this spec)
 - [ ] T085 On device: run quickstart D7 and D8 (force-stop mid-session; reopen within a minute, and after the session would have ended)
 
 **Checkpoint**: A killed session can be resumed in 2 taps at the clock position.

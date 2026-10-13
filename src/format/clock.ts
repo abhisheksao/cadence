@@ -20,3 +20,8 @@ export function spokenDuration(seconds: number) {
   const parts = [h > 0 && unit(h, 'hour'), m > 0 && unit(m, 'minute'), (s > 0 || total === 0) && unit(s, 'second')];
   return parts.filter(Boolean).join(' ');
 }
+
+/** Local time of day as hours and minutes, in the device's format (e.g. "7:05 AM" or "07:05"). */
+export function formatTimeOfDay(at: number) {
+  return new Date(at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
