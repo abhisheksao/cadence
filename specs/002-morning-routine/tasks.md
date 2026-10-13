@@ -79,18 +79,18 @@ and R10 pass.
 
 ### Tests for User Story 1 (write first, confirm they fail) ⚠️
 
-- [ ] T013 [P] [US1] Write src/modes/routine.test.ts: `routineDefinition` maps steps to phases (title or "Step N" for blank titles, subtitle "Step N of M", `durationSec`, kind `step`), title "Morning routine", `keepScreenOn: true`, mode `routine`, and passes `validateDefinition`; the handler's table tests for RC1–RC9 with boundaries (15, 29, 30, 179, 180 s steps; last step vs. not; untimed step at sec 0 and sec 500); `routineMode.id === 'routine'`, `route === '/routine'`
-- [ ] T014 [P] [US1] Add to src/modes/routine.test.ts block "engine run": start the default routine through `SessionController` with all spec 001 fakes, advance the `FakeScheduler`, skip the untimed steps, and assert the sequence of `(cue type/text, at − T0)` reaching `FakeCuePlayer` for step 1 (greeting at 0, "10 seconds." at 50 s, beeps at 57/58 s, beepLast at 59 s, step 2 announcement at 60 s), that step 2 never advances in 10 minutes without skip, and the completion chime + sign-off at the end
-- [ ] T015 [P] [US1] Write src/screens/RoutineScreen.test.tsx (mock `@/session/useSession`, `@/routine/useRoutine`, `@/session/useKeepScreenOn`): start view lists each step's title and "1:00"/"untimed", shows "Total 12:00" for the default, and Start calls `controller.start(routineDefinition(routine))`; live view (routine session running) shows the SessionView with "Step 2 of 6", a Done button that calls `controller.skip()`, Controls, and no Edit; a running sample session shows the start view
-- [ ] T016 [P] [US1] Update src/screens/HomeScreen.test.tsx: Morning routine has no "Coming soon" and navigates to `/routine`; Run / walk and Breathe still show "Coming soon" (so 2 "Coming soon" labels)
+- [x] T013 [P] [US1] Write src/modes/routine.test.ts: `routineDefinition` maps steps to phases (title or "Step N" for blank titles, subtitle "Step N of M", `durationSec`, kind `step`), title "Morning routine", `keepScreenOn: true`, mode `routine`, and passes `validateDefinition`; the handler's table tests for RC1–RC9 with boundaries (15, 29, 30, 179, 180 s steps; last step vs. not; untimed step at sec 0 and sec 500); `routineMode.id === 'routine'`, `route === '/routine'`
+- [x] T014 [P] [US1] Add to src/modes/routine.test.ts block "engine run": start the default routine through `SessionController` with all spec 001 fakes, advance the `FakeScheduler`, skip the untimed steps, and assert the sequence of `(cue type/text, at − T0)` reaching `FakeCuePlayer` for step 1 (greeting at 0, "10 seconds." at 50 s, beeps at 57/58 s, beepLast at 59 s, step 2 announcement at 60 s), that step 2 never advances in 10 minutes without skip, and the completion chime + sign-off at the end
+- [x] T015 [P] [US1] Write src/screens/RoutineScreen.test.tsx (mock `@/session/useSession`, `@/routine/useRoutine`, `@/session/useKeepScreenOn`): start view lists each step's title and "1:00"/"untimed", shows "Total 12:00" for the default, and Start calls `controller.start(routineDefinition(routine))`; live view (routine session running) shows the SessionView with "Step 2 of 6", a Done button that calls `controller.skip()`, Controls, and no Edit; a running sample session shows the start view
+- [x] T016 [P] [US1] Update src/screens/HomeScreen.test.tsx: Morning routine has no "Coming soon" and navigates to `/routine`; Run / walk and Breathe still show "Coming soon" (so 2 "Coming soon" labels)
 
 ### Implementation for User Story 1
 
-- [ ] T017 [US1] Implement `routineDefinition`, the cue handler and `routineMode` in src/modes/routine.ts using `spokenDuration` from src/format/clock.ts to pass T013; register it in src/modes/index.ts
-- [ ] T018 [US1] Make T014 pass (fix any handler or wiring issue it shows; no engine changes expected)
-- [ ] T019 [P] [US1] Create src/components/DoneButton.tsx (`size: 'large' | 'compact'`, accessible label "Done", calls `onPress`)
-- [ ] T020 [US1] Implement src/screens/RoutineScreen.tsx (start view and live view using SessionView, DoneButton, Controls) to pass T015; add src/app/routine/index.tsx re-exporting it, and a `routine/index` screen titled "Morning routine" in src/app/_layout.tsx
-- [ ] T021 [US1] Make Morning routine a live tile in src/screens/HomeScreen.tsx (pressable, opens `/routine`, keeps its description) to pass T016
+- [x] T017 [US1] Implement `routineDefinition`, the cue handler and `routineMode` in src/modes/routine.ts using `spokenDuration` from src/format/clock.ts to pass T013; register it in src/modes/index.ts
+- [x] T018 [US1] Make T014 pass (fix any handler or wiring issue it shows; no engine changes expected)
+- [x] T019 [P] [US1] Create src/components/DoneButton.tsx (`size: 'large' | 'compact'`, accessible label "Done", calls `onPress`)
+- [x] T020 [US1] Implement src/screens/RoutineScreen.tsx (start view and live view using SessionView, DoneButton, Controls) to pass T015; add src/app/routine/index.tsx re-exporting it, and a `routine/index` screen titled "Morning routine" in src/app/_layout.tsx
+- [x] T021 [US1] Make Morning routine a live tile in src/screens/HomeScreen.tsx (pressable, opens `/routine`, keeps its description) to pass T016
 - [ ] T022 [US1] On device: run quickstart R1–R5 and R10, and R15 (recovery opens the routine screen); capture the timing log for SC-002
 
 **Checkpoint**: The default routine runs end to end. MVP.
