@@ -31,7 +31,7 @@ Hermes)
 `FakeScheduler`, `FakeCuePlayer`, `FakeBackgroundHost`, `MemoryStore`); on-device checklist in
 [quickstart.md](./quickstart.md)
 
-**Target Platform**: Android primary (OnePlus 3, Android 9); iOS builds and shows the screen
+**Target Platform**: Android primary (physical device); iOS builds and shows the screen
 (background in spec 008)
 
 **Project Type**: Mobile app (Expo, Continuous Native Generation)
@@ -127,7 +127,7 @@ Ordered so each slice is test-first and leaves `npm run check` green:
    colours, next phase and elapsed/total, keep screen on, the ended view, the notification
    amendment in the spec.
 4. **Polish**: README section, spec review (Principle IX), `npm run check`, expo-doctor, local
-   release build; on-device checks W1–W15 on the OnePlus 3.
+   release build; on-device checks W1–W15 on a physical device.
 
 ## Complexity Tracking
 
