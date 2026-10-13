@@ -231,6 +231,22 @@ describe('cue player: ducking', () => {
     expect(speech.speak).toHaveBeenCalledWith('Cool down', expect.any(Object));
   });
 
+  it('speaks again after 15 s if focus never comes back (another app took it for good)', async () => {
+    const player = await ready();
+    player.play({ type: 'say', text: 'Interval' }, 10_000, 0);
+    mockPlayers[HOLD].emit({ playing: true });
+    mockPlayers[HOLD].emit({ playing: false }); // e.g. the user pressed play in a music app
+    speech.speak.mockClear();
+
+    jest.advanceTimersByTime(14_000);
+    player.play({ type: 'say', text: 'Still lost' }, Date.now(), 0);
+    expect(speech.speak).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(1_000);
+    player.play({ type: 'say', text: 'Cool down' }, Date.now(), 0);
+    expect(speech.speak).toHaveBeenCalledWith('Cool down', expect.any(Object));
+  });
+
   it('does not treat its own pause as lost focus', async () => {
     const player = await ready();
     player.play({ type: 'say', text: 'One' }, 10_000, 0);
