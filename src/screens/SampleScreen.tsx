@@ -23,6 +23,9 @@ export default function SampleScreen() {
     <View style={styles.container}>
       <Text style={[styles.phase, { color }]}>{state?.phase?.title ?? 'Sample session'}</Text>
       <Text style={[styles.status, { color }]}>{STATUS_LABEL[state?.status ?? 'idle']}</Text>
+      {state?.backgroundWarning ? (
+        <Text style={styles.warning}>Cues may stop when the screen is off</Text>
+      ) : null}
       {state ? <Controls status={state.status} controls={controller} /> : null}
       <Pressable
         accessibilityRole="button"
@@ -42,6 +45,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
   phase: { fontSize: 32, fontWeight: '700', textAlign: 'center' },
   status: { fontSize: 18, opacity: 0.7 },
+  warning: { color: '#E5A00D', fontSize: 15, fontWeight: '600', textAlign: 'center' },
   button: { backgroundColor: '#FF7A45', borderRadius: 14, paddingHorizontal: 28, paddingVertical: 16 },
   buttonText: { color: '#0E1116', fontSize: 18, fontWeight: '700' },
 });

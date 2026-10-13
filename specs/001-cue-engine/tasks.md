@@ -168,17 +168,17 @@ a battery exemption asked once and offered again from home.
 
 ### Tests for User Story 4 (write first, confirm they fail) ⚠️
 
-- [ ] T055 [P] [US4] Add block "notification" to src/session/controller.test.ts: C3 (phase change → `background.update('<phase title>')`; pause → `update('Paused · <phase title>')`; resume restores it; no other calls to `update`, including across 60 s of ticks; after a dismissal the next phase change still calls `update`, which re-posts), C7 (`background.start` returns false → session still runs and `snapshot`/controller exposes `backgroundWarning: true`)
-- [ ] T056 [P] [US4] Write src/platform/background.android.test.ts with mocks for `react-native` `PermissionsAndroid`/`Platform`, `expo-intent-launcher`, and a `MemoryStore`: `prepare()` requests POST_NOTIFICATIONS on API 33+ only and continues if denied; asks for the battery exemption only when `battery-exemption-asked:v1` is unset, then sets it; `requestBatteryExemption()` falls back to the settings screen when the request intent throws
-- [ ] T057 [P] [US4] Write src/components/BatteryLink.test.tsx: renders "App stopping mid-session? Allow it to run in the background" and calls `background.requestBatteryExemption()` on press
-- [ ] T058 [P] [US4] Add to src/screens/SampleScreen.test.tsx: "Cues may stop when the screen is off" is shown only when the snapshot has `backgroundWarning: true`
+- [x] T055 [P] [US4] Add block "notification" to src/session/controller.test.ts: C3 (phase change → `background.update('<phase title>')`; pause → `update('Paused · <phase title>')`; resume restores it; no other calls to `update`, including across 60 s of ticks; after a dismissal the next phase change still calls `update`, which re-posts), C7 (`background.start` returns false → session still runs and `snapshot`/controller exposes `backgroundWarning: true`)
+- [x] T056 [P] [US4] Write src/platform/background.android.test.ts with mocks for `react-native` `PermissionsAndroid`/`Platform`, `expo-intent-launcher`, and a `MemoryStore`: `prepare()` requests POST_NOTIFICATIONS on API 33+ only and continues if denied; asks for the battery exemption only when `battery-exemption-asked:v1` is unset, then sets it; `requestBatteryExemption()` falls back to the settings screen when the request intent throws
+- [x] T057 [P] [US4] Write src/components/BatteryLink.test.tsx: renders "App stopping mid-session? Allow it to run in the background" and calls `background.requestBatteryExemption()` on press
+- [x] T058 [P] [US4] Add to src/screens/SampleScreen.test.tsx: "Cues may stop when the screen is off" is shown only when the snapshot has `backgroundWarning: true`
 
 ### Implementation for User Story 4
 
-- [ ] T059 [US4] Update src/session/controller.ts to pass T055 (notification text on phase change/pause/resume only; `backgroundWarning`)
-- [ ] T060 [US4] Implement `prepare()` and `requestBatteryExemption()` in src/platform/background.android.ts to pass T056 (package name from `expo-constants`)
-- [ ] T061 [US4] Implement src/components/BatteryLink.tsx to pass T057 (rendered on Android only via a `BatteryLink.ios.tsx` that returns null)
-- [ ] T062 [US4] To pass T058, show the background warning on src/screens/SampleScreen.tsx when `backgroundWarning` is true ("Cues may stop when the screen is off")
+- [x] T059 [US4] Update src/session/controller.ts to pass T055 (notification text on phase change/pause/resume only; `backgroundWarning`)
+- [x] T060 [US4] Implement `prepare()` and `requestBatteryExemption()` in src/platform/background.android.ts to pass T056 (package name from `expo-constants`)
+- [x] T061 [US4] Implement src/components/BatteryLink.tsx to pass T057 (renders nothing unless `Platform.OS` is android; a `.ios.tsx` split would hide it from the tests, which jest-expo runs as iOS)
+- [x] T062 [US4] To pass T058, show the background warning on src/screens/SampleScreen.tsx when `backgroundWarning` is true ("Cues may stop when the screen is off")
 - [ ] T063 [US4] On device: fresh install (`adb uninstall io.github.abhisheksao.cadence`), then run quickstart D2 and D6
 
 **Checkpoint**: Notification and permission flow verified.

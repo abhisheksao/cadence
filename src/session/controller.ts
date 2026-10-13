@@ -75,19 +75,27 @@ export class SessionController {
     const keepAliveUntil = new Promise<void>((resolve) => {
       release = resolve;
     });
+    let engineStarted = false;
+    let wasPaused = false;
     const engine = new Engine(
       definition.phases,
       mode.cueFor(definition),
       {
         onCue: (cue, at, phase) => player.play(cue, at, phase),
         onCancelPending: () => player.silence(),
+        // The first phase's title goes out with background.start().
+        onPhaseChange: () => {
+          if (engineStarted) this.updateNotification(engine);
+        },
         onStatusChange: (status) => {
+          if (status === 'paused' || (status === 'running' && wasPaused)) this.updateNotification(engine);
+          wasPaused = status === 'paused';
           if (status === 'done') this.windDown(engine);
         },
       },
       { clock, scheduler },
     );
-    const started = await background.start({
+    const serviceStarted = await background.start({
       title: definition.title,
       text: definition.phases[0].title,
       keepAliveUntil,
@@ -96,7 +104,7 @@ export class SessionController {
     const active: Active = {
       engine,
       definition,
-      backgroundWarning: !started,
+      backgroundWarning: !serviceStarted,
       release,
       cancelWindDown: null,
       unsubscribe: () => {},
@@ -104,6 +112,7 @@ export class SessionController {
     this.active = active;
     active.unsubscribe = engine.subscribe((snapshot) => this.publish(active, snapshot));
     engine.start();
+    engineStarted = true;
   }
 
   pause() {
@@ -143,6 +152,17 @@ export class SessionController {
     previous.engine.stop();
     this.deps.player.silence();
     previous.release();
+  }
+
+  /**
+   * Shows the current phase, or the paused label, in the notification (C3). Called on phase
+   * changes and pause/resume only.
+   */
+  private updateNotification(engine: Engine) {
+    if (this.active?.engine !== engine) return;
+    const { status, phase } = engine.snapshot();
+    if (!phase || (status !== 'running' && status !== 'paused')) return;
+    this.deps.background.update(status === 'paused' ? `Paused · ${phase.title}` : phase.title);
   }
 
   private windDown(engine: Engine) {
