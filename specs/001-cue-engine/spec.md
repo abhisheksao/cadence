@@ -189,8 +189,10 @@ session, and run it to completion.
   waking it works out the correct phase and second from the clock. It announces the start of the
   phase it is now in (only the current phase, not every phase it missed) and drops per-second cues
   more than 2 seconds late instead of playing them in a burst.
-- **Device clock changed mid-session** (manual change or time-zone switch): the session's progress
-  must not jump; elapsed time is measured with a clock that only moves forward.
+- **Device clock changed mid-session**: if the clock moves backwards, progress MUST NOT jump back;
+  the session carries on as if the change had not happened. A forward change cannot be told apart
+  from the phone sleeping, so the session follows the clock forward. (A sleep-proof clock needs
+  native code and comes with spec 006.)
 - **Pause during a cue**: the cue in progress is cut off and any cue scheduled ahead is cancelled;
   on resume, cues due from that point are played again.
 - **Skip or back during a cue**: queued speech from the old phase is dropped so the new phase's
@@ -232,9 +234,9 @@ session, and run it to completion.
 
 **Timing**
 
-- **FR-004**: While the app is running, cue times MUST be computed from a monotonic clock as
-  session start + planned offset, adjusted for time spent paused. Accumulated timer ticks MUST NOT
-  be used (Principle I). Recovery after a relaunch uses the wall clock (FR-024).
+- **FR-004**: Cue times MUST be computed from the wall clock as session start + planned offset,
+  adjusted for time spent paused. Accumulated timer ticks MUST NOT be used (Principle I). The
+  same clock is used for recovery after a relaunch (FR-024).
 - **FR-005**: Cues MUST be delivered early enough that, after the device's output latency, they
   are heard on their due second. Speech latency MUST be learned from the device at runtime rather
   than fixed.

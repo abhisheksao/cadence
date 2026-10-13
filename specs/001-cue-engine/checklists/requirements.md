@@ -33,7 +33,7 @@
 
 - Clarify session 2026-10-13 resolved the OS-kill recovery marker and four other questions.
 - Accepted platform terms: "foreground service", "ongoing notification", "audio focus", "Android
-  13+", and "monotonic clock" describe required platform behaviour mandated by the constitution
+  13+", and "wall clock" describe required platform behaviour mandated by the constitution
   (Principles I, II, IV), not implementation choices. Libraries and frameworks are not named.
 - Second users of this spec are mode developers (specs 002–004), so FR-002/FR-003 describe the
   cue contract they build on.
