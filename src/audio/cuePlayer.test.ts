@@ -247,6 +247,24 @@ describe('cue player: ducking', () => {
     expect(speech.speak).toHaveBeenCalledWith('Cool down', expect.any(Object));
   });
 
+  it('does not treat the late status of its own pause as lost focus after Skip or Back mid-phrase', async () => {
+    const player = await ready();
+    player.play({ type: 'say', text: 'Halfway' }, 10_000, 0);
+    mockPlayers[HOLD].emit({ playing: true });
+
+    // Skip: the session silences, then plays the next phase's start cue straight away.
+    player.silence();
+    player.play({ type: 'say', text: 'Cool down', interrupt: true }, Date.now(), 1);
+    speech.stop.mockClear();
+    speech.speak.mockClear();
+    mockPlayers[HOLD].emit({ playing: false }); // the pause from silence() reports late
+    mockPlayers[HOLD].emit({ playing: true }); // then the new play() starts
+
+    expect(speech.stop).not.toHaveBeenCalled();
+    player.play({ type: 'say', text: '10 seconds' }, Date.now(), 1);
+    expect(speech.speak).toHaveBeenCalledWith('10 seconds', expect.any(Object));
+  });
+
   it('does not treat its own pause as lost focus', async () => {
     const player = await ready();
     player.play({ type: 'say', text: 'One' }, 10_000, 0);
