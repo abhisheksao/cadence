@@ -40,7 +40,15 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] **I. Screen-off reliability**: background work runs in a foreground service; timing derives from the wall clock via an injected clock
+- [ ] **II. Duck, never pause**: any audio requests transient ducking focus and releases it
+- [ ] **III. Offline & private**: no network, analytics, or off-device data; new permissions justified
+- [ ] **IV. Android-first, iOS-ready**: platform-specific code behind an interface; iOS blockers noted
+- [ ] **V. CNG**: native config only via app.json / config plugins / local Expo modules
+- [ ] **VI. Local builds**: no EAS or cloud build/OTA services
+- [ ] **VII. Test-first**: tests for each story are planned before implementation; failing-test step comes first
+- [ ] **VIII. Quality gates**: strict TS; lint/typecheck/tests green; deps via `expo install`
+- [ ] **IX. Traceability**: work maps to this spec; spec updated if the design diverges
 
 ## Project Structure
 
