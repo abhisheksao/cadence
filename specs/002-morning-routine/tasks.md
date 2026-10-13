@@ -135,15 +135,15 @@ pass.
 
 ### Tests for User Story 3 (write first, confirm they fail) ⚠️
 
-- [ ] T034 [P] [US3] Write src/components/StepList.test.tsx: for a current index, earlier steps are marked done (accessible state or label "done"), the current one "current", later ones "upcoming"; when the session is done all are done; durations show as m:ss or "untimed"
-- [ ] T035 [P] [US3] Add to src/screens/RoutineScreen.test.tsx: the live view renders StepList with the current index and updates after a state change; Done is large on an untimed step and compact on a timed step; the ended view shows "All done" (done) or "Stopped" (stopped) with Start again; `useKeepScreenOn` receives the routine definition and status while live, and `undefined` when another mode's session is running
-- [ ] T036 [P] [US3] Add to src/screens/HomeScreen.test.tsx: the Morning routine tile shows "In progress" while a routine session is running or paused (mock `@/session/useSession`), and not for a sample session or when idle
+- [x] T034 [P] [US3] Write src/components/StepList.test.tsx: for a current index, earlier steps are marked done (accessible state or label "done"), the current one "current", later ones "upcoming"; when the session is done all are done; durations show as m:ss or "untimed"
+- [x] T035 [P] [US3] Add to src/screens/RoutineScreen.test.tsx: the live view renders StepList with the current index and updates after a state change; Done is large on an untimed step and compact on a timed step; the ended view shows "All done" (done) or "Stopped" (stopped) with Start again; `useKeepScreenOn` receives the routine definition and status while live, and `undefined` when another mode's session is running
+- [x] T036 [P] [US3] Add to src/screens/HomeScreen.test.tsx: the Morning routine tile shows "In progress" while a routine session is running or paused (mock `@/session/useSession`), and not for a sample session or when idle
 
 ### Implementation for User Story 3
 
-- [ ] T037 [P] [US3] Implement src/components/StepList.tsx to pass T034
-- [ ] T038 [US3] Finish src/screens/RoutineScreen.tsx (StepList, Done size by step type, ended view, `useKeepScreenOn` with the live routine only) to pass T035
-- [ ] T039 [US3] Show "In progress" on the Morning routine tile in src/screens/HomeScreen.tsx to pass T036
+- [x] T037 [P] [US3] Implement src/components/StepList.tsx to pass T034
+- [x] T038 [US3] Finish src/screens/RoutineScreen.tsx (StepList, Done size by step type, ended view, `useKeepScreenOn` with the live routine only) to pass T035
+- [x] T039 [US3] Show "In progress" on the Morning routine tile in src/screens/HomeScreen.tsx to pass T036
 - [ ] T040 [US3] On device: run quickstart R6–R9 and R14
 
 **Checkpoint**: All three stories work on their own.

@@ -9,6 +9,7 @@ export function DoneButton({ onPress, size }: Props) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Done"
+      testID={`done-${size}`}
       onPress={onPress}
       hitSlop={8}
       style={({ pressed }) => [styles.base, large ? styles.large : styles.compact, { opacity: pressed ? 0.8 : 1 }]}
