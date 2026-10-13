@@ -136,7 +136,8 @@ notification at each phase change and while paused.
    remaining counting down, the total elapsed and total workout time, and the next phase with its
    length.
 5. **Given** a running workout, **Then** the notification reads the phase and, for runs and walks,
-   the round (e.g. "Run · Round 3 of 8"), with "Paused · " in front while paused.
+   the round, in the same form as the routine (e.g. "Round 3 of 8: Run"), with "Paused · " in
+   front while paused.
 6. **Given** "Keep screen on" is on, **When** a workout runs with the run/walk screen open, **Then**
    the screen stays on past its timeout; **Given** it is off, **Then** the screen turns off as usual.
 7. **Given** the workout has finished or was stopped, **Then** the screen says "Complete" or
@@ -240,8 +241,9 @@ notification at each phase change and while paused.
   (run and walk in clearly different colours), the round for runs and walks, the time remaining,
   total elapsed and total workout time, a paused label when paused, the next phase with its length
   (none on the last phase), and the spec 001 controls.
-- **FR-018**: The notification MUST read the phase title and, for runs and walks, the round (e.g.
-  "Run · Round 3 of 8"; "Warm up"; "Cool down"), with "Paused · " in front while paused.
+- **FR-018**: The notification MUST read the phase title and, for runs and walks, the round first,
+  as the routine does (e.g. "Round 3 of 8: Run"; "Warm up"; "Cool down"), with "Paused · " in
+  front while paused.
 - **FR-019**: After the workout finishes or is stopped, the screen MUST say "Complete" or
   "Stopped" with the total elapsed time and offer Start again, returning to the settings view.
 - **FR-020**: The home screen MUST show Run / walk as available (no longer coming soon), and
