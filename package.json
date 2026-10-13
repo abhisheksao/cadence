@@ -4,6 +4,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "expo": "~57.0.28",
+    "expo-asset": "~57.0.19",
     "expo-audio": "~57.0.5",
     "expo-constants": "~57.0.21",
     "expo-intent-launcher": "~57.0.1",
@@ -74,6 +75,15 @@
           ]
         }
       ]
+    }
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-background-actions"
+        ]
+      }
     }
   }
 }

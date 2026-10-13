@@ -98,6 +98,12 @@ reference device, is used as evidence where noted ("prior implementation").
   `recordAudioAndroid: false`, and `android.blockedPermissions` removes the rest. Remaining
   defaults: `INTERNET` (development builds load JS from the dev server; the app makes no network
   calls), `MODIFY_AUDIO_SETTINGS` (expo-audio), `VIBRATE` (template default, harmless).
+  The release build's merged manifest (checked in T092) also has two permissions added by
+  libraries. `ACCESS_NETWORK_STATE` comes from `androidx.media3` (ExoPlayer, used by expo-audio),
+  which checks the network type for streaming. The app streams nothing, and the permission gives
+  no access to user data. It is kept rather than blocked, because blocking it is untested with
+  ExoPlayer. `<package>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` is a signature permission that
+  `androidx.core` adds to keep runtime-registered receivers private to the app.
 - **Permissions justification (Principle III)**: notifications (show the required ongoing
   notification), wake lock and foreground service (keep running with the screen off), battery
   exemption request (OEM kills; asked once, user can decline).
