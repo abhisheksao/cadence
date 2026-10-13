@@ -15,6 +15,7 @@ const WIND_DOWN_MS = 4_000;
 /** What screens show: the engine snapshot plus session-level details. */
 export type SessionState = SessionSnapshot & {
   title: string;
+  definition: SessionDefinition;
   /** True if the OS refused the background service (cues may stop with the screen off). */
   backgroundWarning: boolean;
 };
@@ -179,7 +180,7 @@ export class SessionController {
 
   private publish(active: Active, snapshot: SessionSnapshot) {
     if (this.active !== active) return;
-    this.state = { ...snapshot, title: active.definition.title, backgroundWarning: active.backgroundWarning };
+    this.state = { ...snapshot, title: active.definition.title, definition: active.definition, backgroundWarning: active.backgroundWarning };
     this.listeners.forEach((fn) => fn(this.state));
   }
 }

@@ -31,9 +31,11 @@ describe('Home screen (FR-019)', () => {
   });
 
   it('opens the sample session', async () => {
-    await renderRouter({ index: HomeScreen, sample: SampleStub });
+    // RNTL 14's render is async; renderRouter adds getPathname() to the returned promise.
+    const router = renderRouter({ index: HomeScreen, sample: SampleStub });
+    await router;
     await fireEvent.press(screen.getByRole('button', { name: /Sample session/ }));
-    expect(screen).toHavePathname('/sample');
+    expect(router.getPathname()).toBe('/sample');
     expect(screen.getByText('Sample screen')).toBeOnTheScreen();
   });
 

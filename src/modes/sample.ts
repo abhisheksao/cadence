@@ -22,6 +22,24 @@ export function sampleDefinition(): SessionDefinition {
   };
 }
 
+/** Length of the soak run used to check timing drift and OS kills (SC-003, quickstart D10). */
+const SOAK_SEC = 60 * 60;
+
+/**
+ * The sample's timed phases repeated to exactly 60 minutes. The screen may turn off, since the
+ * soak is meant to be run with it off.
+ */
+export function soakDefinition(): SessionDefinition {
+  const timed = sampleDefinition().phases.filter((p) => p.durationSec !== null);
+  const phases = [];
+  for (let total = 0, i = 0; total < SOAK_SEC; i++) {
+    const phase = timed[i % timed.length];
+    phases.push(phase);
+    total += phase.durationSec ?? 0;
+  }
+  return { modeId: 'sample', title: '60-minute soak', phases, settings: {}, keepScreenOn: false };
+}
+
 const handler: CueHandler = {
   cueFor({ phase, sec, remaining, next, isPhaseStart }) {
     if (isPhaseStart) return { type: 'say', text: phase.title, interrupt: true };

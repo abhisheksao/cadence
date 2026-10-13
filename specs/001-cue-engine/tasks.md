@@ -195,19 +195,19 @@ device, D1 passes.
 
 ### Tests for User Story 5 (write first, confirm they fail) ⚠️
 
-- [ ] T064 [P] [US5] Write src/screens/HomeScreen.test.tsx (React Native Testing Library + expo-router testing utilities): shows "Morning routine", "Run / walk", "Breathe" each with a description and "Coming soon", a "Sample session" entry that navigates to /sample, and the battery link (from T061)
-- [ ] T065 [P] [US5] Write src/components/SessionView.test.tsx: shows phase title, subtitle, remaining time as m:ss for timed phases and elapsed time for untimed ones, and "Paused" while paused
-- [ ] T066 [P] [US5] Write src/session/useKeepScreenOn.test.ts with a mocked `expo-keep-awake`: activates when the definition has `keepScreenOn: true` and status is running/paused; deactivates on done/stopped/unmount; never activates when `keepScreenOn` is false (FR-021a)
-- [ ] T067 [P] [US5] Add to src/modes/sample.test.ts: `soakDefinition()` repeats the timed sample phases (no untimed phase) to a total of 60 minutes and passes validation
-- [ ] T068 [P] [US5] Add to src/screens/SampleScreen.test.tsx: "Start sample" and "Start 60-minute soak" start the matching definitions; SessionView and Controls render while a session runs; `useKeepScreenOn` receives the running definition
+- [x] T064 [P] [US5] Write src/screens/HomeScreen.test.tsx (React Native Testing Library + expo-router testing utilities): shows "Morning routine", "Run / walk", "Breathe" each with a description and "Coming soon", a "Sample session" entry that navigates to /sample, and the battery link (from T061)
+- [x] T065 [P] [US5] Write src/components/SessionView.test.tsx: shows phase title, subtitle, remaining time as m:ss for timed phases and elapsed time for untimed ones, and "Paused" while paused
+- [x] T066 [P] [US5] Write src/session/useKeepScreenOn.test.ts with a mocked `expo-keep-awake`: activates when the definition has `keepScreenOn: true` and status is running/paused; deactivates on done/stopped/unmount; never activates when `keepScreenOn` is false (FR-021a)
+- [x] T067 [P] [US5] Add to src/modes/sample.test.ts: `soakDefinition()` repeats the timed sample phases (no untimed phase) to a total of 60 minutes and passes validation
+- [x] T068 [P] [US5] Add to src/screens/SampleScreen.test.tsx: "Start sample" and "Start 60-minute soak" start the matching definitions; SessionView and Controls render while a session runs; `useKeepScreenOn` receives the running definition
 
 ### Implementation for User Story 5
 
-- [ ] T069 [US5] Implement src/screens/HomeScreen.tsx (mode tiles + sample entry + BatteryLink) to pass T064; src/app/index.tsx re-exports it
-- [ ] T070 [US5] Implement src/components/SessionView.tsx and a `formatClock` helper in src/format/clock.ts (with a small src/format/clock.test.ts written first) to pass T065
-- [ ] T071 [US5] Implement src/session/useKeepScreenOn.ts to pass T066
-- [ ] T072 [US5] Implement `soakDefinition()` in src/modes/sample.ts to pass T067
-- [ ] T073 [US5] Finish src/screens/SampleScreen.tsx to pass T068: SessionView, Controls, useKeepScreenOn, "Start sample" and "Start 60-minute soak" buttons, and a header title; configure screen titles in src/app/_layout.tsx
+- [x] T069 [US5] Implement src/screens/HomeScreen.tsx (mode tiles + sample entry + BatteryLink) to pass T064; src/app/index.tsx re-exports it
+- [x] T070 [US5] Implement src/components/SessionView.tsx and a `formatClock` helper in src/format/clock.ts (with a small src/format/clock.test.ts written first) to pass T065
+- [x] T071 [US5] Implement src/session/useKeepScreenOn.ts to pass T066
+- [x] T072 [US5] Implement `soakDefinition()` in src/modes/sample.ts to pass T067
+- [x] T073 [US5] Finish src/screens/SampleScreen.tsx to pass T068: SessionView, Controls, useKeepScreenOn, "Start sample" and "Start 60-minute soak" buttons, and a header title; configure screen titles in src/app/_layout.tsx
 - [ ] T074 [US5] On device: run quickstart D1
 
 **Checkpoint**: All five user stories work on their own.
