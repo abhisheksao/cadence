@@ -57,9 +57,9 @@ its own.
 
 ### Tests first
 
-- [ ] T013 [P] Write src/test-utils/fakeClock.test.ts: `FakeClock.now()` returns the set time; `advance(ms)` moves it; `FakeScheduler.every(100, fn)` + `scheduler.advance(clock, 1000)` calls `fn` 10 times in order with the clock advanced before each call; `jitter` option delays individual calls by a seeded random 0–300 ms; cancel stops calls
+- [ ] T013 [P] Write src/test-utils/fakeClock.test.ts: `FakeClock.now()` returns the set time; `advance(ms)` moves it; `FakeScheduler.every(100, fn)` + `scheduler.advance(clock, 1000)` calls `fn` 10 times in order with the clock advanced before each call; `jitter` option delays individual calls by a seeded random 0–300 ms; cancel stops calls; `suspend(clock, ms)` moves the clock without running callbacks (simulates the OS suspending the app)
 - [ ] T014 [P] Write src/session/validate.test.ts: `validateDefinition` returns no errors for a valid definition; returns an error each for empty `phases`, blank `title`, `durationSec` 0, negative, or non-integer, and an unknown `modeId` (data-model "SessionDefinition")
-- [ ] T015 [P] Write src/modes/registry.test.ts: `registerMode` then `getMode(id)` returns it; unknown id returns undefined; registering the same id twice throws
+- [ ] T015 [P] Write src/modes/registry.test.ts: `registerMode` then `getMode(id)` returns it; unknown id returns undefined; registering the same id twice throws (`createModeRegistry()` so tests stay isolated)
 - [ ] T016 [P] Write src/storage/kv.test.ts with a jest mock of `expo-sqlite/kv-store`: `getSync` returns the stored value or null; `set` and `remove` call `setItem` and `removeItem`
 
 ### Implementation
