@@ -1,7 +1,7 @@
 import type { CuePlayer } from '@/audio/types';
 import type { Clock, Scheduler } from '@/engine/clock';
 import { Engine } from '@/engine/engine';
-import type { SessionSnapshot } from '@/engine/types';
+import type { Phase, SessionSnapshot } from '@/engine/types';
 import type { ModeRegistry } from '@/modes/types';
 import type { BackgroundHost } from '@/platform/background';
 import type { KeyValueStore } from '@/storage/types';
@@ -16,6 +16,11 @@ const WIND_DOWN_MS = 4_000;
 const RECORD_REFRESH_MS = 60_000;
 
 type Position = Omit<ResumeAssessment, 'definition'>;
+
+/** Notification text for a phase: "<subtitle>: <title>", or just the title (C3). */
+function phaseText(phase: Phase) {
+  return phase.subtitle ? `${phase.subtitle}: ${phase.title}` : phase.title;
+}
 
 /** What screens show: the engine snapshot plus session-level details. */
 export type SessionState = SessionSnapshot & {
@@ -131,10 +136,10 @@ export class SessionController {
       },
       { clock, scheduler },
     );
-    const firstTitle = definition.phases[position?.index ?? 0].title;
+    const firstText = phaseText(definition.phases[position?.index ?? 0]);
     const serviceStarted = await background.start({
       title: definition.title,
-      text: position?.paused ? `Paused · ${firstTitle}` : firstTitle,
+      text: position?.paused ? `Paused · ${firstText}` : firstText,
       keepAliveUntil,
     });
 
@@ -208,7 +213,7 @@ export class SessionController {
     if (this.active?.engine !== engine) return;
     const { status, phase } = engine.snapshot();
     if (!phase || (status !== 'running' && status !== 'paused')) return;
-    this.deps.background.update(status === 'paused' ? `Paused · ${phase.title}` : phase.title);
+    this.deps.background.update(status === 'paused' ? `Paused · ${phaseText(phase)}` : phaseText(phase));
   }
 
   private saveRecord(engine: Engine) {

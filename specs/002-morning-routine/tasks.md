@@ -37,7 +37,7 @@ its own.
 
 **Purpose**: Confirm the starting point. No new dependencies (plan).
 
-- [ ] T001 Confirm the branch `002-morning-routine` is based on `develop` with spec 001 merged, and `npm run check` is green before any change
+- [x] T001 Confirm the branch `002-morning-routine` is based on `develop` with spec 001 merged, and `npm run check` is green before any change
 
 ---
 
@@ -50,20 +50,20 @@ needs.
 
 ### Tests first
 
-- [ ] T002 [P] Add to src/session/controller.test.ts block "notification": C3 amendment: phases with a `subtitle` produce `"<subtitle>: <title>"` in `background.start()` text and in phase-change updates, and `"Paused · <subtitle>: <title>"` when paused; phases without a subtitle keep the existing text (existing tests stay green)
-- [ ] T003 [P] Add to src/components/BatteryLink.test.tsx: renders the link when `backgroundHost.canRequestBatteryExemption` is true and nothing when false (mock `@/platform/background`; remove the `Platform.OS` overrides); add to src/platform/background.android.test.ts that the Android host reports `canRequestBatteryExemption: true`
-- [ ] T004 [P] Add to src/components/LaunchCheck.test.tsx: Resume pushes the recovered mode's `route` (mock `@/modes` with modes `sample` → `/sample` and `routine` → `/routine`), and `/` for an unknown mode; update src/modes/registry.test.ts and src/modes/sample.test.ts for the `route` field (`sampleMode.route === '/sample'`)
-- [ ] T005 [P] Write src/routine/defaults.test.ts: `defaultRoutine(newId)` has the six steps and durations from data-model.md, unique ids from `newId`, version 1; exported limits `MIN_STEP_SEC = 15`, `MAX_STEP_SEC = 3600`, `MAX_STEPS = 30`, `MAX_TITLE = 60`
-- [ ] T006 [P] Write src/routine/store.test.ts for `parseRoutine` (round-trip of a valid routine; rejects null, bad JSON, version ≠ 1, empty steps, > 30 steps, duplicate ids, a non-string title, a duration that is not null or an integer in 15–3600) and `RoutineStore` with a `MemoryStore`: RS1 (nothing stored or an invalid value → default returned and saved under `routine:v1`), RS2 (`update` notifies subscribers and saves the full routine), RS3 (a new `RoutineStore` on the same data returns the last saved routine), RS4 (`restoreDefault` saves a default with fresh ids)
+- [x] T002 [P] Add to src/session/controller.test.ts block "notification": C3 amendment: phases with a `subtitle` produce `"<subtitle>: <title>"` in `background.start()` text and in phase-change updates, and `"Paused · <subtitle>: <title>"` when paused; phases without a subtitle keep the existing text (existing tests stay green)
+- [x] T003 [P] Add to src/components/BatteryLink.test.tsx: renders the link when `backgroundHost.canRequestBatteryExemption` is true and nothing when false (mock `@/platform/background`; remove the `Platform.OS` overrides); add to src/platform/background.android.test.ts that the Android host reports `canRequestBatteryExemption: true`
+- [x] T004 [P] Add to src/components/LaunchCheck.test.tsx: Resume pushes the recovered mode's `route` (mock `@/modes` with modes `sample` → `/sample` and `routine` → `/routine`), and `/` for an unknown mode; update src/modes/registry.test.ts and src/modes/sample.test.ts for the `route` field (`sampleMode.route === '/sample'`)
+- [x] T005 [P] Write src/routine/defaults.test.ts: `defaultRoutine(newId)` has the six steps and durations from data-model.md, unique ids from `newId`, version 1; exported limits `MIN_STEP_SEC = 15`, `MAX_STEP_SEC = 3600`, `MAX_STEPS = 30`, `MAX_TITLE = 60`
+- [x] T006 [P] Write src/routine/store.test.ts for `parseRoutine` (round-trip of a valid routine; rejects null, bad JSON, version ≠ 1, empty steps, > 30 steps, duplicate ids, a non-string title, a duration that is not null or an integer in 15–3600) and `RoutineStore` with a `MemoryStore`: RS1 (nothing stored or an invalid value → default returned and saved under `routine:v1`), RS2 (`update` notifies subscribers and saves the full routine), RS3 (a new `RoutineStore` on the same data returns the last saved routine), RS4 (`restoreDefault` saves a default with fresh ids)
 
 ### Implementation
 
-- [ ] T007 Update `SessionController` notification text in src/session/controller.ts to pass T002 (a private `phaseText(phase)` used by `background.start()` and `updateNotification`); amend C3 in specs/001-cue-engine/contracts/platform.md
-- [ ] T008 Add `canRequestBatteryExemption: boolean` to `BackgroundHost` in src/platform/background.ts, set it in src/platform/background.android.ts (true), src/platform/background.ios.ts (false) and `FakeBackgroundHost` in src/test-utils/fakes.ts; make src/components/BatteryLink.tsx use it instead of `Platform.OS` to pass T003; update the spec 001 research implementation note and contracts/platform.md
-- [ ] T009 Add `route: string` to `ModeDefinition` in src/modes/types.ts, `route: '/sample'` in src/modes/sample.ts, and route by `modes.get(definition.modeId)?.route ?? '/'` in src/components/LaunchCheck.tsx to pass T004 (use `Href` typing from expo-router for `router.push`)
-- [ ] T010 [P] Create src/routine/types.ts (`Step`, `Routine` per data-model.md) and src/routine/defaults.ts (`defaultRoutine`, limits) to pass T005
-- [ ] T011 Implement `parseRoutine`, `ROUTINE_KEY` and `RoutineStore` in src/routine/store.ts to pass T006 (sync load on first `get()`, fire-and-forget writes with `console.warn` on failure)
-- [ ] T012 [P] Create src/routine/ids.ts (production id generator: `Date.now()` and a counter in base 36) and src/routine/useRoutine.ts (app-wide `RoutineStore` over `kvStore`, `useSyncExternalStore` hook returning `{ routine, store }`)
+- [x] T007 Update `SessionController` notification text in src/session/controller.ts to pass T002 (a private `phaseText(phase)` used by `background.start()` and `updateNotification`); amend C3 in specs/001-cue-engine/contracts/platform.md
+- [x] T008 Add `canRequestBatteryExemption: boolean` to `BackgroundHost` in src/platform/background.ts, set it in src/platform/background.android.ts (true), src/platform/background.ios.ts (false) and `FakeBackgroundHost` in src/test-utils/fakes.ts; make src/components/BatteryLink.tsx use it instead of `Platform.OS` to pass T003; update the spec 001 research implementation note and contracts/platform.md
+- [x] T009 Add `route: string` to `ModeDefinition` in src/modes/types.ts, `route: '/sample'` in src/modes/sample.ts, and route by `modes.get(definition.modeId)?.route ?? '/'` in src/components/LaunchCheck.tsx to pass T004 (use `Href` typing from expo-router for `router.push`)
+- [x] T010 [P] Create src/routine/types.ts (`Step`, `Routine` per data-model.md) and src/routine/defaults.ts (`defaultRoutine`, limits) to pass T005
+- [x] T011 Implement `parseRoutine`, `ROUTINE_KEY` and `RoutineStore` in src/routine/store.ts to pass T006 (sync load on first `get()`, fire-and-forget writes with `console.warn` on failure)
+- [x] T012 [P] Create src/routine/ids.ts (production id generator: `Date.now()` and a counter in base 36) and src/routine/useRoutine.ts (app-wide `RoutineStore` over `kvStore`, `useSyncExternalStore` hook returning `{ routine, store }`)
 
 **Checkpoint**: Spec 001 amendments in, routine data layer tested. `npm run check` green.
 

@@ -5,6 +5,7 @@ import type { BackgroundHost } from './background';
  * the app is in front; background execution is not guaranteed on iOS yet.
  */
 export const backgroundHost: BackgroundHost = {
+  canRequestBatteryExemption: false,
   async prepare() {},
   async start() {
     return true;

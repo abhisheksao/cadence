@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 
+import { modes } from '@/modes';
 import { sessionController } from '@/session';
 import type { RecoveryResult } from '@/session/types';
 
@@ -23,8 +24,7 @@ export function LaunchCheck({ children }: { children: ReactNode }) {
   const resume = () => {
     if (result.kind !== 'resume') return;
     close();
-    // Only the sample session exists in this spec; later modes route by modeId.
-    router.push('/sample');
+    router.push(modes.get(result.assessment.definition.modeId)?.route ?? '/');
     sessionController.resumeInterrupted(result.assessment).catch((e: unknown) => {
       console.warn('Could not resume the session', e);
     });

@@ -30,7 +30,7 @@ function setup() {
   const background = new FakeBackgroundHost();
   const store = new MemoryStore();
   const modes = createModeRegistry();
-  modes.register({ id: 'test', cueFor: () => testHandler });
+  modes.register({ id: 'test', route: '/sample', cueFor: () => testHandler });
   const controller = new SessionController({ clock, scheduler, player, background, store, modes });
   return { clock, scheduler, player, background, store, controller };
 }

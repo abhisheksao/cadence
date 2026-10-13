@@ -1,13 +1,13 @@
-import { Platform, Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { backgroundHost } from '@/platform/background';
 
 /**
- * Offers the battery exemption again, for users who declined it at first (FR-017). Android only:
- * iOS has no such exemption.
+ * Offers the battery exemption again, for users who declined it at first (FR-017). Renders
+ * nothing on platforms without one (iOS).
  */
 export function BatteryLink() {
-  if (Platform.OS !== 'android') return null;
+  if (!backgroundHost.canRequestBatteryExemption) return null;
   const label = 'App stopping mid-session? Allow it to run in the background';
   return (
     <Pressable

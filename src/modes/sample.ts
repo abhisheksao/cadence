@@ -60,5 +60,6 @@ const handler: CueHandler = {
 
 export const sampleMode: ModeDefinition = {
   id: 'sample',
+  route: '/sample',
   cueFor: () => handler,
 };
