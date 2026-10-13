@@ -16,6 +16,21 @@ sounds; test setup; a sample session for on-device verification. Out of scope: t
 themselves (002–004), notification action buttons and the native service (006), iOS background
 execution (008), end-to-end tests and CI (005)."
 
+## Clarifications
+
+### Session 2026-10-13
+
+- Q: What happens if the OS kills the app mid-session? → A: Recover in this spec: progress is
+  saved, and on reopen the app offers to resume at the point the clock says the session has reached.
+- Q: Should the screen stay on while the session screen is open? → A: It is a per-mode choice
+  (e.g. on for routine/breathe, off for run/walk); the sample session keeps it on.
+- Q: How is on-device cue accuracy (SC-001, SC-002) measured? → A: Each cue's planned and actual
+  start time is written to the device log, read over adb, and summarised by a script in the repo.
+- Q: How should Back behave? → A: More than 3 s into the phase, Back restarts it; otherwise it goes
+  to the start of the previous phase (in the first phase, it restarts it).
+- Q: What does the ongoing notification show? → A: Session title, current phase, and a live
+  countdown of time left in the phase (elapsed time for untimed phases), run by the system.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The people using this feature directly are (a) someone running a session with the phone in a
@@ -53,8 +68,9 @@ also verified by automated tests on a simulated clock.
 
 ### User Story 2 - Control a running session (Priority: P1)
 
-While a session runs, the user can pause and resume it, skip to the next phase, go back to the
-previous phase, or stop it. An untimed phase (e.g. "Brush teeth") waits until the user moves on.
+While a session runs, the user can pause and resume it, skip to the next phase, go back (restart the
+current phase, or go to the previous one if the current phase has only just started), or stop
+it. An untimed phase (e.g. "Brush teeth") waits until the user moves on.
 
 **Why this priority**: Every mode needs these controls, and untimed phases are essential for the
 morning routine.
@@ -71,13 +87,16 @@ clock.
    phase continues from where it was paused and the remaining cues keep their spacing.
 3. **Given** a running or paused session, **When** the user skips, **Then** the next phase starts
    from its beginning with its start cue; skipping the last phase completes the session.
-4. **Given** a running or paused session past the first phase, **When** the user goes back,
-   **Then** the previous phase restarts from its beginning; in the first phase, back restarts it.
-5. **Given** an untimed phase, **When** time passes, **Then** the phase does not end by itself and
+4. **Given** a running or paused session more than 3 seconds into a phase, **When** the user goes
+   back, **Then** the current phase restarts from its beginning with its start cue.
+5. **Given** a running or paused session 3 seconds or less into a phase after the first, **When**
+   the user goes back, **Then** the previous phase restarts from its beginning; in the first
+   phase, back restarts it.
+6. **Given** an untimed phase, **When** time passes, **Then** the phase does not end by itself and
    its elapsed time keeps counting until the user skips.
-6. **Given** a running or paused session, **When** the user stops, **Then** all cues stop, no
+7. **Given** a running or paused session, **When** the user stops, **Then** all cues stop, no
    completion cue plays, and the session ends.
-7. **Given** a session is running, **When** the user starts another session, **Then** the first one
+8. **Given** a session is running, **When** the user starts another session, **Then** the first one
    is stopped before the second begins.
 
 ---
@@ -120,15 +139,18 @@ check the notification text through a phase change, and tap it to return to the 
 **Acceptance Scenarios**:
 
 1. **Given** a running session, **When** the user pulls down the notification shade, **Then** an
-   ongoing notification shows the session title and current phase title, updated on each phase
-   change, and it cannot be swiped away while the session runs.
-2. **Given** the session ends or is stopped, **When** it finishes, **Then** the notification is
+   ongoing notification shows the session title, the current phase title, and a live countdown of
+   time left in the phase (elapsed time for an untimed phase), and it cannot be swiped away while
+   the session runs.
+2. **Given** the session is paused, **When** the user views the notification, **Then** the timer
+   is frozen at the paused value and the notification says the session is paused.
+3. **Given** the session ends or is stopped, **When** it finishes, **Then** the notification is
    removed.
-3. **Given** a fresh install on Android 13 or later, **When** the user starts the first session,
+4. **Given** a fresh install on Android 13 or later, **When** the user starts the first session,
    **Then** the app asks for notification permission; if denied, the session still runs.
-4. **Given** the user has never been asked, **When** they start their first session, **Then** the
+5. **Given** the user has never been asked, **When** they start their first session, **Then** the
    app asks once to be exempted from battery optimisation; it does not ask again on later sessions.
-5. **Given** the home screen, **When** the user taps the "app stopping mid-session?" link, **Then**
+6. **Given** the home screen, **When** the user taps the "app stopping mid-session?" link, **Then**
    the battery-optimisation request or settings screen opens.
 
 ---
@@ -179,9 +201,12 @@ session, and run it to completion.
   second later; a phase must be at least 1 second long or untimed.
 - **Background service cannot start** (e.g. OS refuses): the session still runs while the app is
   open and the user is told cues may stop when the screen is off.
-- **App killed by the OS mid-session**: [NEEDS CLARIFICATION: Should the session be recovered when
-  the user reopens the app after an OS kill (offer to resume at the correct point), or does
-  recovery wait for a later spec?]
+- **App killed by the OS mid-session**: when the user reopens the app, it offers to resume the
+  interrupted session at the phase and second the clock says it has reached (as if it had never
+  stopped), or to discard it. If the session would already have finished, the app instead says
+  the session was interrupted and when. Time spent paused before the kill still counts as paused.
+- **Device restarted mid-session**: the monotonic clock resets on reboot, so a session interrupted
+  by a restart is treated as interrupted (discard or note only), never resumed at a guessed point.
 
 ## Requirements *(mandatory)*
 
@@ -226,8 +251,12 @@ session, and run it to completion.
 **Background and audio**
 
 - **FR-013**: On Android, a running session MUST run in a foreground service with an ongoing
-  notification showing the session title and current phase, updated on every phase change and
-  removed when the session ends. Tapping it MUST open the app.
+  notification showing the session title, current phase, and a live countdown of time left in the
+  phase (elapsed for untimed phases). The countdown MUST be kept by the system's notification
+  timer rather than by updating the notification every second; the notification MUST be updated
+  only on phase changes, pause, resume, skip, and back. Paused sessions MUST show a frozen timer
+  and a paused label. The notification MUST be removed when the session ends, and tapping it MUST
+  open the app.
 - **FR-014**: The background service MUST stay up long enough after the last phase for the
   completion cue to finish playing.
 - **FR-015**: Cue audio MUST request transient, ducking audio focus, release it after each cue,
@@ -248,14 +277,45 @@ session, and run it to completion.
 - **FR-021**: The sample session screen MUST show the current phase title, subtitle, time remaining
   or elapsed, and all controls, and the sample session MUST exercise every cue type and an untimed
   phase.
+- **FR-021a**: Each session MUST declare whether the screen stays on while its session screen is
+  open and in the foreground. When set, the screen MUST NOT time out until the session ends or the
+  user leaves the screen; when not set, the phone's normal timeout applies. The sample session
+  keeps the screen on. Cues run regardless of this setting.
 - **FR-022**: The app MUST work fully offline and collect no data (Principle III).
+
+**Timing diagnostics**
+
+- **FR-022a**: For every cue played, the app MUST write one line to the device's system log with
+  the cue type, planned time, and actual start time as reported by the platform (playback start
+  for sounds, speech-start callback for spoken cues), in all build types. The log MUST contain no
+  user content beyond phase titles and MUST NOT leave the device (Principle III).
+- **FR-022b**: The repository MUST include a script that reads a captured log and reports, per cue
+  type, the 50th/95th-percentile timing error and the error trend over the session (first vs last
+  5 minutes), so SC-001 and SC-002 can be checked.
+
+**Recovery after an OS kill**
+
+- **FR-023**: While a session is running or paused, the app MUST keep an on-device record of it
+  (session definition, start time, pause history, current status), updated on every start, pause,
+  resume, skip, back, and phase change, and cleared when the session completes or is stopped.
+- **FR-024**: On launch, if such a record exists and the session would still be in progress, the
+  app MUST offer Resume or Discard. Resume MUST continue at the position computed from the clock,
+  with the background service, notification, and cues restored; the current phase's start cue
+  MUST be announced.
+- **FR-025**: If the session would already have finished, or the device has restarted since the
+  record was written, the app MUST NOT resume; it MUST tell the user the session was interrupted
+  (session title and time) and clear the record.
+- **FR-026**: A session MUST be describable as plain data (mode, title, phases, mode settings) so it
+  can be rebuilt with the same cues after a relaunch.
 
 ### Key Entities
 
 - **Phase**: one step of a session. Title, optional subtitle, duration in seconds or untimed, and a
   kind label the mode can use to choose cues.
-- **Session**: an ordered list of phases plus a title shown in the notification. Has a status:
-  idle, running, paused, done, or stopped.
+- **Session**: an ordered list of phases plus a title shown in the notification and the mode that
+  owns it, and whether it keeps the screen on. Has a status: idle, running, paused, done, or stopped.
+- **Session record**: the saved copy of a running or paused session used to recover after an OS
+  kill: session definition, start time, pause history, status, and when it was last written.
 - **Cue opportunity**: the per-second event given to the mode: phase, index, second, remaining,
   neighbours, due time.
 - **Session state**: the live snapshot screens display: status, current phase, phase elapsed,
@@ -266,8 +326,9 @@ session, and run it to completion.
 
 ### Measurable Outcomes
 
-- **SC-001**: On the reference Android test device, with the screen off, beeps are heard within
-  150 ms and spoken cues begin within 300 ms of their due second for 95% of cues.
+- **SC-001**: On the reference Android test device, with the screen off, as measured by the
+  timing log and script (FR-022a/b), beeps start within 150 ms and spoken cues begin within
+  300 ms of their due second for 95% of cues.
 - **SC-002**: Over a 60-minute session, timing error does not grow: the last 5 minutes' cues are as
   accurate as the first 5 minutes' (within the SC-001 bounds).
 - **SC-003**: With the battery exemption granted, a 60-minute screen-off session on the reference
@@ -279,6 +340,8 @@ session, and run it to completion.
 - **SC-006**: Every timing and control rule in this spec (FR-002 – FR-011) is covered by an
   automated test on a simulated clock, written before the code it covers (Principle VII).
 - **SC-007**: A new user can find and complete the sample session from launch with no instructions.
+- **SC-008**: After the app is force-stopped mid-session and reopened, the user can resume within
+  2 taps, and the resumed phase and second match the clock (within 1 second).
 
 ## Assumptions
 

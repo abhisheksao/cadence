@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,7 +31,7 @@
 
 ## Notes
 
-- Open marker: recovery after an OS kill (Edge Cases). To be resolved in `/speckit-clarify`.
+- Clarify session 2026-10-13 resolved the OS-kill recovery marker and four other questions.
 - Accepted platform terms: "foreground service", "ongoing notification", "audio focus", "Android
   13+", and "monotonic clock" describe required platform behaviour mandated by the constitution
   (Principles I, II, IV), not implementation choices. Libraries and frameworks are not named.
