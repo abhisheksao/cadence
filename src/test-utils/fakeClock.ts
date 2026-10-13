@@ -100,6 +100,18 @@ export class FakeScheduler implements Scheduler {
     this.clock.set(target);
   }
 
+  /**
+   * Changes the wall clock by `ms` (negative = backwards) without disturbing pending intervals,
+   * which run on elapsed time like setInterval does. Simulates the user changing the time.
+   */
+  jumpClock(ms: number) {
+    for (const t of this.timers) {
+      t.nominal += ms;
+      t.fireAt += ms;
+    }
+    this.clock.set(this.clock.now() + ms);
+  }
+
   private withJitter(nominal: number, notBefore: number) {
     const jitter = this.jitterMs > 0 ? Math.floor(this.random() * (this.jitterMs + 1)) : 0;
     return Math.max(nominal + jitter, notBefore);

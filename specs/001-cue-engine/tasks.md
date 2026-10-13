@@ -124,15 +124,15 @@ the completion chime.
 
 ### Tests for User Story 2 (write first, confirm they fail) ⚠️
 
-- [ ] T045 [P] [US2] Add block "controls" to src/engine/engine.test.ts: E7 (pause freezes elapsed; resume after 7 s shifts every later `at` by 7000; a cue handed out early but due after the pause is handed out again on resume), E8 (pause/skip/back/stop call `onCancelPending` first), E9 (skip starts the next phase at sec 0; skip in the last phase → `done` + completion), E10 (back at 3.5 s restarts the phase; back at 2 s goes to the previous phase; back in the first phase at 1 s restarts it; works while paused), E11 (untimed phase never ends by itself; elapsed keeps counting), E12 (stop → `stopped`, no completion), E13 (clock moved back 30 s mid-phase: elapsed does not decrease and later `at` values stay on schedule)
-- [ ] T046 [P] [US2] Add block "controls" to src/session/controller.test.ts: pause/skip/back/stop call `player.silence()` within the same call (FR-010); stop calls `background.stop()` immediately
-- [ ] T047 [P] [US2] Write src/components/Controls.test.tsx (React Native Testing Library): renders Pause while running and Resume while paused, Skip, Back, Stop; each button calls the matching controller method; buttons have accessibility labels
+- [X] T045 [P] [US2] Add block "controls" to src/engine/engine.test.ts: E7 (pause freezes elapsed; resume after 7 s shifts every later `at` by 7000; a cue handed out early but due after the pause is handed out again on resume), E8 (pause/skip/back/stop call `onCancelPending` first), E9 (skip starts the next phase at sec 0; skip in the last phase → `done` + completion), E10 (back at 3.5 s restarts the phase; back at 2 s goes to the previous phase; back in the first phase at 1 s restarts it; works while paused), E11 (untimed phase never ends by itself; elapsed keeps counting), E12 (stop → `stopped`, no completion), E13 (clock moved back 30 s mid-phase: elapsed does not decrease and later `at` values stay on schedule)
+- [X] T046 [P] [US2] Add block "controls" to src/session/controller.test.ts: pause/skip/back/stop call `player.silence()` within the same call (FR-010); stop calls `background.stop()` immediately
+- [X] T047 [P] [US2] Write src/components/Controls.test.tsx (React Native Testing Library): renders Pause while running and Resume while paused, Skip, Back, Stop; each button calls the matching controller method; buttons have accessibility labels
 
 ### Implementation for User Story 2
 
-- [ ] T048 [US2] Implement `pause`, `resume`, `skip`, `back` (3 s rule), `stop`, untimed phases, and the backwards-clock guard (shift anchors when `now < lastSeenNow`) in src/engine/engine.ts to pass T045
-- [ ] T049 [US2] Wire controller control methods to the engine and `player.silence()` in src/session/controller.ts to pass T046
-- [ ] T050 [US2] Implement src/components/Controls.tsx to pass T047 and add it to src/screens/SampleScreen.tsx
+- [X] T048 [US2] Implement `pause`, `resume`, `skip`, `back` (3 s rule), `stop`, untimed phases, and the backwards-clock guard (shift anchors when `now < lastSeenNow`) in src/engine/engine.ts to pass T045
+- [X] T049 [US2] Wire controller control methods to the engine and `player.silence()` in src/session/controller.ts to pass T046
+- [X] T050 [US2] Implement src/components/Controls.tsx to pass T047 and add it to src/screens/SampleScreen.tsx
 - [ ] T051 [US2] On device: run quickstart D5 and confirm audio stops within 300 ms of each tap (SC-005)
 
 **Checkpoint**: US1 and US2 both work on their own.
@@ -148,7 +148,7 @@ D9 pass.
 
 ### Tests for User Story 3 (write first, confirm they fail) ⚠️
 
-- [ ] T052 [US3] Add block "ducking" to src/audio/cuePlayer.test.ts (mocks from the US1 cue-player test): `init()` calls `setAudioModeAsync` with `interruptionMode: 'duckOthers'`, `shouldPlayInBackground: true`, `playsInSilentMode: true`; a `say` cue starts the looping silence player before `Speech.speak` and pauses it on `onDone`, `onStopped`, and `onError`; the silence player keeps running for 1 s after a phrase, so phrases less than 1 s apart share one hold; `silence()` pauses it; if the silence player stops without being asked mid-phrase (another app took focus, e.g. a call), `Speech.stop()` is called and later phrases are skipped until the player resumes on its own (focus regained), at which point it is paused again (spec edge case "phone call"; research R3)
+- [X] T052 [US3] Add block "ducking" to src/audio/cuePlayer.test.ts (mocks from the US1 cue-player test): `init()` calls `setAudioModeAsync` with `interruptionMode: 'duckOthers'`, `shouldPlayInBackground: true`, `playsInSilentMode: true`; a `say` cue starts the looping silence player before `Speech.speak` and pauses it on `onDone`, `onStopped`, and `onError`; the silence player keeps running for 1 s after a phrase, so phrases less than 1 s apart share one hold; `silence()` pauses it; if the silence player stops without being asked mid-phrase (another app took focus, e.g. a call), `Speech.stop()` is called and later phrases are skipped until the player resumes on its own (focus regained), at which point it is paused again (spec edge case "phone call"; research R3)
 
 ### Implementation for User Story 3
 

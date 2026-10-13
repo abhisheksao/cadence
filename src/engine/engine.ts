@@ -7,6 +7,8 @@ const TICK_MS = 100;
 const LOOKAHEAD_MS = 1_000;
 /** Per-second cues later than this are dropped instead of played in a burst (FR-007). */
 const STALE_MS = 2_000;
+/** Back restarts the current phase after this long in it; before, it goes to the previous one. */
+const BACK_RESTART_AFTER_MS = 3_000;
 
 /**
  * A phase timeline driven by the wall clock. Each tick works out the current phase and second
@@ -22,6 +24,10 @@ export class Engine {
   /** The next cue opportunity to hand out. Can run ahead of `index` by LOOKAHEAD_MS. */
   private cursor = { index: 0, sec: 0 };
   private completionSent = false;
+  /** Wall time the session was paused, while paused. */
+  private pausedAt = 0;
+  /** Latest clock reading, to detect the clock going backwards. */
+  private lastNow = 0;
   private cancelTick: (() => void) | null = null;
   private readonly listeners = new Set<(s: SessionSnapshot) => void>();
 
@@ -35,7 +41,8 @@ export class Engine {
   start() {
     if (this.status !== 'idle' || this.phases.length === 0) return;
     this.index = 0;
-    this.phaseStartAt = this.deps.clock.now();
+    this.lastNow = this.deps.clock.now();
+    this.phaseStartAt = this.lastNow;
     this.cursor = { index: 0, sec: 0 };
     this.setStatus('running');
     this.events.onPhaseChange?.(this.phases[0], 0);
@@ -43,14 +50,63 @@ export class Engine {
     this.tick();
   }
 
+  pause() {
+    if (this.status !== 'running') return;
+    this.events.onCancelPending?.();
+    this.pausedAt = this.now();
+    // Cues handed out early were cancelled, so hand them out again on resume: rewind the cursor
+    // to the first second of this phase that is not yet due.
+    const elapsed = this.pausedAt - this.phaseStartAt;
+    this.cursor = { index: this.index, sec: Math.floor(elapsed / 1_000) + 1 };
+    this.completionSent = false;
+    this.setStatus('paused');
+    this.emit();
+  }
+
+  resume() {
+    if (this.status !== 'paused') return;
+    this.phaseStartAt += this.now() - this.pausedAt;
+    this.setStatus('running');
+    this.tick();
+  }
+
+  /** Finish the current phase now: untimed phases and "skip". In the last phase, completes. */
+  skip() {
+    if (this.status !== 'running' && this.status !== 'paused') return;
+    this.events.onCancelPending?.();
+    const now = this.status === 'paused' ? this.pausedAt : this.now();
+    this.completedMs += now - this.phaseStartAt;
+    this.completionSent = false;
+    if (this.index === this.phases.length - 1) {
+      this.finish('done');
+      return;
+    }
+    this.jumpTo(this.index + 1, now);
+  }
+
+  /** More than 3 s into a phase: restart it. Otherwise go to the previous phase (FR-009). */
+  back() {
+    if (this.status !== 'running' && this.status !== 'paused') return;
+    this.events.onCancelPending?.();
+    const now = this.status === 'paused' ? this.pausedAt : this.now();
+    const restart = now - this.phaseStartAt > BACK_RESTART_AFTER_MS || this.index === 0;
+    const target = restart ? this.index : this.index - 1;
+    this.completedMs = this.phases.slice(0, target).reduce((sum, p) => sum + (p.durationSec ?? 0) * 1_000, 0);
+    this.completionSent = false;
+    this.jumpTo(target, now);
+  }
+
   stop() {
+    if (this.status !== 'running' && this.status !== 'paused') return;
+    this.events.onCancelPending?.();
     this.finish('stopped');
   }
 
   snapshot(): SessionSnapshot {
     const phase = this.phases[this.index];
     let phaseElapsedMs = 0;
-    if (this.status === 'running') phaseElapsedMs = this.deps.clock.now() - this.phaseStartAt;
+    if (this.status === 'running') phaseElapsedMs = this.now() - this.phaseStartAt;
+    if (this.status === 'paused') phaseElapsedMs = this.pausedAt - this.phaseStartAt;
     if (this.status === 'done') phaseElapsedMs = (phase?.durationSec ?? 0) * 1_000;
     const durationMs = phase?.durationSec == null ? null : phase.durationSec * 1_000;
     return {
@@ -71,9 +127,34 @@ export class Engine {
     };
   }
 
+  /** Starts phase `index` from its beginning at `now`; stays paused if paused. */
+  private jumpTo(index: number, now: number) {
+    this.index = index;
+    this.phaseStartAt = now;
+    this.cursor = { index, sec: 0 };
+    this.events.onPhaseChange?.(this.phases[index], index);
+    if (this.status === 'running') this.tick();
+    else this.emit();
+  }
+
+  /**
+   * Reads the clock. If it went backwards (the user changed the time), shifts every anchor back
+   * by the same amount so progress does not jump (research R1). Forward jumps are followed.
+   */
+  private now() {
+    const now = this.deps.clock.now();
+    if (now < this.lastNow) {
+      const shift = this.lastNow - now;
+      this.phaseStartAt -= shift;
+      this.pausedAt -= shift;
+    }
+    this.lastNow = now;
+    return now;
+  }
+
   private tick() {
     if (this.status !== 'running') return;
-    const now = this.deps.clock.now();
+    const now = this.now();
 
     // Close out phases whose time is up. Advancing by the exact duration keeps the schedule
     // anchored however late this tick is.
@@ -172,6 +253,12 @@ export class Engine {
     if (this.status === 'done' || this.status === 'stopped' || this.status === 'idle') return;
     this.cancelTick?.();
     this.cancelTick = null;
+    // Reached by skipping the last phase before the look-ahead asked for the completion cue.
+    if (status === 'done' && !this.completionSent) {
+      this.completionSent = true;
+      const at = this.deps.clock.now();
+      this.deliver(this.handler.completion(at), at, this.index);
+    }
     this.setStatus(status);
     this.emit();
   }

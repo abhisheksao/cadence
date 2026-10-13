@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 
+import { Controls } from '@/components/Controls';
 import type { Status } from '@/engine/types';
 import { sampleDefinition } from '@/modes/sample';
 import { useSession } from '@/session/useSession';
@@ -22,6 +23,7 @@ export default function SampleScreen() {
     <View style={styles.container}>
       <Text style={[styles.phase, { color }]}>{state?.phase?.title ?? 'Sample session'}</Text>
       <Text style={[styles.status, { color }]}>{STATUS_LABEL[state?.status ?? 'idle']}</Text>
+      {state ? <Controls status={state.status} controls={controller} /> : null}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Start sample"

@@ -106,6 +106,33 @@ export class SessionController {
     engine.start();
   }
 
+  pause() {
+    this.active?.engine.pause();
+  }
+
+  resume() {
+    this.active?.engine.resume();
+  }
+
+  skip() {
+    this.active?.engine.skip();
+  }
+
+  back() {
+    this.active?.engine.back();
+  }
+
+  /** Stops the session and the background service right away (no wind-down: no chime). */
+  stop() {
+    const active = this.active;
+    if (!active) return;
+    active.engine.stop();
+    active.cancelWindDown?.();
+    active.cancelWindDown = null;
+    active.release();
+    void this.deps.background.stop();
+  }
+
   /** Stops the current session (if any) without stopping the service: a new one replaces it. */
   private replaceActive() {
     const previous = this.active;

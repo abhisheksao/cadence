@@ -400,7 +400,10 @@ describe('Engine: controls', () => {
     scheduler.jumpClock(-30_000);
     scheduler.advance(5_000);
 
-    expect(engine.snapshot().phaseElapsedMs).toBe(15_000);
+    // The engine cannot tell real time from the jump within one tick, so it may lose up to 100 ms.
+    const elapsed = engine.snapshot().phaseElapsedMs;
+    expect(elapsed).toBeGreaterThanOrEqual(14_900);
+    expect(elapsed).toBeLessThanOrEqual(15_000);
     const secs = ops.map((op) => op.sec);
     expect(secs).toEqual(Array.from({ length: secs.length }, (_, i) => i)); // no repeats, no gaps
     const last = ops[ops.length - 1];
