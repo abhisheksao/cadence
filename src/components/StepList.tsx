@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { StyleSheet, View, useColorScheme } from 'react-native';
 
+import { Text } from '@/components/Text';
 import type { Phase } from '@/engine/types';
 import { formatClock } from '@/format/clock';
 

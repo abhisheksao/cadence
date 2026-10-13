@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';
 
+import { Text } from '@/components/Text';
 import { formatClock, formatTimeOfDay } from '@/format/clock';
 import type { RecoveryResult } from '@/session/types';
 

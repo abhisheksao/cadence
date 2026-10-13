@@ -71,6 +71,33 @@ describe('LaunchCheck (FR-024, FR-025)', () => {
     expect(screen.queryByRole('button', { name: 'Resume' })).toBeNull();
   });
 
+  it('Resume continues where the clock is at the tap, not where it was when the prompt opened', async () => {
+    const later: RecoveryResult = {
+      kind: 'resume',
+      assessment: { definition, index: 0, phaseElapsedMs: 18_000, paused: false },
+    };
+    await renderCheck(resume);
+    controller.checkForInterrupted.mockReturnValue(later); // 13 s pass on the prompt
+    await fireEvent.press(screen.getByRole('button', { name: 'Resume' }));
+
+    expect(controller.resumeInterrupted).toHaveBeenCalledWith(later.kind === 'resume' && later.assessment);
+  });
+
+  it('Resume shows the interrupted note if the session ended while the prompt was open', async () => {
+    await renderCheck(resume);
+    controller.checkForInterrupted.mockReturnValue({
+      kind: 'interrupted',
+      reason: 'finished',
+      title: 'Sample session',
+      at: 0,
+    });
+    await fireEvent.press(screen.getByRole('button', { name: 'Resume' }));
+
+    expect(controller.resumeInterrupted).not.toHaveBeenCalled();
+    expect(router.push).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'OK' })).toBeOnTheScreen();
+  });
+
   it.each([
     ['routine', '/routine'],
     ['gone', '/'],

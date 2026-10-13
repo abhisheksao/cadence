@@ -42,6 +42,12 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
   /** The looping silent clip that holds ducking focus during speech. */
   let hold: AudioPlayer | null = null;
   let holdWanted = false;
+  /**
+   * The hold has reported playing since the last play(). Status events arrive late, so a
+   * "not playing" from our own earlier pause can land after play(); only a stop after this
+   * confirmation means another app took focus.
+   */
+  let holdConfirmed = false;
   let holdRelease: ReturnType<typeof setTimeout> | null = null;
   /** Another app (e.g. a phone call) took focus while we held it; skip speech until it returns. */
   let focusLost = false;
@@ -52,6 +58,7 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
     holdRelease = null;
     if (holdWanted) return;
     holdWanted = true;
+    holdConfirmed = false;
     hold?.play();
   }
 
@@ -69,7 +76,9 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
 
   /** expo-audio pauses its players when another app takes focus and resumes them after. */
   function onHoldStatus(playing: boolean) {
-    if (!playing && holdWanted && !focusLost) {
+    if (playing && holdWanted) {
+      holdConfirmed = true;
+    } else if (!playing && holdWanted && holdConfirmed && !focusLost) {
       focusLost = true;
       focusLostAt = Date.now();
       holdWanted = false;

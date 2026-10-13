@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, TextInput, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, Switch, View, useColorScheme } from 'react-native';
 
+import { Text, TextInput } from '@/components/Text';
 import { MAX_TITLE } from '@/routine/defaults';
 import { normaliseDuration } from '@/routine/edit';
 import type { Step } from '@/routine/types';
