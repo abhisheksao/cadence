@@ -154,7 +154,7 @@ pass.
 
 - [x] T041 [P] Update README.md: Morning routine moves from "coming later" to what works today, with a one-line description and a link to specs/002-morning-routine/
 - [x] T042 Review the spec against what was built; update spec.md, plan.md, research.md, data-model.md or contracts where the implementation diverged, including the spec 001 amendments (Principle IX)
-- [ ] T043 Run `npm run check`, `npx expo-doctor`, and a local release build (`npx expo prebuild -p android && (cd android && ./gradlew assembleRelease)`); confirm the merged manifest's permissions are unchanged from spec 001 (no new permissions)
+- [x] T043 Run `npm run check`, `npx expo-doctor`, and a local release build (`npx expo prebuild -p android && (cd android && ./gradlew assembleRelease)`); confirm the merged manifest's permissions are unchanged from spec 001 (no new permissions)
 - [ ] T044 Open the PR from `002-morning-routine` to `develop` (after explicit go-ahead), listing the on-device checks R1–R15 and their results or pending status
 
 ---
