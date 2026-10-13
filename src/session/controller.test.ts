@@ -262,3 +262,12 @@ describe('SessionController: notification', () => {
     expect(controller.getState()?.backgroundWarning).toBe(false);
   });
 });
+
+describe('SessionController: state', () => {
+  it('exposes the running definition, for the session screen (FR-021a)', async () => {
+    const { controller } = setup();
+    const def = definition('Run', [5]);
+    await controller.start(def);
+    expect(controller.getState()?.definition).toEqual(def);
+  });
+});

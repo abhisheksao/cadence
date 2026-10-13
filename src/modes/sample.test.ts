@@ -1,7 +1,7 @@
 import type { Cue, CueOpportunity, Phase } from '@/engine/types';
 import { validateDefinition } from '@/session/validate';
 
-import { sampleDefinition, sampleMode } from './sample';
+import { sampleDefinition, sampleMode, soakDefinition } from './sample';
 
 const def = sampleDefinition();
 const handler = sampleMode.cueFor(def);
@@ -68,5 +68,26 @@ describe('sample session', () => {
       { type: 'chime' },
       { type: 'say', text: 'Sample complete', offsetMs: 700 },
     ]);
+  });
+});
+
+describe('60-minute soak (SC-003)', () => {
+  const soak = soakDefinition();
+  const total = soak.phases.reduce((sum, p) => sum + (p.durationSec ?? 0), 0);
+
+  it('is a valid sample-mode session of exactly 60 minutes', () => {
+    expect(validateDefinition(soak, (id) => id === 'sample')).toEqual([]);
+    expect(soak.modeId).toBe('sample');
+    expect(total).toBe(60 * 60);
+  });
+
+  it('repeats the timed sample phases in order, with no untimed phase', () => {
+    const timed = def.phases.filter((p) => p.durationSec !== null);
+    expect(soak.phases.every((p) => p.durationSec !== null)).toBe(true);
+    soak.phases.forEach((p, i) => expect(p).toEqual(timed[i % timed.length]));
+  });
+
+  it('lets the screen turn off, since the soak is run with the screen off', () => {
+    expect(soak.keepScreenOn).toBe(false);
   });
 });
