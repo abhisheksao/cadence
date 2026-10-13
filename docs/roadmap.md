@@ -38,7 +38,7 @@ Cadence is built spec-first with [GitHub Spec Kit](https://github.com/github/spe
 | 003 | Run / walk | warm-up, rounds, cool-down, "ends in 5…1" countdown |
 | 004 | Breathe | presets (4-7-8, 3-4-7, 4-4-4, box, coherent), custom, beep or count aloud |
 | 005 | Tests & CI | Maestro end-to-end test (screen off), coverage reporting, GitHub Actions lint/typecheck/test/APK, release APKs on tag, spec-link check |
-| 006 | Native foreground service | custom Kotlin Expo Module replacing react-native-background-actions; notification pause/skip |
+| 006 | Native foreground service | custom Kotlin Expo Module replacing react-native-background-actions; notification pause/skip, live phase countdown in the notification |
 | 007 | Workout DSL & sharing | text format parser/validator, import/export, `cadence://` deep links |
 | 008 | iOS | silent-audio keep-alive + Live Activities (Swift widget via config plugin); see `ios-live-activities.md` |
 

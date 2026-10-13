@@ -22,14 +22,18 @@ execution (008), end-to-end tests and CI (005)."
 
 - Q: What happens if the OS kills the app mid-session? → A: Recover in this spec: progress is
   saved, and on reopen the app offers to resume at the point the clock says the session has reached.
+  (Revised same day to keep it simple: recovery uses the wall clock with sanity checks; no reboot
+  detection.)
 - Q: Should the screen stay on while the session screen is open? → A: It is a per-mode choice
   (e.g. on for routine/breathe, off for run/walk); the sample session keeps it on.
 - Q: How is on-device cue accuracy (SC-001, SC-002) measured? → A: Each cue's planned and actual
   start time is written to the device log, read over adb, and summarised by a script in the repo.
 - Q: How should Back behave? → A: More than 3 s into the phase, Back restarts it; otherwise it goes
   to the start of the previous phase (in the first phase, it restarts it).
-- Q: What does the ongoing notification show? → A: Session title, current phase, and a live
-  countdown of time left in the phase (elapsed time for untimed phases), run by the system.
+- Q: What does the ongoing notification show? → A: Session title and current phase (plus a paused
+  label). A live countdown was chosen first, then moved to spec 006: the background library used
+  here cannot show a system-run timer, and updating the notification every second is not
+  acceptable. 006 writes its own native service, where the countdown is simple.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -139,11 +143,10 @@ check the notification text through a phase change, and tap it to return to the 
 **Acceptance Scenarios**:
 
 1. **Given** a running session, **When** the user pulls down the notification shade, **Then** an
-   ongoing notification shows the session title, the current phase title, and a live countdown of
-   time left in the phase (elapsed time for an untimed phase), and it cannot be swiped away while
-   the session runs.
-2. **Given** the session is paused, **When** the user views the notification, **Then** the timer
-   is frozen at the paused value and the notification says the session is paused.
+   ongoing notification shows the session title and the current phase title, updated on each
+   phase change, and it cannot be swiped away while the session runs.
+2. **Given** the session is paused, **When** the user views the notification, **Then** it says the
+   session is paused, and the label goes away on resume.
 3. **Given** the session ends or is stopped, **When** it finishes, **Then** the notification is
    removed.
 4. **Given** a fresh install on Android 13 or later, **When** the user starts the first session,
@@ -202,11 +205,14 @@ session, and run it to completion.
 - **Background service cannot start** (e.g. OS refuses): the session still runs while the app is
   open and the user is told cues may stop when the screen is off.
 - **App killed by the OS mid-session**: when the user reopens the app, it offers to resume the
-  interrupted session at the phase and second the clock says it has reached (as if it had never
-  stopped), or to discard it. If the session would already have finished, the app instead says
-  the session was interrupted and when. Time spent paused before the kill still counts as paused.
-- **Device restarted mid-session**: the monotonic clock resets on reboot, so a session interrupted
-  by a restart is treated as interrupted (discard or note only), never resumed at a guessed point.
+  interrupted session at the phase and second the wall clock says it has reached (as if it had
+  never stopped), or to discard it. Time spent paused before the kill still counts as paused, and
+  a session killed while paused resumes paused. If the session would already have finished, or the
+  saved record is stale or inconsistent (see FR-025), the app instead says the session was
+  interrupted and when.
+- **Device clock changed or phone restarted while the app was dead**: not detected specially. The
+  sanity checks in FR-025 catch results that make no sense; anything else resumes at the position
+  the wall clock gives.
 
 ## Requirements *(mandatory)*
 
@@ -226,8 +232,9 @@ session, and run it to completion.
 
 **Timing**
 
-- **FR-004**: Cue times MUST be computed from a monotonic clock as session start + planned offset,
-  adjusted for time spent paused. Accumulated timer ticks MUST NOT be used (Principle I).
+- **FR-004**: While the app is running, cue times MUST be computed from a monotonic clock as
+  session start + planned offset, adjusted for time spent paused. Accumulated timer ticks MUST NOT
+  be used (Principle I). Recovery after a relaunch uses the wall clock (FR-024).
 - **FR-005**: Cues MUST be delivered early enough that, after the device's output latency, they
   are heard on their due second. Speech latency MUST be learned from the device at runtime rather
   than fixed.
@@ -251,12 +258,10 @@ session, and run it to completion.
 **Background and audio**
 
 - **FR-013**: On Android, a running session MUST run in a foreground service with an ongoing
-  notification showing the session title, current phase, and a live countdown of time left in the
-  phase (elapsed for untimed phases). The countdown MUST be kept by the system's notification
-  timer rather than by updating the notification every second; the notification MUST be updated
-  only on phase changes, pause, resume, skip, and back. Paused sessions MUST show a frozen timer
-  and a paused label. The notification MUST be removed when the session ends, and tapping it MUST
-  open the app.
+  notification showing the session title and current phase, with a paused label while paused.
+  It MUST be updated only on phase changes, pause, and resume (never every second), removed when
+  the session ends, and tapping it MUST open the app. A live countdown in the notification is
+  deferred to spec 006.
 - **FR-014**: The background service MUST stay up long enough after the last phase for the
   completion cue to finish playing.
 - **FR-015**: Cue audio MUST request transient, ducking audio focus, release it after each cue,
@@ -297,14 +302,18 @@ session, and run it to completion.
 
 - **FR-023**: While a session is running or paused, the app MUST keep an on-device record of it
   (session definition, start time, pause history, current status), updated on every start, pause,
-  resume, skip, back, and phase change, and cleared when the session completes or is stopped.
+  resume, skip, back, and phase change, refreshed at least once a minute while running, and
+  cleared when the session completes or is stopped. Times in the record are wall-clock times.
 - **FR-024**: On launch, if such a record exists and the session would still be in progress, the
-  app MUST offer Resume or Discard. Resume MUST continue at the position computed from the clock,
+  app MUST offer Resume or Discard. Resume MUST continue at the position computed from the wall
+  clock,
   with the background service, notification, and cues restored; the current phase's start cue
   MUST be announced.
-- **FR-025**: If the session would already have finished, or the device has restarted since the
-  record was written, the app MUST NOT resume; it MUST tell the user the session was interrupted
-  (session title and time) and clear the record.
+- **FR-025**: The app MUST NOT offer Resume, and MUST instead tell the user the session was
+  interrupted (session title and time) and clear the record, if any of these hold: the session
+  would already have finished; the record was last refreshed more than 60 minutes ago; or the
+  computed position is impossible (e.g. the current time is earlier than the record's last
+  refresh).
 - **FR-026**: A session MUST be describable as plain data (mode, title, phases, mode settings) so it
   can be rebuilt with the same cues after a relaunch.
 
@@ -351,8 +360,9 @@ session, and run it to completion.
   the long-term roadmap.
 - The reference test device is an older Android phone from an OEM known for aggressive background
   killing; passing there is taken as a good proxy for other devices.
-- Notification controls (pause/skip from the notification) and a custom native service come in
-  spec 006; this spec uses an existing background-task library.
+- Notification controls (pause/skip from the notification), a live countdown in the notification,
+  and a custom native service come in spec 006; this spec uses an existing background-task
+  library.
 - iOS must build and show the screens but need not keep sessions running in the background until
   spec 008.
 - Automated end-to-end tests (screen-off flow) and CI come in spec 005; this spec sets up unit and
