@@ -23,9 +23,15 @@ export function LaunchCheck({ children }: { children: ReactNode }) {
 
   const resume = () => {
     if (result.kind !== 'resume') return;
+    // Assess again: the clock kept running while the prompt was open (SC-008).
+    const now = sessionController.checkForInterrupted();
+    if (now.kind !== 'resume') {
+      setResult(now);
+      return;
+    }
     close();
-    router.push(modes.get(result.assessment.definition.modeId)?.route ?? '/');
-    sessionController.resumeInterrupted(result.assessment).catch((e: unknown) => {
+    router.push(modes.get(now.assessment.definition.modeId)?.route ?? '/');
+    sessionController.resumeInterrupted(now.assessment).catch((e: unknown) => {
       console.warn('Could not resume the session', e);
     });
   };
