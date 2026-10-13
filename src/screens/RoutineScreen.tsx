@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 
 import { Controls } from '@/components/Controls';
@@ -49,7 +50,19 @@ export default function RoutineScreen() {
           </View>
         )}
       />
-      <Text style={[styles.total, { color }]}>{`Total ${formatClock(totalSec)}`}</Text>
+      <View style={styles.footer}>
+        <Text style={[styles.total, { color }]}>{`Total ${formatClock(totalSec)}`}</Text>
+        {/* Hidden while a routine session is live (FR-007): this view only shows otherwise. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Edit"
+          onPress={() => router.push('/routine/edit')}
+          hitSlop={8}
+          style={({ pressed }) => [styles.edit, { opacity: pressed ? 0.7 : 1 }]}
+        >
+          <Text style={styles.editText}>Edit</Text>
+        </Pressable>
+      </View>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Start"
@@ -71,7 +84,10 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 10 },
   stepTitle: { flex: 1, fontSize: 18 },
   duration: { fontSize: 16, opacity: 0.7, fontVariant: ['tabular-nums'] },
-  total: { fontSize: 15, opacity: 0.7, textAlign: 'right' },
+  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  total: { fontSize: 15, opacity: 0.7 },
+  edit: { borderRadius: 10, paddingHorizontal: 18, paddingVertical: 10, backgroundColor: '#2A313C' },
+  editText: { color: '#E6EDF3', fontSize: 16, fontWeight: '700' },
   start: { backgroundColor: '#FF7A45', borderRadius: 14, paddingVertical: 18, alignItems: 'center' },
   startText: { color: '#0E1116', fontSize: 20, fontWeight: '700' },
 });

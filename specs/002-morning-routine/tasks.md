@@ -107,19 +107,19 @@ pass.
 
 ### Tests for User Story 2 (write first, confirm they fail) ⚠️
 
-- [ ] T023 [P] [US2] Write src/routine/edit.test.ts (table tests per data-model.md "Edit operations"): `normaliseDuration` (rounds; 0, 5, 14 → 15; 3601 → 3600; NaN → 15), `updateStep` (title clamped to 60, duration normalised, `null` for untimed, unknown id is a no-op), `addStep` (appends `{ title: '', durationSec: 120 }`, no-op at 30), `moveStep` (up/down, no-op at the ends), `deleteStep` (returns `removed` with its index; no-op on the only step), `restoreStep` (back at its index, at the end if the list shrank, no-op if the id exists or at 30)
-- [ ] T024 [P] [US2] Write src/components/StepEditor.test.tsx: title input (maxLength 60) calls `onChange({ title })`; Untimed switch toggles between `null` and the last timed duration (or 120 s); minutes/seconds inputs call `onChange({ durationSec })` with the normalised value on blur ("0" and "5" → 0:15); move up/down disabled at the ends; Delete disabled when `canDelete` is false
-- [ ] T025 [P] [US2] Write src/components/UndoBar.test.tsx with Jest fake timers: shows "Step deleted" and an Undo button; Undo calls `onUndo`; `onExpire` is called after 5 s; a new `key` restarts the 5 s
-- [ ] T026 [P] [US2] Write src/screens/RoutineEditScreen.test.tsx with a real `RoutineStore` over `MemoryStore` (mock `@/routine/useRoutine` to return it): editing a title updates the store; Add step adds a row (disabled at 30); move and delete change the order; delete shows the undo bar and Undo restores the step in place; "Restore default routine" shows Confirm/Cancel, where Cancel keeps the edits and Confirm restores the default
-- [ ] T027 [P] [US2] Add to src/screens/RoutineScreen.test.tsx: Edit navigates to `/routine/edit` (use `renderRouter` or a mocked `router.push`); Edit is hidden while a routine session is running or paused, and shown when idle or after it ends
+- [x] T023 [P] [US2] Write src/routine/edit.test.ts (table tests per data-model.md "Edit operations"): `normaliseDuration` (rounds; 0, 5, 14 → 15; 3601 → 3600; NaN → 15), `updateStep` (title clamped to 60, duration normalised, `null` for untimed, unknown id is a no-op), `addStep` (appends `{ title: '', durationSec: 120 }`, no-op at 30), `moveStep` (up/down, no-op at the ends), `deleteStep` (returns `removed` with its index; no-op on the only step), `restoreStep` (back at its index, at the end if the list shrank, no-op if the id exists or at 30)
+- [x] T024 [P] [US2] Write src/components/StepEditor.test.tsx: title input (maxLength 60) calls `onChange({ title })`; Untimed switch toggles between `null` and the last timed duration (or 120 s); minutes/seconds inputs call `onChange({ durationSec })` with the normalised value on blur ("0" and "5" → 0:15); move up/down disabled at the ends; Delete disabled when `canDelete` is false
+- [x] T025 [P] [US2] Write src/components/UndoBar.test.tsx with Jest fake timers: shows "Step deleted" and an Undo button; Undo calls `onUndo`; `onExpire` is called after 5 s; a new `key` restarts the 5 s
+- [x] T026 [P] [US2] Write src/screens/RoutineEditScreen.test.tsx with a real `RoutineStore` over `MemoryStore` (mock `@/routine/useRoutine` to return it): editing a title updates the store; Add step adds a row (disabled at 30); move and delete change the order; delete shows the undo bar and Undo restores the step in place; "Restore default routine" shows Confirm/Cancel, where Cancel keeps the edits and Confirm restores the default
+- [x] T027 [P] [US2] Add to src/screens/RoutineScreen.test.tsx: Edit navigates to `/routine/edit` (use `renderRouter` or a mocked `router.push`); Edit is hidden while a routine session is running or paused, and shown when idle or after it ends
 
 ### Implementation for User Story 2
 
-- [ ] T028 [US2] Implement src/routine/edit.ts to pass T023
-- [ ] T029 [P] [US2] Implement src/components/StepEditor.tsx to pass T024 (minutes and seconds `TextInput`s with `keyboardType="number-pad"`, normalise on blur, accessible labels per field)
-- [ ] T030 [P] [US2] Implement src/components/UndoBar.tsx to pass T025
-- [ ] T031 [US2] Implement src/screens/RoutineEditScreen.tsx (StepEditor rows in a ScrollView, Add step, in-place restore confirmation, UndoBar) to pass T026; add src/app/routine/edit.tsx re-exporting it and a `routine/edit` screen titled "Edit routine" in src/app/_layout.tsx
-- [ ] T032 [US2] Add the Edit button and its visibility rule to src/screens/RoutineScreen.tsx to pass T027
+- [x] T028 [US2] Implement src/routine/edit.ts to pass T023
+- [x] T029 [P] [US2] Implement src/components/StepEditor.tsx to pass T024 (minutes and seconds `TextInput`s with `keyboardType="number-pad"`, normalise on blur, accessible labels per field)
+- [x] T030 [P] [US2] Implement src/components/UndoBar.tsx to pass T025
+- [x] T031 [US2] Implement src/screens/RoutineEditScreen.tsx (StepEditor rows in a ScrollView, Add step, in-place restore confirmation, UndoBar) to pass T026; add src/app/routine/edit.tsx re-exporting it and a `routine/edit` screen titled "Edit routine" in src/app/_layout.tsx
+- [x] T032 [US2] Add the Edit button and its visibility rule to src/screens/RoutineScreen.tsx to pass T027
 - [ ] T033 [US2] On device: run quickstart R11–R13
 
 **Checkpoint**: The routine is editable and survives restarts.

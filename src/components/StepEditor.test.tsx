@@ -42,10 +42,12 @@ describe('StepEditor (UI6)', () => {
     await fireEvent.changeText(seconds, '5');
     await fireEvent(seconds, 'blur');
     expect(props.onChange).toHaveBeenLastCalledWith({ durationSec: 15 });
+    // The fields show the corrected value.
+    expect([minutes.props.value, seconds.props.value]).toEqual(['0', '15']);
 
     await fireEvent.changeText(minutes, '12');
     await fireEvent(minutes, 'blur');
-    expect(props.onChange).toHaveBeenLastCalledWith({ durationSec: 725 });
+    expect(props.onChange).toHaveBeenLastCalledWith({ durationSec: 735 });
   });
 
   it('switches a timed step to untimed and back to its last duration', async () => {
