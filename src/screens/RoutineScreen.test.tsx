@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { router } from 'expo-router';
 
 import { routineDefinition } from '@/modes/routine';
 import { sampleDefinition } from '@/modes/sample';
@@ -99,5 +100,26 @@ describe('Routine screen: live view (UI3)', () => {
     await render(<RoutineScreen />);
     await fireEvent.press(screen.getByRole('button', { name: 'Done' }));
     expect(controller.skip).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Routine screen: Edit (FR-007)', () => {
+  it('opens the Edit screen when no routine session is live', async () => {
+    withSession(null);
+    await render(<RoutineScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Edit' }));
+    expect(router.push).toHaveBeenCalledWith('/routine/edit');
+  });
+
+  it.each(['running', 'paused'] as const)('hides Edit while a routine session is %s', async (status) => {
+    withSession(routineState(0, { status }));
+    await render(<RoutineScreen />);
+    expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
+  });
+
+  it('allows editing while another mode runs', async () => {
+    withSession({ ...routineState(0), definition: sampleDefinition(), title: 'Sample session' });
+    await render(<RoutineScreen />);
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeOnTheScreen();
   });
 });
