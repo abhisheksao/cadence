@@ -148,7 +148,7 @@ D9 pass.
 
 ### Tests for User Story 3 (write first, confirm they fail) ⚠️
 
-- [ ] T052 [US3] Add block "ducking" to src/audio/cuePlayer.test.ts (mocks from the US1 cue-player test): `init()` calls `setAudioModeAsync` with `interruptionMode: 'duckOthers'`, `shouldPlayInBackground: true`, `playsInSilentMode: true`; a `say` cue starts the looping silence player before `Speech.speak` and pauses it on `onDone`, `onStopped`, and `onError`; two `say` cues less than 1.5 s apart keep the silence player running between them; `silence()` pauses it; if the silence player does not report playing within 300 ms of `play()` (focus refused, e.g. during a call) the phrase is skipped, and if it stops without being asked mid-phrase, `Speech.stop()` is called (spec edge case "phone call")
+- [ ] T052 [US3] Add block "ducking" to src/audio/cuePlayer.test.ts (mocks from the US1 cue-player test): `init()` calls `setAudioModeAsync` with `interruptionMode: 'duckOthers'`, `shouldPlayInBackground: true`, `playsInSilentMode: true`; a `say` cue starts the looping silence player before `Speech.speak` and pauses it on `onDone`, `onStopped`, and `onError`; the silence player keeps running for 1 s after a phrase, so phrases less than 1 s apart share one hold; `silence()` pauses it; if the silence player stops without being asked mid-phrase (another app took focus, e.g. a call), `Speech.stop()` is called and later phrases are skipped until the player resumes on its own (focus regained), at which point it is paused again (spec edge case "phone call"; research R3)
 
 ### Implementation for User Story 3
 

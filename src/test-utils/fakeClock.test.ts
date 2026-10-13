@@ -87,6 +87,20 @@ describe('FakeScheduler', () => {
     expect(run(7)).not.toEqual(seen);
   });
 
+  it('jumps the wall clock without disturbing interval spacing, like a manual time change', () => {
+    const clock = new FakeClock(100_000);
+    const scheduler = new FakeScheduler(clock);
+    const seen: number[] = [];
+    scheduler.every(100, () => seen.push(clock.now()));
+    scheduler.advance(250); // fires at 100_100, 100_200; now 100_250
+
+    scheduler.jumpClock(-30_000); // now 70_250
+    scheduler.advance(200);
+
+    expect(clock.now()).toBe(70_450);
+    expect(seen).toEqual([100_100, 100_200, 70_300, 70_400]);
+  });
+
   it('can skip time without running callbacks, to simulate the app being suspended', () => {
     const clock = new FakeClock(0);
     const scheduler = new FakeScheduler(clock);

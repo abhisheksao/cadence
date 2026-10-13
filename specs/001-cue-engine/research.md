@@ -54,6 +54,15 @@ reference device, is used as evidence where noted ("prior implementation").
   during speech, the audio layer plays a looping **silent clip** through `expo-audio` from just
   before `Speech.speak` until `onDone`/`onStopped`/`onError`; holding that player holds the
   ducking focus. Spec 006's native service can request focus directly and drop the silent clip.
+- **Phone calls** (expo-audio `sdk-57` source): `play()` starts playback even when the focus
+  request is refused, so a refusal is invisible to JS. When another app takes focus, expo-audio
+  pauses its players and resumes them itself on regaining focus. The cue player uses that: if the
+  silent clip stops on its own mid-phrase, speech stops and is skipped until the clip resumes on
+  its own (call over), then the clip is paused again. **Known limitation**: a phrase that starts
+  while a call is already in progress cannot be detected and may be heard. Spec 006 requests
+  focus natively and can check the result.
+- **Hold window**: the silent clip keeps playing for 1 s after a phrase, so phrases close together
+  share one dip and the music returns about a second after the last one (spec US3).
 - **Risk**: two cues close together cause the music to dip twice. Acceptable; tune on device.
 - **Alternatives considered**: `doNotMix` (pauses music, violates Principle II); `mixWithOthers`
   (no ducking); a native TTS wrapper (006 territory).

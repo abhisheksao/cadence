@@ -222,3 +222,189 @@ describe('Engine: catch-up', () => {
     expect(engine.snapshot().status).toBe('done');
   });
 });
+
+/** Like setup(), but also records cancel and status events in order. */
+function setupWithEvents(phases: Phase[]) {
+  const clock = new FakeClock(T0);
+  const scheduler = new FakeScheduler(clock);
+  const events: string[] = [];
+  const ops: CueOpportunity[] = [];
+  const completions: number[] = [];
+  const engine = new Engine(
+    phases,
+    {
+      cueFor(op) {
+        ops.push(op);
+        return null;
+      },
+      completion(at) {
+        completions.push(at);
+        return null;
+      },
+    },
+    {
+      onCue: () => {},
+      onCancelPending: () => events.push('cancel'),
+      onStatusChange: (s) => events.push(`status:${s}`),
+      onPhaseChange: (_p, i) => events.push(`phase:${i}`),
+    },
+    { clock, scheduler },
+  );
+  return { clock, scheduler, engine, events, ops, completions };
+}
+
+const untimed = (title: string): Phase => ({ kind: 'step', title, durationSec: null });
+
+describe('Engine: controls', () => {
+  it('E7: pause freezes elapsed; resume shifts later cues by the paused time', () => {
+    const { engine, scheduler, ops } = setupWithEvents([timed('A', 10)]);
+    engine.start();
+    scheduler.advance(4_500);
+    engine.pause();
+    const frozen = engine.snapshot();
+    scheduler.advance(7_000);
+
+    expect(engine.snapshot()).toMatchObject({ status: 'paused', phaseElapsedMs: 4_500 });
+    expect(frozen.phaseElapsedMs).toBe(4_500);
+
+    const beforeResume = ops.length;
+    engine.resume();
+    scheduler.advance(6_000);
+    const later = ops.slice(beforeResume);
+
+    // Second 5 was handed out early (before the pause) and is handed out again, 7 s later.
+    expect(ops.slice(0, beforeResume).some((op) => op.sec === 5)).toBe(true);
+    expect(later.map((op) => [op.sec, op.at - T0])).toEqual([
+      [5, 12_000],
+      [6, 13_000],
+      [7, 14_000],
+      [8, 15_000],
+      [9, 16_000],
+    ]);
+  });
+
+  it('E8: pause, skip, back and stop cancel pending cues before anything else happens', () => {
+    const { engine, scheduler, events } = setupWithEvents([timed('A', 10), timed('B', 10), timed('C', 10)]);
+    engine.start();
+    scheduler.advance(500);
+
+    const step = (action: () => void) => {
+      events.length = 0;
+      action();
+      return events[0];
+    };
+    expect(step(() => engine.pause())).toBe('cancel');
+    engine.resume();
+    expect(step(() => engine.skip())).toBe('cancel');
+    expect(step(() => engine.back())).toBe('cancel');
+    expect(step(() => engine.stop())).toBe('cancel');
+  });
+
+  it('E9: skip starts the next phase from its first second', () => {
+    const { engine, scheduler, clock, ops } = setupWithEvents([timed('A', 10), timed('B', 10)]);
+    engine.start();
+    scheduler.advance(2_300);
+    engine.skip();
+
+    expect(engine.snapshot()).toMatchObject({ index: 1, phaseElapsedMs: 0, totalElapsedMs: 2_300 });
+    const start = ops.find((op) => op.index === 1 && op.sec === 0);
+    expect(start).toMatchObject({ isPhaseStart: true, at: clock.now() });
+  });
+
+  it('E9: skip in the last phase completes the session with the completion cue', () => {
+    const { engine, scheduler, clock, events, completions } = setupWithEvents([timed('A', 10), timed('B', 10)]);
+    engine.start();
+    scheduler.advance(1_000);
+    engine.skip();
+    scheduler.advance(9_500); // B's completion is handed out ahead of time...
+    engine.skip(); // ...then cancelled by skipping, so it is asked for again now
+
+    expect(engine.snapshot().status).toBe('done');
+    expect(events).toContain('status:done');
+    expect(completions[completions.length - 1]).toBe(clock.now());
+  });
+
+  it('E9: skip while paused moves to the next phase and stays paused', () => {
+    const { engine, scheduler, ops } = setupWithEvents([timed('A', 10), timed('B', 10)]);
+    engine.start();
+    scheduler.advance(3_000);
+    engine.pause();
+    engine.skip();
+    scheduler.advance(5_000);
+
+    expect(engine.snapshot()).toMatchObject({ status: 'paused', index: 1, phaseElapsedMs: 0 });
+    expect(ops.some((op) => op.index === 1)).toBe(false);
+
+    engine.resume();
+    expect(ops.some((op) => op.index === 1 && op.isPhaseStart)).toBe(true);
+  });
+
+  it('E10: back more than 3 s into a phase restarts it', () => {
+    const { engine, scheduler, ops } = setupWithEvents([timed('A', 10), timed('B', 10)]);
+    engine.start();
+    scheduler.advance(10_000 + 3_500); // 3.5 s into B
+    engine.back();
+
+    expect(engine.snapshot()).toMatchObject({ index: 1, phaseElapsedMs: 0, totalElapsedMs: 10_000 });
+    expect(ops.filter((op) => op.index === 1 && op.isPhaseStart)).toHaveLength(2);
+  });
+
+  it('E10: back within 3 s of a phase start goes to the previous phase', () => {
+    const { engine, scheduler } = setupWithEvents([timed('A', 10), timed('B', 10)]);
+    engine.start();
+    scheduler.advance(10_000 + 2_000);
+    engine.back();
+
+    expect(engine.snapshot()).toMatchObject({ index: 0, phaseElapsedMs: 0, totalElapsedMs: 0 });
+  });
+
+  it('E10: back in the first phase restarts it, and works while paused', () => {
+    const { engine, scheduler } = setupWithEvents([timed('A', 10), timed('B', 10)]);
+    engine.start();
+    scheduler.advance(1_000);
+    engine.pause();
+    engine.back();
+
+    expect(engine.snapshot()).toMatchObject({ status: 'paused', index: 0, phaseElapsedMs: 0 });
+  });
+
+  it('E11: an untimed phase waits for skip, and its elapsed time keeps counting', () => {
+    const { engine, scheduler } = setupWithEvents([timed('A', 2), untimed('Brush teeth'), timed('C', 2)]);
+    engine.start();
+    scheduler.advance(2_000 + 600_000);
+
+    expect(engine.snapshot()).toMatchObject({ status: 'running', index: 1, phaseRemainingMs: null });
+    expect(engine.snapshot().phaseElapsedMs).toBe(600_000);
+
+    engine.skip();
+    expect(engine.snapshot().index).toBe(2);
+  });
+
+  it('E12: stop ends the session without the completion cue', () => {
+    const { engine, scheduler, completions, events } = setupWithEvents([timed('A', 3)]);
+    engine.start();
+    scheduler.advance(1_000);
+    engine.stop();
+    scheduler.advance(10_000);
+
+    expect(engine.snapshot().status).toBe('stopped');
+    expect(events).toContain('status:stopped');
+    expect(completions).toEqual([]);
+  });
+
+  it('E13: a backwards clock change does not move progress backwards', () => {
+    const { engine, scheduler, clock, ops } = setupWithEvents([timed('A', 60)]);
+    engine.start();
+    scheduler.advance(10_000);
+
+    scheduler.jumpClock(-30_000);
+    scheduler.advance(5_000);
+
+    expect(engine.snapshot().phaseElapsedMs).toBe(15_000);
+    const secs = ops.map((op) => op.sec);
+    expect(secs).toEqual(Array.from({ length: secs.length }, (_, i) => i)); // no repeats, no gaps
+    const last = ops[ops.length - 1];
+    expect(last.at - clock.now()).toBeLessThanOrEqual(1_000);
+    expect(last.at - clock.now()).toBeGreaterThanOrEqual(0);
+  });
+});

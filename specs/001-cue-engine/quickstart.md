@@ -55,7 +55,7 @@ Each maps to a user story or edge case and is listed as an on-device task in `ta
 | D8 | Kill recovery | Repeat D7 but reopen after the session would have ended | "Session interrupted" note, no resume |
 | D9 | Edge | Silent/vibrate mode on, run the sample | Cues still heard |
 | D10 | US1/SC-003 | 60-minute session (sample phases repeated via a debug long-session option) with the screen off, 3 runs | Completes every time; no `am_kill` for the app in `adb logcat -b events` |
-| D11 | Edge | Call the phone from another phone during the sample, talk 30 s, hang up | No speech over the call; beeps may be silenced; timing continues; cues resume on schedule after the call, missed ones are not replayed |
+| D11 | Edge | Call the phone from another phone during the sample, talk 30 s, hang up | A phrase in progress when the call starts is cut off; timing continues; cues resume on schedule after the call, missed ones are not replayed. Known limitation: a phrase that *starts* during the call may be heard (fixed in 006) |
 
 ## 4. Timing accuracy (SC-001, SC-002)
 

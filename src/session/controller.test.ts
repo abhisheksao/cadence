@@ -125,3 +125,61 @@ describe('SessionController: start', () => {
     expect(seen[seen.length - 1]).toBe('done');
   });
 });
+
+describe('SessionController: controls', () => {
+  it('pause, skip, back and stop silence the player immediately (FR-010)', async () => {
+    const { controller, scheduler, player } = setup();
+    await controller.start(definition('Run', [10, 10, 10]));
+    scheduler.advance(1_000);
+
+    for (const action of ['pause', 'resume', 'skip', 'back', 'stop'] as const) {
+      const before = player.silenced;
+      controller[action]();
+      if (action === 'resume') expect(player.silenced).toBe(before);
+      else expect(player.silenced).toBe(before + 1);
+    }
+  });
+
+  it('passes each control to the engine', async () => {
+    const { controller, scheduler } = setup();
+    await controller.start(definition('Run', [10, 10]));
+    scheduler.advance(4_000);
+
+    controller.pause();
+    expect(controller.getState()?.status).toBe('paused');
+    controller.resume();
+    expect(controller.getState()?.status).toBe('running');
+    controller.skip();
+    expect(controller.getState()?.index).toBe(1);
+    controller.back();
+    expect(controller.getState()?.index).toBe(0);
+  });
+
+  it('stop stops the background service right away', async () => {
+    const { controller, scheduler, background } = setup();
+    let released = false;
+    await controller.start(definition('Run', [10]));
+    void background.keepAliveUntil?.then(() => {
+      released = true;
+    });
+    scheduler.advance(1_000);
+
+    controller.stop();
+    await Promise.resolve();
+
+    expect(controller.getState()?.status).toBe('stopped');
+    expect(background.callsOf('stop')).toHaveLength(1);
+    expect(released).toBe(true);
+  });
+
+  it('ignores controls when no session is running', () => {
+    const { controller } = setup();
+    expect(() => {
+      controller.pause();
+      controller.resume();
+      controller.skip();
+      controller.back();
+      controller.stop();
+    }).not.toThrow();
+  });
+});
