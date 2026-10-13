@@ -45,4 +45,14 @@ describe('Sample screen', () => {
     expect(screen.getByText('Interval')).toBeOnTheScreen();
     expect(screen.getByText('Running')).toBeOnTheScreen();
   });
+
+  it('warns that cues may stop only when the background service was refused', async () => {
+    withState(running);
+    await render(<SampleScreen />);
+    expect(screen.queryByText('Cues may stop when the screen is off')).toBeNull();
+
+    withState({ ...running, backgroundWarning: true });
+    await render(<SampleScreen />);
+    expect(screen.getByText('Cues may stop when the screen is off')).toBeOnTheScreen();
+  });
 });

@@ -183,3 +183,82 @@ describe('SessionController: controls', () => {
     }).not.toThrow();
   });
 });
+
+describe('SessionController: notification', () => {
+  const updates = (background: FakeBackgroundHost) => background.callsOf('update').map((c) => c.text);
+
+  it('C3: shows the phase title on each phase change, and nothing on ordinary ticks', async () => {
+    const { controller, scheduler, background } = setup();
+    await controller.start(definition('Run', [30, 40]));
+    // The first phase's title goes out with start(), not as an update.
+    expect(updates(background)).toEqual([]);
+
+    scheduler.advance(29_000);
+    expect(updates(background)).toEqual([]);
+    scheduler.advance(2_000);
+    expect(updates(background)).toEqual(['Run 2']);
+
+    scheduler.advance(30_000);
+    expect(updates(background)).toEqual(['Run 2']);
+  });
+
+  it('C3: pause shows a paused label and resume restores the title', async () => {
+    const { controller, scheduler, background } = setup();
+    await controller.start(definition('Run', [30, 30]));
+    scheduler.advance(5_000);
+
+    controller.pause();
+    expect(updates(background)).toEqual(['Paused · Run 1']);
+    scheduler.advance(60_000);
+    expect(updates(background)).toEqual(['Paused · Run 1']);
+
+    controller.resume();
+    expect(updates(background)).toEqual(['Paused · Run 1', 'Run 1']);
+  });
+
+  it('C3: skip and back update the title, keeping the paused label while paused', async () => {
+    const { controller, scheduler, background } = setup();
+    await controller.start(definition('Run', [30, 30]));
+    scheduler.advance(1_000);
+
+    controller.skip();
+    expect(updates(background)).toEqual(['Run 2']);
+    controller.pause();
+    controller.back();
+    expect(updates(background)).toEqual(['Run 2', 'Paused · Run 2', 'Paused · Run 1']);
+  });
+
+  it('C3: keeps updating after the user dismisses the notification (the update re-posts it)', async () => {
+    const { controller, scheduler, background } = setup();
+    await controller.start(definition('Run', [10, 10, 10]));
+    scheduler.advance(10_500);
+    // Dismissal is invisible to the app; the next update must still be sent.
+    scheduler.advance(10_000);
+    expect(updates(background)).toEqual(['Run 2', 'Run 3']);
+  });
+
+  it('C3: sends no updates after the session ends', async () => {
+    const { controller, scheduler, background } = setup();
+    await controller.start(definition('Run', [2]));
+    scheduler.advance(10_000);
+    controller.pause();
+    controller.resume();
+    expect(updates(background)).toEqual([]);
+  });
+
+  it('C7: runs the session and exposes a warning when the OS refuses the service', async () => {
+    const { controller, scheduler, background, player } = setup();
+    background.startResult = false;
+    await controller.start(definition('Run', [5]));
+    scheduler.advance(2_000);
+
+    expect(controller.getState()).toMatchObject({ status: 'running', backgroundWarning: true });
+    expect(player.played.length).toBeGreaterThan(0);
+  });
+
+  it('C7: no warning when the service starts', async () => {
+    const { controller } = setup();
+    await controller.start(definition('Run', [5]));
+    expect(controller.getState()?.backgroundWarning).toBe(false);
+  });
+});
