@@ -415,3 +415,37 @@ function snapshotAt(index: number, phaseElapsedMs: number) {
     totalElapsedMs: 0,
   };
 }
+
+describe('SessionController: notification text from the phase subtitle', () => {
+  const withSubtitles = (): SessionDefinition => ({
+    modeId: 'test',
+    title: 'Morning routine',
+    phases: [
+      { kind: 'step', title: 'Water', subtitle: 'Step 1 of 2', durationSec: 30 },
+      { kind: 'step', title: 'Stretch', subtitle: 'Step 2 of 2', durationSec: 30 },
+    ],
+    settings: {},
+    keepScreenOn: true,
+  });
+
+  it('C3: starts with "<subtitle>: <title>" and updates on phase change and pause', async () => {
+    const { controller, scheduler, background } = setup();
+    await controller.start(withSubtitles());
+    expect(background.callsOf('start')[0]).toMatchObject({ text: 'Step 1 of 2: Water' });
+
+    scheduler.advance(30_500);
+    controller.pause();
+    controller.resume();
+    expect(background.callsOf('update').map((c) => c.text)).toEqual([
+      'Step 2 of 2: Stretch',
+      'Paused · Step 2 of 2: Stretch',
+      'Step 2 of 2: Stretch',
+    ]);
+  });
+
+  it('C3: a paused recovery starts with the paused subtitle text', async () => {
+    const { controller, background } = setup();
+    await controller.resumeInterrupted({ definition: withSubtitles(), index: 1, phaseElapsedMs: 5_000, paused: true });
+    expect(background.callsOf('start')[0]).toMatchObject({ text: 'Paused · Step 2 of 2: Stretch' });
+  });
+});

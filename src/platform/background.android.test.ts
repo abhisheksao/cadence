@@ -43,6 +43,10 @@ function setApiLevel(version: number) {
 describe('Android background host: service', () => {
   beforeEach(() => jest.clearAllMocks());
 
+  it('can ask for the battery exemption', () => {
+    expect(backgroundHost.canRequestBatteryExemption).toBe(true);
+  });
+
   it('starts a media-playback foreground service with the session title and phase', async () => {
     const keepAliveUntil = Promise.resolve();
     await expect(backgroundHost.start({ title: 'Sample session', text: 'Get ready', keepAliveUntil })).resolves.toBe(

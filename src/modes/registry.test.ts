@@ -3,6 +3,7 @@ import type { ModeDefinition } from './types';
 
 const mode = (id: string): ModeDefinition => ({
   id,
+  route: `/${id}`,
   cueFor: () => ({ cueFor: () => null, completion: () => null }),
 });
 
