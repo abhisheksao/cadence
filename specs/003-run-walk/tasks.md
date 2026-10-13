@@ -39,7 +39,7 @@ its own.
 
 **Purpose**: Confirm the starting point. No new dependencies (plan).
 
-- [ ] T001 Confirm `003-run-walk` contains `develop` plus the `fix/oneplus-text-clipping` merge, and `npm run check` is green before any change
+- [X] T001 Confirm `003-run-walk` contains `develop` plus the `fix/oneplus-text-clipping` merge, and `npm run check` is green before any change
 
 ---
 
@@ -51,14 +51,14 @@ its own.
 
 ### Tests first
 
-- [ ] T002 [P] Write src/runWalk/settings.test.ts (defaults part): `defaultSettings()` equals the data-model.md defaults; exported limits and steps per field (run/walk 15–1800 step 15, rounds 1–30 step 1, warm-up/cool-down 0–1800 step 60); `PRESETS` lists the four presets with the labels and values in data-model.md
-- [ ] T003 [P] Write src/runWalk/store.test.ts for `parseRunWalk` (round-trip of valid settings; null for `null`, bad JSON, a non-object, version ≠ 1) and `RunWalkStore` with a `MemoryStore`: WS4 (nothing stored or unreadable → defaults returned and saved under `run-walk:v1`), WS6 (`update` notifies subscribers and saves the full value; a new store on the same data returns it)
+- [X] T002 [P] Write src/runWalk/settings.test.ts (defaults part): `defaultSettings()` equals the data-model.md defaults; exported limits and steps per field (run/walk 15–1800 step 15, rounds 1–30 step 1, warm-up/cool-down 0–1800 step 60); `PRESETS` lists the four presets with the labels and values in data-model.md
+- [X] T003 [P] Write src/runWalk/store.test.ts for `parseRunWalk` (round-trip of valid settings; null for `null`, bad JSON, a non-object, version ≠ 1) and `RunWalkStore` with a `MemoryStore`: WS4 (nothing stored or unreadable → defaults returned and saved under `run-walk:v1`), WS6 (`update` notifies subscribers and saves the full value; a new store on the same data returns it)
 
 ### Implementation
 
-- [ ] T004 [P] Create src/runWalk/types.ts (`RunWalkSettings`, `RunWalkField`, `Preset`, `RunWalkVoice`) and the defaults, limits and `PRESETS` in src/runWalk/settings.ts to pass T002
-- [ ] T005 Implement `parseRunWalk`, `RUN_WALK_KEY` and `RunWalkStore` in src/runWalk/store.ts to pass T003 (sync load on first `get()`, fire-and-forget writes with `console.warn` on failure)
-- [ ] T006 [P] Create src/runWalk/useRunWalk.ts (app-wide `RunWalkStore` over `kvStore`, `useSyncExternalStore` hook returning `{ settings, store }`)
+- [X] T004 [P] Create src/runWalk/types.ts (`RunWalkSettings`, `RunWalkField`, `Preset`, `RunWalkVoice`) and the defaults, limits and `PRESETS` in src/runWalk/settings.ts to pass T002
+- [X] T005 Implement `parseRunWalk`, `RUN_WALK_KEY` and `RunWalkStore` in src/runWalk/store.ts to pass T003 (sync load on first `get()`, fire-and-forget writes with `console.warn` on failure)
+- [X] T006 [P] Create src/runWalk/useRunWalk.ts (app-wide `RunWalkStore` over `kvStore`, `useSyncExternalStore` hook returning `{ settings, store }`)
 
 **Checkpoint**: Settings data layer tested. `npm run check` green.
 
