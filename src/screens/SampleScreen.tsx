@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/components/Text';
 import { Controls } from '@/components/Controls';
 import { SessionView } from '@/components/SessionView';
 import { sampleDefinition, soakDefinition } from '@/modes/sample';

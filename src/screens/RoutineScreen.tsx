@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 
+import { Text } from '@/components/Text';
 import { Controls } from '@/components/Controls';
 import { DoneButton } from '@/components/DoneButton';
 import { SessionView } from '@/components/SessionView';

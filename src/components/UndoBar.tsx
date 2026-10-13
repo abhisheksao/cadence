@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { Text } from '@/components/Text';
 
 /** How long Undo is offered after a delete (clarification Q4). */
 export const UNDO_MS = 5_000;
