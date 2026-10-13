@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View, useColorScheme } from 'react-n
 import { Text } from '@/components/Text';
 import { BatteryLink } from '@/components/BatteryLink';
 import { ROUTINE_MODE_ID } from '@/modes/routine';
+import { RUN_WALK_MODE_ID } from '@/modes/runWalk';
 import { useSession } from '@/session/useSession';
 
 type ModeTile = { name: string; description: string; route?: Href; modeId?: string };
@@ -11,7 +12,12 @@ type ModeTile = { name: string; description: string; route?: Href; modeId?: stri
 /** The modes (roadmap). Those without a route are shown as coming soon until they ship (FR-019). */
 const MODES: ModeTile[] = [
   { name: 'Morning routine', description: 'A guided set of exercises, each with its own timer.', route: '/routine', modeId: ROUTINE_MODE_ID },
-  { name: 'Run / walk', description: 'Run and walk intervals, cued by voice while you listen to music.' },
+  {
+    name: 'Run / walk',
+    description: 'Run and walk intervals, cued by voice while you listen to music.',
+    route: '/run-walk',
+    modeId: RUN_WALK_MODE_ID,
+  },
   { name: 'Breathe', description: 'Paced breathing with gentle cues for each breath.' },
 ];
 

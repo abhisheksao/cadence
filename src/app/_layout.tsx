@@ -24,6 +24,7 @@ export default function RootLayout() {
         <Stack.Screen name="sample" options={{ title: 'Sample session' }} />
         <Stack.Screen name="routine/index" options={{ title: 'Morning routine' }} />
         <Stack.Screen name="routine/edit" options={{ title: 'Edit routine' }} />
+        <Stack.Screen name="run-walk" options={{ title: 'Run / walk' }} />
       </Stack>
     </LaunchCheck>
   );
