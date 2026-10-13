@@ -142,3 +142,20 @@ below.
     `LaunchCheck` routing by mode.
 - **Rationale**: Covers SC-002, SC-004, and SC-005 without a device. On-device checks are listed
   in [quickstart.md](./quickstart.md).
+
+## Implementation notes (spec review, T042)
+
+- **Duration fields**: minutes and seconds accept up to two digits each. On blur the value is
+  normalised (15 s–60 min), and both fields then show the corrected value, so the user sees right
+  away that 0:05 became 0:15.
+- **Keeping fields in sync**: `StepEditor` follows changes to the saved duration (undo, restore)
+  by adjusting its state during render, not in an effect. The React Compiler lint rule forbids
+  `setState` inside effects.
+- **Ended view**: after a routine ends, the routine screen shows "All done" or "Stopped" over the
+  step list from the session that just ran, not the stored routine. Edits made since then show
+  once Start again is tapped.
+- **Done size**: `DoneButton` has the test IDs `done-large` and `done-compact`. The live view picks
+  the size from the current phase (`durationSec === null` → large).
+- **Store first read**: the default routine saved on first read does not notify subscribers. It
+  is the initial value, not a change.
+

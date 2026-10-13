@@ -59,11 +59,11 @@ export function useRoutine(): { routine: Routine; store: RoutineStore };
 | UI1 | Home | Morning routine tile has no "Coming soon", opens `/routine`, and shows "In progress" while a routine session is running or paused | FR-021 |
 | UI2 | Routine (start view) | Shows each step's title (or "Step N") and duration (or "untimed"), the total timed duration, Start and Edit. Start calls `controller.start(routineDefinition(routine))` | FR-017 |
 | UI3 | Routine (live view) | Only for a routine session: SessionView (subtitle "Step N of M"), step list with done/current/upcoming, Done (large when untimed, compact when timed) → `controller.skip()`, Controls; no Edit | FR-007, FR-014, FR-018 |
-| UI4 | Routine (ended) | "All done" or "Stopped" with Start again and Edit | FR-020 |
+| UI4 | Routine (ended) | "All done" or "Stopped" over the step list (all done after a finished routine), with Start again and Edit | FR-020 |
 | UI5 | Routine | `useKeepScreenOn` receives the live routine definition and status | FR-015 |
 | UI6 | Edit | Title input (≤ 60), Untimed switch, minutes/seconds inputs normalised on blur, move up/down (disabled at the ends), Delete (disabled for the only step), Add step (disabled at 30) | FR-001, FR-003 |
 | UI7 | Edit | Delete shows "Step deleted · Undo" for 5 s; Undo restores the step in place; a second delete replaces the bar | FR-003 |
-| UI8 | Edit | "Restore default routine" asks for confirmation in place; Confirm restores, Cancel does nothing | FR-005 |
+| UI8 | Edit | "Restore default routine" asks "Replace your routine with the default one?" in place; Restore replaces it (and drops any pending undo), Cancel does nothing | FR-005 |
 | UI9 | LaunchCheck | Resume navigates to the recovered mode's `route` (`/routine` for a routine session) | FR-021 |
 
 ## Spec 001 amendments
