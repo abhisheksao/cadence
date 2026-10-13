@@ -18,7 +18,17 @@ with beeps, and waits on untimed steps until the user taps Done.
 
 Everything that makes cues reliable comes from spec 001 and is reused unchanged: timing with the
 screen off, ducking music, the controls, the notification, and recovery after the OS kills the
-app. This spec adds the routine itself, its cues, the editor, and the routine screen.
+app. This spec adds the routine itself, its cues, the Edit screen, and the routine screen.
+
+## Clarifications
+
+### Session 2026-10-13
+
+- Q: What is the shortest allowed timed step? → A: 15 seconds, so the step announcement always finishes before the countdown beeps.
+- Q: Can the user finish a timed step early? → A: Yes. Every step has a Done button: large on untimed steps, smaller on timed steps. It works like skip.
+- Q: Where does editing happen? → A: On a separate Edit screen. The routine screen shows a read-only list with Start and an Edit button.
+- Q: What protects against deleting a step by mistake? → A: The step is deleted right away, then "Step deleted · Undo" shows for about 5 seconds. Undo restores the step in the same place.
+- Q: How does the user get back to a routine after leaving its screen? → A: Opening Morning routine shows the live routine session, and the home tile shows "In progress" while it runs or is paused. If another mode's session is running, the routine screen shows its normal Start view.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -75,21 +85,26 @@ it and confirm the announcements match the edited steps.
 
 **Acceptance Scenarios**:
 
-1. **Given** the routine screen with no session running, **When** the user changes a step's title,
+1. **Given** the routine screen with no session running, **When** the user taps Edit, **Then** the
+   Edit screen opens with the steps and all editing controls, and back returns to the routine
+   screen showing the edited routine.
+2. **Given** the Edit screen, **When** the user changes a step's title,
    **Then** the new title is shown and used in that step's announcement.
-2. **Given** a step, **When** the user sets its duration in minutes and seconds, **Then** the step
+3. **Given** a step, **When** the user sets its duration in minutes and seconds, **Then** the step
    is timed with that duration; **When** the user marks it untimed, **Then** it waits for Done.
-3. **Given** the routine, **When** the user adds a step, **Then** a new timed step (2 minutes, empty
+4. **Given** the routine, **When** the user adds a step, **Then** a new timed step (2 minutes, empty
    title) is added at the end and ready to edit.
-4. **Given** the routine, **When** the user moves a step up or down, **Then** the order changes and
+5. **Given** the routine, **When** the user moves a step up or down, **Then** the order changes and
    the step numbers in announcements follow the new order.
-5. **Given** a routine with more than one step, **When** the user deletes a step, **Then** it is
-   removed. **Given** a routine with one step, **Then** that step cannot be deleted.
-6. **Given** any edits, **When** the app is closed and reopened (including after a force-stop),
+6. **Given** a routine with more than one step, **When** the user deletes a step, **Then** it is
+   removed and "Step deleted · Undo" shows for about 5 seconds; **When** the user taps Undo,
+   **Then** the step returns to the same place with the same title and duration. **Given** a
+   routine with one step, **Then** that step cannot be deleted.
+7. **Given** any edits, **When** the app is closed and reopened (including after a force-stop),
    **Then** the routine is exactly as last edited.
-7. **Given** a step whose title is left empty, **When** the routine runs, **Then** that step is
+8. **Given** a step whose title is left empty, **When** the routine runs, **Then** that step is
    shown and announced as "Step N".
-8. **Given** an edited routine, **When** the user chooses Restore default routine and confirms,
+9. **Given** an edited routine, **When** the user chooses Restore default routine and confirms,
    **Then** the default routine replaces it. **When** the user cancels, **Then** nothing changes.
 
 ---
@@ -98,7 +113,8 @@ it and confirm the announcements match the edited steps.
 
 While the routine runs, the screen shows the current step's title and position ("Step 2 of 6"), its
 time remaining (or elapsed, for an untimed step), and the full step list marking which steps are
-done, which is current, and which are upcoming. Untimed steps show a large Done button. The
+done, which is current, and which are upcoming. Every step has a Done button to move on: large on
+untimed steps, smaller on timed steps. The
 notification shows "Step N of M: title", so the user can check progress from the lock screen. The
 screen stays on while the routine screen is open.
 
@@ -106,7 +122,7 @@ screen stays on while the routine screen is open.
 but the routine is usable by ear alone.
 
 **Independent Test**: Run the default routine and check the screen at each step: current step,
-clock, list states, the Done button on untimed steps, and the notification text. Leave the phone
+clock, list states, the Done button on each step, and the notification text. Leave the phone
 untouched on the routine screen for longer than its screen timeout and confirm the screen stays on.
 
 **Acceptance Scenarios**:
@@ -115,15 +131,17 @@ untouched on the routine screen for longer than its screen timeout and confirm t
    time remaining counting down.
 2. **Given** a running untimed step, **Then** the screen shows the time elapsed counting up and a
    prominent Done button.
-3. **Given** a running routine, **Then** the step list marks earlier steps as done, the current step
+3. **Given** a running timed step, **When** the user taps Done before it ends, **Then** the next
+   step starts and is announced right away.
+4. **Given** a running routine, **Then** the step list marks earlier steps as done, the current step
    as current, and later steps as upcoming, and updates on every step change, including after skip
    and back.
-4. **Given** a running routine, **Then** the notification reads "Step N of M: title", and
+5. **Given** a running routine, **Then** the notification reads "Step N of M: title", and
    "Paused · Step N of M: title" while paused.
-5. **Given** the routine has finished or was stopped, **Then** the screen says "All done" or
+6. **Given** the routine has finished or was stopped, **Then** the screen says "All done" or
    "Stopped" and offers Start again, and editing is available again.
-6. **Given** a session is running or paused, **Then** the routine cannot be edited; edit controls
-   are hidden or disabled until the session ends.
+7. **Given** a session is running or paused, **Then** the routine cannot be edited: the Edit
+   button is hidden until the session ends.
 
 ---
 
@@ -133,11 +151,14 @@ untouched on the routine screen for longer than its screen timeout and confirm t
   paused. A running session always uses the routine as it was when started.
 - **OS kills the app mid-routine**: spec 001 recovery applies unchanged. The resumed session uses
   the routine as it was when started, even if the stored routine differs.
-- **Another session is running** (e.g. the sample session) when the user starts the routine: the
-  other session stops and the routine starts (spec 001 FR-011).
-- **Very short timed steps** (5–9 seconds): the step announcement and the final beeps may follow
-  each other closely. The 10-second warning is skipped for steps under 30 seconds, and the
+- **Another session is running** (e.g. the sample session): the routine screen shows its normal
+  Start view. Starting the routine stops the other session (spec 001 FR-011).
+- **User leaves the routine screen mid-routine**: the session keeps running. The home screen's
+  Morning routine tile shows "In progress", and opening it shows the live session.
+- **Short timed steps**: timed steps are at least 15 seconds, so the step announcement finishes
+  before the countdown beeps. The 10-second warning is skipped for steps under 30 seconds, and the
   one-minute warning for steps under 3 minutes, so warnings never land on top of the announcement.
+  A duration entered below 15 seconds is raised to 15 seconds.
 - **All steps untimed**: allowed. The total timed duration shows as zero and the routine advances
   only on Done.
 - **Long titles**: titles are limited in length; the screen and notification truncate visually but
@@ -154,20 +175,22 @@ untouched on the routine screen for longer than its screen timeout and confirm t
 **Routine content**
 
 - **FR-001**: The app MUST keep one morning routine: an ordered list of 1 to 30 steps. Each step has
-  a title (up to 60 characters) and either a duration of 5 seconds to 60 minutes in whole seconds
+  a title (up to 60 characters) and either a duration of 15 seconds to 60 minutes in whole seconds
   (timed) or no duration (untimed).
 - **FR-002**: On first use, or when the stored routine is missing or unreadable, the app MUST
   provide a default routine: Drink a glass of water (1 min), Make the bed (untimed), Stretch
   (5 min), Breathing (3 min), Plan the day (3 min), Shower (untimed).
 - **FR-003**: Users MUST be able to rename a step, set its duration, switch it between timed and
   untimed, add a step (at the end, timed, 2 minutes, empty title), move a step up or down, and
-  delete a step, but not the last remaining one.
+  delete a step, but not the last remaining one. After a delete, the app MUST offer Undo for about
+  5 seconds, which restores the step in the same place with its title and duration.
 - **FR-004**: Every change MUST be saved on the device as it is made, with no separate save action,
   and MUST survive closing, force-stopping, and restarting the app.
 - **FR-005**: Users MUST be able to restore the default routine after confirming.
 - **FR-006**: A step with an empty or blank title MUST be shown and announced as "Step N", where N
   is its position.
-- **FR-007**: Editing MUST NOT be possible while a session is running or paused.
+- **FR-007**: Editing MUST happen on a separate Edit screen, opened from the routine screen. Editing
+  MUST NOT be possible while a session is running or paused: the Edit button is not shown.
 
 **Running the routine**
 
@@ -187,8 +210,9 @@ untouched on the routine screen for longer than its screen timeout and confirm t
   beeps and the completion chime follows.
 - **FR-013**: When the last step ends, the app MUST play the completion chime followed by "Routine
   complete. Have a great day."
-- **FR-014**: An untimed step MUST NOT end by itself. Done MUST end it and start the next step
-  (or complete the routine on the last step), exactly like skip.
+- **FR-014**: An untimed step MUST NOT end by itself. Every step MUST offer Done, which ends the
+  step and starts the next one (or completes the routine on the last step), exactly like skip.
+  Done is large on untimed steps and smaller on timed steps.
 - **FR-015**: The screen MUST stay on while the routine screen is open and a routine session is
   running or paused (spec 001 FR-021a).
 - **FR-016**: The routine session MUST be fully described by its plain data (steps as phases, mode
@@ -196,17 +220,20 @@ untouched on the routine screen for longer than its screen timeout and confirm t
 
 **Routine screen**
 
-- **FR-017**: Before starting, the routine screen MUST show the steps with their durations (or
-  "untimed"), the total timed duration, the editing controls, and Start.
+- **FR-017**: Before starting, the routine screen MUST show a read-only list of the steps with
+  their durations (or "untimed"), the total timed duration, Start, and Edit.
 - **FR-018**: While running, the routine screen MUST show "Step N of M", the step title, time
-  remaining (timed) or elapsed (untimed), the step list with done/current/upcoming state, a large
-  Done button on untimed steps, and the spec 001 controls.
+  remaining (timed) or elapsed (untimed), the step list with done/current/upcoming state, the Done
+  button (large on untimed steps, smaller on timed steps), and the spec 001 controls.
 - **FR-019**: The notification MUST read "Step N of M: <title>" and "Paused · Step N of M: <title>"
   while paused.
 - **FR-020**: After the routine finishes or is stopped, the screen MUST say "All done" or "Stopped"
   and offer Start again.
 - **FR-021**: The home screen MUST show Morning routine as available (no longer coming soon), and
-  tapping it MUST open the routine screen. A session recovered after an OS kill MUST open the
+  tapping it MUST open the routine screen. While a routine session is running or paused, the tile
+  MUST show "In progress", and the routine screen MUST show the live session. The routine screen
+  MUST show the live view only for a routine session; if another mode's session is running, it
+  shows the normal Start view. A session recovered after an OS kill MUST open the
   screen of its mode (the routine screen for routine sessions).
 
 ### Key Entities
@@ -238,7 +265,7 @@ untouched on the routine screen for longer than its screen timeout and confirm t
   scope (roadmap: later).
 - Cue wording is English only, like spec 001. Spoken durations use minutes and seconds ("2 minutes
   30 seconds"); hours are not needed because steps are at most 60 minutes.
-- The duration limits (5 s to 60 min) and step limit (30) are generous for a morning routine and
+- The duration limits (15 s to 60 min) and step limit (30) are generous for a morning routine and
   keep the editor and announcements sensible. The 3-minute and 30-second thresholds for warnings
   follow the prior implementation, where they worked well.
 - Reordering uses move up/down buttons, which are accessible and simple to test; drag-and-drop can
