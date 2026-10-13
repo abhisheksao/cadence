@@ -1,39 +1,70 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
 
 import { BatteryLink } from '@/components/BatteryLink';
+import { ROUTINE_MODE_ID } from '@/modes/routine';
+import { useSession } from '@/session/useSession';
 
-/** The modes later specs deliver (roadmap). Shown as coming soon until each ships (FR-019). */
-const MODES = [
-  { name: 'Morning routine', description: 'A guided set of exercises, each with its own timer.' },
+type ModeTile = { name: string; description: string; route?: Href; modeId?: string };
+
+/** The modes (roadmap). Those without a route are shown as coming soon until they ship (FR-019). */
+const MODES: ModeTile[] = [
+  { name: 'Morning routine', description: 'A guided set of exercises, each with its own timer.', route: '/routine', modeId: ROUTINE_MODE_ID },
   { name: 'Run / walk', description: 'Run and walk intervals, cued by voice while you listen to music.' },
   { name: 'Breathe', description: 'Paced breathing with gentle cues for each breath.' },
 ];
 
 /** Lists the modes and the sample session (User Story 5). */
 export default function HomeScreen() {
+  const { state } = useSession();
+  const live = state && (state.status === 'running' || state.status === 'paused') ? state.definition.modeId : null;
   const dark = useColorScheme() === 'dark';
   const text = dark ? '#E6EDF3' : '#0E1116';
   const card = dark ? '#1A1F27' : '#F2F4F7';
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {MODES.map((mode) => (
-        <View
-          key={mode.name}
-          accessible
-          accessibilityLabel={`${mode.name}, coming soon. ${mode.description}`}
-          style={[styles.card, { backgroundColor: card }]}
-        >
+      {MODES.map((mode) => {
+        const route = mode.route;
+        const inProgress = mode.modeId !== undefined && mode.modeId === live;
+        const header = (
           <View style={styles.cardHeader}>
             <Text style={[styles.name, { color: text }]}>{mode.name}</Text>
-            <Text style={styles.soon}>Coming soon</Text>
+            {route ? null : <Text style={styles.soon}>Coming soon</Text>}
+            {inProgress ? <Text style={styles.soon}>In progress</Text> : null}
           </View>
+        );
+        const description = (
           <Text testID="mode-description" style={[styles.description, { color: text }]}>
             {mode.description}
           </Text>
-        </View>
-      ))}
+        );
+        if (!route) {
+          return (
+            <View
+              key={mode.name}
+              accessible
+              accessibilityLabel={`${mode.name}, coming soon. ${mode.description}`}
+              style={[styles.card, { backgroundColor: card }]}
+            >
+              {header}
+              {description}
+            </View>
+          );
+        }
+        return (
+          <Pressable
+            key={mode.name}
+            accessibilityRole="button"
+            accessibilityLabel={`${mode.name}${inProgress ? ', in progress' : ''}. ${mode.description}`}
+            onPress={() => router.push(route)}
+            style={({ pressed }) => [styles.card, { backgroundColor: card, opacity: pressed ? 0.8 : 1 }]}
+          >
+            {header}
+            {description}
+          </Pressable>
+        );
+      })}
 
       <Pressable
         accessibilityRole="button"

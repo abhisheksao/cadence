@@ -28,6 +28,7 @@ describe('sample session', () => {
   it('is a valid definition with the four phases from the quickstart', () => {
     expect(validateDefinition(def, (id) => id === 'sample')).toEqual([]);
     expect(def.modeId).toBe('sample');
+    expect(sampleMode.route).toBe('/sample');
     expect(def.keepScreenOn).toBe(true);
     expect(def.phases.map((p) => [p.title, p.durationSec])).toEqual([
       ['Get ready', 10],

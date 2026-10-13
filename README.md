@@ -4,7 +4,13 @@ Spoken-cue timers that keep working with the screen off: a morning routine, run/
 
 > **Status:** early rebuild. Features are being specified and implemented one at a time. See [docs/roadmap.md](docs/roadmap.md).
 
-## What works today (spec 001: cue engine)
+## What works today
+
+### Morning routine (spec 002)
+
+[Spec 002](specs/002-morning-routine/spec.md) adds the first mode. You keep one routine of timed and untimed steps, and Cadence talks you through it: it announces each step, warns at one minute and 10 seconds left, beeps on the last 3 seconds, and waits on untimed steps until you tap **Done**. You can rename, retime, add, reorder, and delete steps (with undo) on the Edit screen. The routine is saved on the phone.
+
+### Cue engine (spec 001)
 
 [Spec 001](specs/001-cue-engine/spec.md) builds the engine every mode will use:
 
@@ -13,10 +19,10 @@ Spoken-cue timers that keep working with the screen off: a morning routine, run/
 - **Controls.** Pause, resume, skip, back, and stop, with audio silenced right away.
 - **Ongoing notification** with the session title and phase. Notification permission and the battery exemption are each asked for once.
 - **Recovery.** If the OS kills the app mid-session, the next launch offers to resume where the clock says the session should be.
-- **Home screen and sample session.** The three modes are listed as coming soon. A sample session uses every cue type, and a 60-minute soak tests timing.
+- **Home screen and sample session.** The modes are listed on the home screen; those not built yet are marked coming soon. A sample session uses every cue type, and a 60-minute soak tests timing.
 - **Timing log.** Each cue writes one log line. `npm run timing-report` checks the log against the accuracy targets.
 
-The modes themselves (morning routine, run/walk, breathe) come in later specs.
+Run / walk and Breathe come in later specs.
 
 ## Spec-driven development
 

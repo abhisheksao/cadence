@@ -30,6 +30,7 @@ type BackgroundCall =
   | { kind: 'requestBatteryExemption' };
 
 export class FakeBackgroundHost implements BackgroundHost {
+  canRequestBatteryExemption = true;
   calls: BackgroundCall[] = [];
   /** What start() resolves to; set false to simulate the OS refusing the service. */
   startResult = true;

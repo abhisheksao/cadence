@@ -19,6 +19,8 @@ export interface CuePlayer {
 
 // src/platform/background.ts
 export interface BackgroundHost {
+  /** Whether the platform has a battery exemption to ask for (Android only; spec 002 R9). */
+  readonly canRequestBatteryExemption: boolean;
   /** Ask for notification permission (Android 13+) and, once ever, the battery exemption. */
   prepare(): Promise<void>;
   /** Start the foreground service; resolves false if the OS refused (FR edge case). */
@@ -58,7 +60,8 @@ export class SessionController {
   pause(): void; resume(): void; skip(): void; back(): void; stop(): void;
   /** On launch: read and assess the record (FR-024/025). */
   checkForInterrupted(): RecoveryResult;          // 'none' | resume offer | interrupted note
-  /** Clear the record: Discard on a resume offer, OK on an interrupted note. */
+  /** Clear the record: Discard on a resume offer, OK on an interrupted note. LaunchCheck opens
+   *  the resumed session's screen at `modes.get(modeId)?.route ?? '/'` (spec 002 R8). */
   discardInterrupted(): Promise<void>;
   getState(): SessionState | null;
   subscribe(fn: (s: SessionState | null) => void): () => void;
@@ -78,7 +81,7 @@ Controller guarantees (unit tests with all fakes):
 |---|---|---|
 | C1 | `start` validates, calls `background.prepare()` then `start()`, then the engine | FR-013/016/017 |
 | C2 | Engine cues go to `player.play(cue, at)`; cancels go to `player.silence()` | FR-010 |
-| C3 | Phase change / pause / resume update the notification text; nothing else does. The first phase's title goes out with `background.start()`. A phase change while paused keeps the label (`Paused · <phase>`). If the user dismisses the notification (Android 14+), the session continues and the next update re-posts it | FR-013 |
+| C3 | Phase change / pause / resume update the notification text; nothing else does. The first phase's text goes out with `background.start()`. The text is `"<subtitle>: <title>"` when the phase has a subtitle, else the title (spec 002 R3). A phase change while paused keeps the label (`Paused · <phase>`). If the user dismisses the notification (Android 14+), the session continues and the next update re-posts it | FR-013 |
 | C4 | Record written on every control event and phase change, refreshed every 60 s, cleared on done/stop | FR-023 |
 | C5 | Background stays up ≥ 4 s after `done` so the completion cue plays | FR-014 |
 | C6 | Starting a second session stops the first | FR-011 |

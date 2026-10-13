@@ -174,9 +174,10 @@ reference device, is used as evidence where noted ("prior implementation").
 
 Places where the build differs from the plan above, or where the plan left a detail open:
 
-- **Battery link on iOS**: `BatteryLink` checks `Platform.OS` instead of using a `BatteryLink.ios.tsx`
-  split. jest-expo resolves `.ios` files by default, so a split file would hide the Android
-  component from its tests.
+- **Battery link on iOS**: `BatteryLink` renders nothing when `backgroundHost.canRequestBatteryExemption`
+  is false (the iOS placeholder). A `BatteryLink.ios.tsx` split would hide the Android component
+  from its tests, since jest-expo resolves `.ios` files by default. The first version checked
+  `Platform.OS`, which Principle IV forbids; spec 002 (research R9) moved the check behind the port.
 - **Background host**: `createBackgroundHost(store)` builds the Android host, so tests can pass a
   `MemoryStore` for the "asked" flag. The flag is set even if the exemption dialog cannot be shown,
   so the user is asked at most once. The link on the home screen can still open it.

@@ -41,6 +41,8 @@ async function openBatteryExemption() {
  */
 export function createBackgroundHost(store: KeyValueStore): BackgroundHost {
   return {
+    canRequestBatteryExemption: true,
+
     async prepare() {
       await requestNotificationPermission();
       if (store.getSync(BATTERY_ASKED_KEY) !== null) return;

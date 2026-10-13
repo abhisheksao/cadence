@@ -3,6 +3,8 @@
  * background.android.ts or background.ios.ts; shared code imports this interface only.
  */
 export interface BackgroundHost {
+  /** Whether the platform has a battery exemption to ask for (Android only). */
+  readonly canRequestBatteryExemption: boolean;
   /** Ask for notification permission (Android 13+) and, once ever, the battery exemption. */
   prepare(): Promise<void>;
   /** Start the foreground service. Resolves false if the OS refused. */

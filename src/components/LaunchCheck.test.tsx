@@ -15,6 +15,10 @@ jest.mock('@/session', () => ({
   },
 }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+jest.mock('@/modes', () => {
+  const routes: Record<string, string> = { sample: '/sample', routine: '/routine' };
+  return { modes: { get: (id: string) => (routes[id] ? { id, route: routes[id] } : undefined) } };
+});
 
 const controller = jest.mocked(sessionController);
 
@@ -65,6 +69,18 @@ describe('LaunchCheck (FR-024, FR-025)', () => {
     expect(controller.resumeInterrupted).toHaveBeenCalledWith(resume.kind === 'resume' && resume.assessment);
     expect(router.push).toHaveBeenCalledWith('/sample');
     expect(screen.queryByRole('button', { name: 'Resume' })).toBeNull();
+  });
+
+  it.each([
+    ['routine', '/routine'],
+    ['gone', '/'],
+  ])('Resume of a %s session opens %s', async (modeId, route) => {
+    await renderCheck({
+      kind: 'resume',
+      assessment: { definition: { ...definition, modeId }, index: 0, phaseElapsedMs: 0, paused: false },
+    });
+    await fireEvent.press(screen.getByRole('button', { name: 'Resume' }));
+    expect(router.push).toHaveBeenCalledWith(route);
   });
 
   it('Discard clears the record and closes the prompt', async () => {
