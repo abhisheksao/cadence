@@ -411,3 +411,72 @@ describe('Engine: controls', () => {
     expect(last.at - clock.now()).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe('Engine: recovery', () => {
+  it('E16: startAt resumes mid-phase, announces that phase once, and keeps the recovered anchor', () => {
+    const { engine, scheduler, ops, events } = setupWithEvents([timed('A', 10), timed('B', 30), timed('C', 10)]);
+    engine.startAt({ index: 1, phaseElapsedMs: 12_400, paused: false });
+
+    expect(events).toEqual(expect.arrayContaining(['status:running', 'phase:1']));
+    expect(engine.snapshot()).toMatchObject({ status: 'running', index: 1, phaseElapsedMs: 12_400 });
+    // The phase start is announced now; the regular seconds follow on the recovered grid.
+    expect(ops[0]).toMatchObject({ index: 1, sec: 12, isPhaseStart: true, at: T0 });
+    scheduler.advance(3_000);
+    const rest = ops.slice(1);
+    expect(rest.filter((op) => op.isPhaseStart && op.index === 1)).toHaveLength(0);
+    expect(rest.slice(0, 3).map((op) => [op.sec, op.at - T0])).toEqual([
+      [13, 600],
+      [14, 1_600],
+      [15, 2_600],
+    ]);
+  });
+
+  it('E16: the recovered session reaches the next phase and the end on the original schedule', () => {
+    const { engine, scheduler, ops, completions } = setupWithEvents([timed('A', 10), timed('B', 30), timed('C', 10)]);
+    engine.startAt({ index: 1, phaseElapsedMs: 12_400, paused: false });
+    scheduler.advance(30_000);
+
+    const cStart = ops.find((op) => op.index === 2 && op.sec === 0);
+    expect(cStart?.at).toBe(T0 + 17_600);
+    expect(completions).toEqual([T0 + 27_600]);
+    expect(engine.snapshot()).toMatchObject({ status: 'done', totalElapsedMs: 50_000 });
+  });
+
+  it('E16: counts the earlier timed phases as elapsed', () => {
+    const { engine } = setupWithEvents([timed('A', 10), timed('B', 30), timed('C', 10)]);
+    engine.startAt({ index: 2, phaseElapsedMs: 4_000, paused: false });
+    expect(engine.snapshot().totalElapsedMs).toBe(44_000);
+  });
+
+  it('E16: a paused recovery stays paused and announces the phase on resume', () => {
+    const { engine, scheduler, ops } = setupWithEvents([timed('A', 10), timed('B', 30)]);
+    engine.startAt({ index: 1, phaseElapsedMs: 5_000, paused: true });
+    scheduler.advance(20_000);
+
+    expect(engine.snapshot()).toMatchObject({ status: 'paused', index: 1, phaseElapsedMs: 5_000 });
+    expect(ops).toHaveLength(0);
+
+    engine.resume();
+    expect(ops[0]).toMatchObject({ index: 1, sec: 5, isPhaseStart: true, at: T0 + 20_000 });
+    scheduler.advance(2_000);
+    expect(ops.slice(1, 3).map((op) => [op.sec, op.at - T0])).toEqual([
+      [6, 21_000],
+      [7, 22_000],
+    ]);
+  });
+
+  it('E16: an untimed phase recovers with its elapsed time', () => {
+    const { engine, scheduler } = setupWithEvents([timed('A', 10), untimed('Wait')]);
+    engine.startAt({ index: 1, phaseElapsedMs: 90_000, paused: false });
+    scheduler.advance(1_000);
+    expect(engine.snapshot()).toMatchObject({ index: 1, phaseElapsedMs: 91_000, phaseRemainingMs: null });
+  });
+
+  it('E16: startAt only works on a fresh engine', () => {
+    const { engine, events } = setupWithEvents([timed('A', 10)]);
+    engine.start();
+    events.length = 0;
+    engine.startAt({ index: 0, phaseElapsedMs: 5_000, paused: false });
+    expect(events).toEqual([]);
+  });
+});

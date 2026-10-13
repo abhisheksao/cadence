@@ -4,6 +4,7 @@ import { FakeClock, FakeScheduler } from '@/test-utils/fakeClock';
 import { FakeBackgroundHost, FakeCuePlayer, MemoryStore } from '@/test-utils/fakes';
 
 import { SessionController } from './controller';
+import { RECORD_KEY, parseRecord, toRecord } from './record';
 import type { SessionDefinition } from './types';
 
 const T0 = 1_000_000;
@@ -271,3 +272,146 @@ describe('SessionController: state', () => {
     expect(controller.getState()?.definition).toEqual(def);
   });
 });
+
+describe('SessionController: recovery', () => {
+  /** Captures every value written to the record key, in order (null = cleared). */
+  function recordWrites(store: MemoryStore) {
+    const writes: (ReturnType<typeof parseRecord> | 'cleared')[] = [];
+    const set = store.set.bind(store);
+    const remove = store.remove.bind(store);
+    store.set = async (key, value) => {
+      if (key === RECORD_KEY) writes.push(parseRecord(value));
+      return set(key, value);
+    };
+    store.remove = async (key) => {
+      if (key === RECORD_KEY) writes.push('cleared');
+      return remove(key);
+    };
+    return writes;
+  }
+
+  it('C4: writes the record on start, controls and phase changes', async () => {
+    const { controller, scheduler, store } = setup();
+    const writes = recordWrites(store);
+    await controller.start(definition('Run', [10, 10, 10]));
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toMatchObject({ status: 'running', index: 0, phaseStartAt: T0, writtenAt: T0 });
+
+    scheduler.advance(10_500); // phase change
+    expect(writes[writes.length - 1]).toMatchObject({ index: 1, phaseStartAt: T0 + 10_000 });
+
+    const count = () => writes.length;
+    for (const action of ['pause', 'resume', 'skip', 'back'] as const) {
+      const before = count();
+      controller[action]();
+      expect(count()).toBeGreaterThan(before);
+    }
+    controller.pause();
+    expect(writes[writes.length - 1]).toMatchObject({ status: 'paused', pausedAt: T0 + 10_500 });
+  });
+
+  it('C4: refreshes the record every 60 s while running, not while paused', async () => {
+    const { controller, scheduler, store } = setup();
+    const writes = recordWrites(store);
+    await controller.start(definition('Long', [600]));
+    scheduler.advance(60_000);
+    expect(writes).toHaveLength(2);
+    expect(writes[1]).toMatchObject({ writtenAt: T0 + 60_000, phaseStartAt: T0 });
+    scheduler.advance(60_000);
+    expect(writes).toHaveLength(3);
+
+    controller.pause();
+    const paused = writes.length;
+    scheduler.advance(180_000);
+    expect(writes).toHaveLength(paused);
+  });
+
+  it('C4: clears the record when the session is done or stopped', async () => {
+    const { controller, scheduler, store } = setup();
+    await controller.start(definition('Run', [2]));
+    expect(store.getSync(RECORD_KEY)).not.toBeNull();
+    scheduler.advance(3_000);
+    expect(store.getSync(RECORD_KEY)).toBeNull();
+
+    await controller.start(definition('Run', [20]));
+    scheduler.advance(1_000);
+    controller.stop();
+    expect(store.getSync(RECORD_KEY)).toBeNull();
+    scheduler.advance(120_000);
+    expect(store.getSync(RECORD_KEY)).toBeNull();
+  });
+
+  it('C8: checkForInterrupted assesses the stored record against the clock', async () => {
+    const { controller, store, clock } = setup();
+    expect(controller.checkForInterrupted()).toEqual({ kind: 'none' });
+
+    const def = definition('Run', [60, 60]);
+    store.data.set(RECORD_KEY, JSON.stringify(toRecord(def, snapshotAt(0, 20_000), T0)));
+    clock.advance(50_000);
+    expect(controller.checkForInterrupted()).toEqual({
+      kind: 'resume',
+      assessment: { definition: def, index: 1, phaseElapsedMs: 10_000, paused: false },
+    });
+
+    clock.advance(200_000);
+    expect(controller.checkForInterrupted()).toMatchObject({ kind: 'interrupted', reason: 'finished', title: 'Run' });
+  });
+
+  it('C8: resumeInterrupted rebuilds the cues, restarts the service and announces the phase', async () => {
+    const { controller, scheduler, player, background, store } = setup();
+    const def = definition('Run', [60, 60]);
+    await controller.resumeInterrupted({ definition: def, index: 1, phaseElapsedMs: 10_000, paused: false });
+
+    expect(background.calls.map((c) => c.kind)).toEqual(['prepare', 'start']);
+    expect(background.callsOf('start')[0]).toMatchObject({ title: 'Run', text: 'Run 2' });
+    expect(player.played[0]).toMatchObject({ cue: { type: 'say', text: 'Run 2' }, at: T0, phase: 1 });
+    expect(controller.getState()).toMatchObject({ status: 'running', index: 1, phaseElapsedMs: 10_000 });
+    expect(parseRecord(store.getSync(RECORD_KEY))).toMatchObject({ index: 1, phaseStartAt: T0 - 10_000 });
+
+    scheduler.advance(50_500);
+    expect(controller.getState()?.status).toBe('done');
+  });
+
+  it('C8: a paused recovery shows the paused label in the notification', async () => {
+    const { controller, background } = setup();
+    await controller.resumeInterrupted({
+      definition: definition('Run', [60]),
+      index: 0,
+      phaseElapsedMs: 5_000,
+      paused: true,
+    });
+    expect(controller.getState()?.status).toBe('paused');
+    expect(background.callsOf('start')[0]).toMatchObject({ text: 'Paused · Run 1' });
+  });
+
+  it('C8: resumeInterrupted rejects a definition whose mode is unknown', async () => {
+    const { controller, background } = setup();
+    await expect(
+      controller.resumeInterrupted({
+        definition: { ...definition('Run', [60]), modeId: 'gone' },
+        index: 0,
+        phaseElapsedMs: 0,
+        paused: false,
+      }),
+    ).rejects.toThrow('unknown mode');
+    expect(background.calls).toEqual([]);
+  });
+
+  it('C8: discardInterrupted clears the record', async () => {
+    const { controller, store } = setup();
+    store.data.set(RECORD_KEY, JSON.stringify(toRecord(definition('Run', [60]), snapshotAt(0, 0), T0)));
+    await controller.discardInterrupted();
+    expect(store.getSync(RECORD_KEY)).toBeNull();
+  });
+});
+
+function snapshotAt(index: number, phaseElapsedMs: number) {
+  return {
+    status: 'running' as const,
+    index,
+    phase: undefined,
+    phaseElapsedMs,
+    phaseRemainingMs: null,
+    totalElapsedMs: 0,
+  };
+}
