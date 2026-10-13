@@ -105,6 +105,7 @@ src/
 │   ├── validate.ts (+ .test.ts)
 │   ├── record.ts (+ .test.ts)   # serialise + assessRecord (pure)
 │   ├── controller.ts (+ .test.ts)
+│   ├── useKeepScreenOn.ts (+ .test.ts)
 │   └── useSession.ts
 ├── audio/
 │   ├── types.ts                 # CuePlayer
@@ -119,8 +120,10 @@ src/
 │   └── kv.ts                    # KeyValueStore over expo-sqlite/kv-store
 ├── modes/
 │   ├── types.ts, registry.ts
-│   └── sample.ts (+ .test.ts)   # sample mode: definition + cues
-├── components/                  # SessionView, Controls, ResumePrompt, LaunchCheck (+ RNTL tests)
+│   └── sample.ts (+ .test.ts)   # sample mode: definition + cues, 60-minute soak
+├── format/
+│   └── clock.ts (+ .test.ts)    # m:ss, spoken durations, time of day
+├── components/                  # SessionView, Controls, BatteryLink, ResumePrompt, LaunchCheck (+ RNTL tests)
 └── test-utils/                  # FakeClock, FakeScheduler, fake ports
 plugins/withBackgroundActions.js # foreground service type (config plugin)
 scripts/

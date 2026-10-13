@@ -80,7 +80,7 @@ export class Engine {
 | E13 | Clock going backwards does not move progress backwards | Edge cases |
 | E14 | `completion(at)` is called once, with `at` = exact end time, also when reached by skipping | FR-003 |
 | E15 | Snapshots are emitted at least every 250 ms while running | FR-012 |
-| E16 | `startAt` resumes at the given index/elapsed and marks that phase's start cue | FR-024 |
+| E16 | `startAt` resumes at the given index/elapsed and offers that phase's current second once with `isPhaseStart: true`, due now (when paused: on resume, unless skip/back moved to another phase first); later seconds keep the recovered phase's grid | FR-024 |
 
 ## Modes
 

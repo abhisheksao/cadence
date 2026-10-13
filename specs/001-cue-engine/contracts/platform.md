@@ -58,9 +58,18 @@ export class SessionController {
   pause(): void; resume(): void; skip(): void; back(): void; stop(): void;
   /** On launch: read and assess the record (FR-024/025). */
   checkForInterrupted(): RecoveryResult;          // 'none' | resume offer | interrupted note
-  subscribe(fn: (s: SessionSnapshot) => void): () => void;
+  /** Clear the record: Discard on a resume offer, OK on an interrupted note. */
+  discardInterrupted(): Promise<void>;
+  getState(): SessionState | null;
+  subscribe(fn: (s: SessionState | null) => void): () => void;
 }
-export function useSession(): { snapshot: SessionSnapshot | null; controller: SessionController };
+/** The engine snapshot plus what screens need from the session. */
+export type SessionState = SessionSnapshot & {
+  title: string;
+  definition: SessionDefinition;  // e.g. keepScreenOn for useKeepScreenOn (FR-021a)
+  backgroundWarning: boolean;     // C7
+};
+export function useSession(): { state: SessionState | null; controller: SessionController };
 ```
 
 Controller guarantees (unit tests with all fakes):
@@ -69,9 +78,9 @@ Controller guarantees (unit tests with all fakes):
 |---|---|---|
 | C1 | `start` validates, calls `background.prepare()` then `start()`, then the engine | FR-013/016/017 |
 | C2 | Engine cues go to `player.play(cue, at)`; cancels go to `player.silence()` | FR-010 |
-| C3 | Phase change / pause / resume update the notification text; nothing else does. If the user dismisses the notification (Android 14+), the session continues and the next update re-posts it | FR-013 |
+| C3 | Phase change / pause / resume update the notification text; nothing else does. The first phase's title goes out with `background.start()`. A phase change while paused keeps the label (`Paused · <phase>`). If the user dismisses the notification (Android 14+), the session continues and the next update re-posts it | FR-013 |
 | C4 | Record written on every control event and phase change, refreshed every 60 s, cleared on done/stop | FR-023 |
 | C5 | Background stays up ≥ 4 s after `done` so the completion cue plays | FR-014 |
 | C6 | Starting a second session stops the first | FR-011 |
 | C7 | If `background.start` returns false, the session still runs and a warning is exposed | Edge cases |
-| C8 | `resumeInterrupted` restores service, notification, cues; the landing phase's start cue plays | FR-024 |
+| C8 | `resumeInterrupted` restores service, notification, cues; the landing phase's start cue plays (for a session recovered paused: on resume). An unknown mode is rejected before the service starts | FR-024 |

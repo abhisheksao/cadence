@@ -163,3 +163,26 @@ reference device, is used as evidence where noted ("prior implementation").
   `interrupted(reason)`, or `none` (FR-024/025). Unit-tested on a fake clock.
 - **Rationale**: Recovery math is pure and testable; the plain-data definition also serves spec
   007 (sharing) and makes modes 002–004 easier to test.
+
+## Implementation notes (spec review, T091)
+
+Places where the build differs from the plan above, or where the plan left a detail open:
+
+- **Battery link on iOS**: `BatteryLink` checks `Platform.OS` instead of using a `BatteryLink.ios.tsx`
+  split. jest-expo resolves `.ios` files by default, so a split file would hide the Android
+  component from its tests.
+- **Background host**: `createBackgroundHost(store)` builds the Android host, so tests can pass a
+  `MemoryStore` for the "asked" flag. The flag is set even if the exemption dialog cannot be shown,
+  so the user is asked at most once. The link on the home screen can still open it.
+- **Recovery prompt**: shown in a modal over the stack. Android back closes a resume offer but keeps
+  the record, so the next launch asks again. On an interrupted note, back works like OK.
+- **Soak session**: `soakDefinition()` repeats the sample's three timed phases 80 times (45 s each,
+  exactly 60 min) with `keepScreenOn: false`, because D10 runs with the screen off.
+- **Jest and `.mjs`**: `scripts/**/*.test.mjs` runs through `babel-jest` with Expo's Babel preset
+  (`expo/internal/babel-preset`). The CLI entry point in `timing-report.mjs` checks
+  `process.argv[1]` instead of `import.meta`, which Babel's CommonJS output does not support.
+- **Router tests**: `renderRouter` from `expo-router/testing-library` returns a promise (RNTL 14)
+  that also has `getPathname()`. The `toHavePathname` matcher on `screen` does not work with
+  RNTL 14.
+- **Transform allow-list**: `standard-navigation` (used by expo-router 57) ships ESM and is added
+  to `transformIgnorePatterns`.

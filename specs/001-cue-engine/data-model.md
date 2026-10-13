@@ -122,6 +122,10 @@ Saved copy of a running/paused session (FR-023). Stored as JSON under `session-r
    untimed phase (it waits). Passing the end of the last phase → `interrupted('finished')`.
    Otherwise → `resume` at the computed index and elapsed.
 
+The interrupted note's time is `writtenAt`, the last moment the session was known to be alive. A
+paused record is not refreshed, so a session paused for more than 60 minutes before the kill is
+`stale`. `parseRecord` also rejects a record whose `index` is outside the definition's phases.
+
 ## Flags
 
 | Key | Type | Purpose |

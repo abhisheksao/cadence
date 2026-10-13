@@ -248,7 +248,7 @@ device, D1 passes.
 - [ ] T088 On device: run quickstart D10 three times (60-minute soak, screen off) and capture the timing log; run `npm run timing-report cues.log`; check `adb logcat -b events` for `am_kill` of the app. Record the SC-001/SC-002/SC-003 results in the PR description
 - [x] T089 [P] Update README.md: what spec 001 delivers, how to run tests (`npm run check`), how to build locally, and a link to specs/001-cue-engine/quickstart.md
 - [x] T090 [P] Add docs/adr/0001-wall-clock-timing.md (research R1) and docs/adr/0002-speech-ducking-silent-clip.md (research R3)
-- [ ] T091 Review the spec against what was built; update spec.md, plan.md, or research.md where the implementation diverged (Principle IX)
+- [x] T091 Review the spec against what was built; update spec.md, plan.md, or research.md where the implementation diverged (Principle IX)
 - [ ] T092 Run `npm run check`, `npx expo-doctor`, and a release build (`npx expo prebuild -p android && (cd android && ./gradlew assembleRelease)`); check the merged release manifest's permissions match research R5 (plus Expo's defaults, each noted) and that `npm ls` shows no analytics or crash-reporting packages (FR-022); all must pass before opening the PR to `develop`
 
 ---
