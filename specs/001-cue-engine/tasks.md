@@ -57,23 +57,23 @@ its own.
 
 ### Tests first
 
-- [ ] T013 [P] Write src/test-utils/fakeClock.test.ts: `FakeClock.now()` returns the set time; `advance(ms)` moves it; `FakeScheduler.every(100, fn)` + `scheduler.advance(clock, 1000)` calls `fn` 10 times in order with the clock advanced before each call; `jitter` option delays individual calls by a seeded random 0–300 ms; cancel stops calls; `suspend(clock, ms)` moves the clock without running callbacks (simulates the OS suspending the app)
-- [ ] T014 [P] Write src/session/validate.test.ts: `validateDefinition` returns no errors for a valid definition; returns an error each for empty `phases`, blank `title`, `durationSec` 0, negative, or non-integer, and an unknown `modeId` (data-model "SessionDefinition")
-- [ ] T015 [P] Write src/modes/registry.test.ts: `registerMode` then `getMode(id)` returns it; unknown id returns undefined; registering the same id twice throws (`createModeRegistry()` so tests stay isolated)
-- [ ] T016 [P] Write src/storage/kv.test.ts with a jest mock of `expo-sqlite/kv-store`: `getSync` returns the stored value or null; `set` and `remove` call `setItem` and `removeItem`
+- [X] T013 [P] Write src/test-utils/fakeClock.test.ts: `FakeClock.now()` returns the set time; `advance(ms)` moves it; `FakeScheduler.every(100, fn)` + `scheduler.advance(clock, 1000)` calls `fn` 10 times in order with the clock advanced before each call; `jitter` option delays individual calls by a seeded random 0–300 ms; cancel stops calls; `suspend(clock, ms)` moves the clock without running callbacks (simulates the OS suspending the app)
+- [X] T014 [P] Write src/session/validate.test.ts: `validateDefinition` returns no errors for a valid definition; returns an error each for empty `phases`, blank `title`, `durationSec` 0, negative, or non-integer, and an unknown `modeId` (data-model "SessionDefinition")
+- [X] T015 [P] Write src/modes/registry.test.ts: `registerMode` then `getMode(id)` returns it; unknown id returns undefined; registering the same id twice throws (`createModeRegistry()` so tests stay isolated)
+- [X] T016 [P] Write src/storage/kv.test.ts with a jest mock of `expo-sqlite/kv-store`: `getSync` returns the stored value or null; `set` and `remove` call `setItem` and `removeItem`
 
 ### Implementation
 
-- [ ] T017 Create src/engine/clock.ts with the `Clock` and `Scheduler` interfaces and `systemClock` (`Date.now()`) and `systemScheduler` (`setInterval`) per contracts/engine.md
-- [ ] T018 Create src/engine/types.ts with `Phase`, `CueOpportunity`, `Cue`, `CueHandler`, `EngineEvents`, `Status`, `SessionSnapshot` per contracts/engine.md and data-model.md
-- [ ] T019 Implement src/test-utils/fakeClock.ts (`FakeClock`, `FakeScheduler`) to pass T013
-- [ ] T020 Create src/session/types.ts with `SessionDefinition<S>`, `SessionRecord`, `ResumeAssessment`, `RecoveryResult` per data-model.md
-- [ ] T021 Create src/modes/types.ts (`ModeDefinition`) and implement src/modes/registry.ts to pass T015
-- [ ] T022 Implement src/session/validate.ts to pass T014
-- [ ] T023 [P] Create the port interfaces: src/audio/types.ts (`CuePlayer`), src/platform/background.ts (`BackgroundHost`), src/storage/types.ts (`KeyValueStore`) per contracts/platform.md
-- [ ] T024 [P] Create test doubles in src/test-utils/fakes.ts: `FakeCuePlayer` (records `play(cue, at)` and `silence()` calls), `FakeBackgroundHost` (records calls; `start` result configurable), `MemoryStore` (in-memory `KeyValueStore`)
-- [ ] T025 Implement src/storage/kv.ts: `KeyValueStore` over `expo-sqlite/kv-store` (`getItemSync`, `setItem`, `removeItem`) to pass T016 (research R7)
-- [ ] T026 Create a minimal src/app/_layout.tsx (Expo Router `Stack`, dark/light background from the system scheme) and a placeholder src/app/index.tsx so the app launches
+- [X] T017 Create src/engine/clock.ts with the `Clock` and `Scheduler` interfaces and `systemClock` (`Date.now()`) and `systemScheduler` (`setInterval`) per contracts/engine.md
+- [X] T018 Create src/engine/types.ts with `Phase`, `CueOpportunity`, `Cue`, `CueHandler`, `EngineEvents`, `Status`, `SessionSnapshot` per contracts/engine.md and data-model.md
+- [X] T019 Implement src/test-utils/fakeClock.ts (`FakeClock`, `FakeScheduler`) to pass T013
+- [X] T020 Create src/session/types.ts with `SessionDefinition<S>`, `SessionRecord`, `ResumeAssessment`, `RecoveryResult` per data-model.md
+- [X] T021 Create src/modes/types.ts (`ModeDefinition`) and implement src/modes/registry.ts to pass T015
+- [X] T022 Implement src/session/validate.ts to pass T014
+- [X] T023 [P] Create the port interfaces: src/audio/types.ts (`CuePlayer`), src/platform/background.ts (`BackgroundHost`), src/storage/types.ts (`KeyValueStore`) per contracts/platform.md
+- [X] T024 [P] Create test doubles in src/test-utils/fakes.ts: `FakeCuePlayer` (records `play(cue, at)` and `silence()` calls), `FakeBackgroundHost` (records calls; `start` result configurable), `MemoryStore` (in-memory `KeyValueStore`)
+- [X] T025 Implement src/storage/kv.ts: `KeyValueStore` over `expo-sqlite/kv-store` (`getItemSync`, `setItem`, `removeItem`) to pass T016 (research R7)
+- [X] T026 Create a minimal src/app/_layout.tsx (Expo Router `Stack`, dark/light background from the system scheme) and a placeholder src/app/index.tsx so the app launches
 
 **Checkpoint**: foundation ready. `npm run check` is green; `npx expo start` shows a placeholder home.
 

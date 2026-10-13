@@ -20,37 +20,48 @@ describe('FakeClock', () => {
 describe('FakeScheduler', () => {
   it('calls an interval callback on schedule, advancing the clock before each call', () => {
     const clock = new FakeClock(0);
-    const scheduler = new FakeScheduler();
+    const scheduler = new FakeScheduler(clock);
     const seen: number[] = [];
     scheduler.every(100, () => seen.push(clock.now()));
 
-    scheduler.advance(clock, 1_000);
+    scheduler.advance(1_000);
 
     expect(seen).toEqual([100, 200, 300, 400, 500, 600, 700, 800, 900, 1_000]);
     expect(clock.now()).toBe(1_000);
   });
 
+  it('schedules from the clock time when every() is called', () => {
+    const clock = new FakeClock(1_000_000);
+    const scheduler = new FakeScheduler(clock);
+    const seen: number[] = [];
+    scheduler.every(100, () => seen.push(clock.now()));
+
+    scheduler.advance(300);
+
+    expect(seen).toEqual([1_000_100, 1_000_200, 1_000_300]);
+  });
+
   it('stops calling after cancel', () => {
     const clock = new FakeClock(0);
-    const scheduler = new FakeScheduler();
+    const scheduler = new FakeScheduler(clock);
     const fn = jest.fn();
     const cancel = scheduler.every(100, fn);
 
-    scheduler.advance(clock, 250);
+    scheduler.advance(250);
     cancel();
-    scheduler.advance(clock, 1_000);
+    scheduler.advance(1_000);
 
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
   it('runs callbacks from several intervals in time order', () => {
     const clock = new FakeClock(0);
-    const scheduler = new FakeScheduler();
+    const scheduler = new FakeScheduler(clock);
     const order: string[] = [];
     scheduler.every(300, () => order.push(`a@${clock.now()}`));
     scheduler.every(200, () => order.push(`b@${clock.now()}`));
 
-    scheduler.advance(clock, 600);
+    scheduler.advance(600);
 
     expect(order).toEqual(['b@200', 'a@300', 'b@400', 'a@600', 'b@600']);
   });
@@ -58,10 +69,10 @@ describe('FakeScheduler', () => {
   it('delays calls by a seeded random jitter, keeping the nominal schedule and order', () => {
     const run = (seed: number) => {
       const clock = new FakeClock(0);
-      const scheduler = new FakeScheduler({ jitterMs: 300, seed });
+      const scheduler = new FakeScheduler(clock, { jitterMs: 300, seed });
       const seen: number[] = [];
       scheduler.every(100, () => seen.push(clock.now()));
-      scheduler.advance(clock, 2_000);
+      scheduler.advance(2_000);
       return seen;
     };
 
@@ -78,15 +89,15 @@ describe('FakeScheduler', () => {
 
   it('can skip time without running callbacks, to simulate the app being suspended', () => {
     const clock = new FakeClock(0);
-    const scheduler = new FakeScheduler();
+    const scheduler = new FakeScheduler(clock);
     const fn = jest.fn();
     scheduler.every(100, fn);
 
-    scheduler.suspend(clock, 25_000);
+    scheduler.suspend(25_000);
 
     expect(fn).not.toHaveBeenCalled();
     expect(clock.now()).toBe(25_000);
-    scheduler.advance(clock, 100);
+    scheduler.advance(100);
     expect(fn).toHaveBeenCalledTimes(1);
   });
 });
