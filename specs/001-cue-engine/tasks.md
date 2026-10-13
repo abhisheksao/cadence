@@ -243,8 +243,8 @@ device, D1 passes.
 
 **Purpose**: Timing measurement, long-run validation, docs, and final gates.
 
-- [ ] T086 [P] Write scripts/timing-report.test.mjs (run by Jest via `testMatch` including `scripts/**/*.test.mjs`) with fixtures in scripts/__fixtures__/: parses CADENCE_CUE lines and ignores other lines; computes p50/p95 of |err| per type; computes first-5 vs last-5-minute p95; returns failure when beeps p95 > 150, speech p95 > 300, or drift > 50 ms
-- [ ] T087 Implement scripts/timing-report.mjs (pure `analyse(lines)` + CLI with `--no-fail`) to pass T086
+- [x] T086 [P] Write scripts/timing-report.test.mjs (run by Jest via `testMatch` including `scripts/**/*.test.mjs`) with fixtures in scripts/__fixtures__/: parses CADENCE_CUE lines and ignores other lines; computes p50/p95 of |err| per type; computes first-5 vs last-5-minute p95; returns failure when beeps p95 > 150, speech p95 > 300, or drift > 50 ms
+- [x] T087 Implement scripts/timing-report.mjs (pure `analyse(lines)` + CLI with `--no-fail`) to pass T086
 - [ ] T088 On device: run quickstart D10 three times (60-minute soak, screen off) and capture the timing log; run `npm run timing-report cues.log`; check `adb logcat -b events` for `am_kill` of the app. Record the SC-001/SC-002/SC-003 results in the PR description
 - [ ] T089 [P] Update README.md: what spec 001 delivers, how to run tests (`npm run check`), how to build locally, and a link to specs/001-cue-engine/quickstart.md
 - [ ] T090 [P] Add docs/adr/0001-wall-clock-timing.md (research R1) and docs/adr/0002-speech-ducking-silent-clip.md (research R3)
