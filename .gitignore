@@ -50,3 +50,7 @@ GoogleService-Info.plist
 
 # Spec Kit: active feature pointer (per-checkout state)
 .specify/feature.json
+
+# test coverage and logs
+coverage/
+*.log
