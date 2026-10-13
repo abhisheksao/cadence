@@ -6,6 +6,7 @@ import { sampleDefinition } from '@/modes/sample';
 import { defaultRoutine } from '@/routine/defaults';
 import { useRoutine } from '@/routine/useRoutine';
 import type { SessionState } from '@/session/controller';
+import { useKeepScreenOn } from '@/session/useKeepScreenOn';
 import { useSession } from '@/session/useSession';
 
 import RoutineScreen from './RoutineScreen';
@@ -121,5 +122,52 @@ describe('Routine screen: Edit (FR-007)', () => {
     withSession({ ...routineState(0), definition: sampleDefinition(), title: 'Sample session' });
     await render(<RoutineScreen />);
     expect(screen.getByRole('button', { name: 'Edit' })).toBeOnTheScreen();
+  });
+});
+
+describe('Routine screen: progress (US3)', () => {
+  it('lists the steps with their state and follows the current step', async () => {
+    withSession(routineState(2));
+    await render(<RoutineScreen />);
+    expect(screen.getByLabelText('Make the bed, untimed, done')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Stretch, 5:00, current')).toBeOnTheScreen();
+
+    withSession(routineState(3));
+    await screen.rerender(<RoutineScreen />);
+    expect(screen.getByLabelText('Stretch, 5:00, done')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Breathing, 3:00, current')).toBeOnTheScreen();
+  });
+
+  it('shows a large Done on an untimed step and a compact one on a timed step', async () => {
+    withSession(routineState(1));
+    await render(<RoutineScreen />);
+    expect(screen.getByTestId('done-large')).toBeOnTheScreen();
+
+    withSession(routineState(2));
+    await screen.rerender(<RoutineScreen />);
+    expect(screen.getByTestId('done-compact')).toBeOnTheScreen();
+  });
+
+  it.each([
+    ['done', 'All done'],
+    ['stopped', 'Stopped'],
+  ] as const)('after the routine is %s, says "%s" and offers Start again and Edit', async (status, text) => {
+    withSession(routineState(5, { status }));
+    await render(<RoutineScreen />);
+    expect(screen.getByText(text)).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Done' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Start again' }));
+    expect(controller.start).toHaveBeenCalledWith(definition);
+  });
+
+  it('keeps the screen on for a live routine only (FR-015)', async () => {
+    withSession(routineState(1, { status: 'paused' }));
+    await render(<RoutineScreen />);
+    expect(useKeepScreenOn).toHaveBeenLastCalledWith(definition, 'paused');
+
+    withSession({ ...routineState(0), definition: sampleDefinition(), title: 'Sample session' });
+    await screen.rerender(<RoutineScreen />);
+    expect(useKeepScreenOn).toHaveBeenLastCalledWith(undefined, undefined);
   });
 });

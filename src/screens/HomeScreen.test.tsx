@@ -1,6 +1,12 @@
 import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
+import { routineDefinition } from '@/modes/routine';
+import { sampleDefinition } from '@/modes/sample';
+import { defaultRoutine } from '@/routine/defaults';
+import type { SessionState } from '@/session/controller';
+import { useSession } from '@/session/useSession';
+
 import HomeScreen from './HomeScreen';
 
 jest.mock('@/components/BatteryLink', () => {
@@ -54,5 +60,44 @@ describe('Home screen (FR-019)', () => {
   it('shows the battery link', async () => {
     await renderRouter(routes);
     expect(screen.getByText('Battery link')).toBeOnTheScreen();
+  });
+
+  describe('"In progress" (FR-021)', () => {
+    const live = (definition: SessionState['definition'], status: SessionState['status']): SessionState => ({
+      status,
+      index: 0,
+      phase: definition.phases[0],
+      phaseElapsedMs: 0,
+      phaseRemainingMs: null,
+      totalElapsedMs: 0,
+      title: definition.title,
+      definition,
+      backgroundWarning: false,
+    });
+    const withState = (state: SessionState | null) =>
+      jest.mocked(useSession).mockReturnValue({
+        state,
+        controller: {} as ReturnType<typeof useSession>['controller'],
+      });
+    const routine = routineDefinition(defaultRoutine(() => 'x'));
+
+    afterEach(() => withState(null));
+
+    it.each(['running', 'paused'] as const)('shows on the routine tile while a routine is %s', async (status) => {
+      withState(live(routine, status));
+      await renderRouter(routes);
+      expect(screen.getByText('In progress')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: /^Morning routine, in progress/ })).toBeOnTheScreen();
+    });
+
+    it('does not show for a finished routine or another mode', async () => {
+      withState(live(routine, 'done'));
+      await renderRouter(routes);
+      expect(screen.queryByText('In progress')).toBeNull();
+
+      withState(live(sampleDefinition(), 'running'));
+      await renderRouter(routes);
+      expect(screen.queryByText('In progress')).toBeNull();
+    });
   });
 });
