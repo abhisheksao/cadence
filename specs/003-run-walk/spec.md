@@ -13,11 +13,25 @@
 Run / walk is the second mode on top of the spec 001 cue engine. It is for interval training such
 as couch-to-5K: the user runs for a while, walks for a while, and repeats, usually with a walk to
 warm up and cool down. The phone stays in a pocket with music playing, so every switch is cued by
-voice, with a spoken countdown so the user knows exactly when to change pace.
+voice, with a countdown so the user knows exactly when to change pace.
 
 Everything that makes cues reliable comes from spec 001 and is reused unchanged: timing with the
 screen off, ducking music, the controls, the notification, and recovery after the OS kills the
 app. This spec adds the workout settings, the presets, the run/walk cues, and the run/walk screen.
+
+## Clarifications
+
+### Session 2026-10-14
+
+- Q: How often should the "time left" cue speak during a phase? → A: Every 30 seconds, in every
+  phase (as before).
+- Q: How is the last stretch before a switch counted down? → A: "<Phase> ends in" at 5 seconds
+  left, then beeps on 3, 2, 1 with the higher final beep before a phase change (as in the routine),
+  instead of spoken numbers.
+- Q: Should the screen stay on during a workout? → A: A "Keep screen on" setting, off by default.
+- Q: How long is the get-ready phase? → A: 10 seconds, fixed.
+- Q: How are lengths and rounds set? → A: − / + step buttons only (15 s for run/walk, 1 round, 1
+  min for warm-up/cool-down); no typed entry.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -48,10 +62,10 @@ countdown lands on the switch, and the workout ends with the chime and sign-off.
    for 1 minute. Round 3 of 8."; on the final round it says "Run for 1 minute. Last round."
 5. **Given** a 90-second walk, **When** it starts, **Then** the app says "Walk for 1 minute 30
    seconds."
-6. **Given** any phase after get-ready, **When** 6 seconds remain, **Then** the app says "<Phase>
-   ends in" (e.g. "Run ends in"), and **When** 5, 4, 3, 2, and 1 seconds remain, **Then** it says
-   each number on its second, and the next phase is announced on time.
-7. **Given** the get-ready phase, **When** 5 to 1 seconds remain, **Then** the app counts down the
+6. **Given** any phase after get-ready, **When** 5 seconds remain, **Then** the app says "<Phase>
+   ends in" (e.g. "Run ends in"), and **When** 3, 2, and 1 seconds remain, **Then** it beeps, with
+   the higher final beep at 1 second, and the next phase is announced on time.
+7. **Given** the get-ready phase, **When** 3, 2, and 1 seconds remain, **Then** the app beeps the
    same way, without the "ends in" lead-in.
 8. **Given** a cool-down of 5 minutes, **When** it starts, **Then** the app says "Now cool down.
    Walk for 5 minutes."
@@ -110,7 +124,7 @@ notification at each phase change and while paused.
 **Acceptance Scenarios**:
 
 1. **Given** "Say time left" is on, **When** a phase has a multiple of 30 seconds remaining (and
-   more than 6 seconds), **Then** the app says the time left, e.g. "2 minutes left." or "30 seconds
+   more than 5 seconds), **Then** the app says the time left, e.g. "2 minutes left." or "30 seconds
    left.", except within the first 5 seconds of the phase.
 2. **Given** "Say halfway" is on and a run of 2 minutes or longer, **When** half the run has
    passed (rounded down to the second), **Then** the app says "Halfway."; if a time-left cue falls
@@ -123,7 +137,9 @@ notification at each phase change and while paused.
    length.
 5. **Given** a running workout, **Then** the notification reads the phase and, for runs and walks,
    the round (e.g. "Run · Round 3 of 8"), with "Paused · " in front while paused.
-6. **Given** the workout has finished or was stopped, **Then** the screen says "Complete" or
+6. **Given** "Keep screen on" is on, **When** a workout runs with the run/walk screen open, **Then**
+   the screen stays on past its timeout; **Given** it is off, **Then** the screen turns off as usual.
+7. **Given** the workout has finished or was stopped, **Then** the screen says "Complete" or
    "Stopped" with the total time and offers Start again, and the settings can be changed again.
 
 ---
@@ -151,8 +167,10 @@ notification at each phase change and while paused.
 - **Stored settings missing or unreadable** (first launch, or data from a future version): the
   defaults are used and saved.
 - **Values out of range in stored data**: each value is brought into its allowed range.
-- **Screen**: the screen is allowed to turn off as usual during a workout (spec 001 clarification:
-  off for run/walk), since the phone is normally in a pocket.
+- **Screen**: by default the screen turns off as usual during a workout, since the phone is
+  normally in a pocket. With "Keep screen on" turned on, it stays on while the run/walk screen is
+  open and a workout is running or paused. The setting is read when Start is tapped and is part of
+  the workout snapshot.
 
 ## Requirements *(mandatory)*
 
@@ -162,13 +180,15 @@ notification at each phase change and while paused.
 
 - **FR-001**: The app MUST keep one run/walk workout setting: run length and walk length (15
   seconds to 30 minutes each), rounds (1 to 30), warm-up and cool-down (0 to 30 minutes each, 0
-  meaning none), and three voice options: say the round, say halfway, say time left.
+  meaning none), three voice options (say the round, say halfway, say time left), and a "Keep screen
+  on" option.
 - **FR-002**: The defaults MUST be: warm-up 5 minutes, run 1 minute, walk 1 minute 30 seconds, 8
-  rounds, cool-down 5 minutes, all voice options on.
+  rounds, cool-down 5 minutes, all voice options on, keep screen on off.
 - **FR-003**: The app MUST offer four presets that set run, walk, and rounds: 1:00 / 1:30 ×8,
   1:30 / 2:00 ×6, 2:00 / 1:00 ×6, and 5:00 / 1:00 ×4. A preset MUST show as selected exactly when
   the current run, walk, and rounds match it.
-- **FR-004**: Run and walk lengths MUST be adjustable in 15-second steps, rounds in steps of 1, and
+- **FR-004**: Values MUST be changed with − / + step buttons only (no typed entry); a button MUST
+  be disabled at its limit. Run and walk lengths MUST be adjustable in 15-second steps, rounds in steps of 1, and
   warm-up and cool-down in 1-minute steps, each within its range.
 - **FR-005**: Every change MUST be saved on the device as it is made, with no separate save
   action, and MUST survive closing, force-stopping, and restarting the app. Missing or unreadable
@@ -194,27 +214,28 @@ notification at each phase change and while paused.
 
   Durations are spoken in minutes and seconds (e.g. "1 minute 30 seconds").
 - **FR-010**: In every phase except get-ready, the app MUST say "<Phase> ends in" (Warm up, Run,
-  Walk, or Cool down) when 6 seconds remain, then say "5", "4", "3", "2", "1" on those seconds. In
-  get-ready it MUST say only the numbers. Each number MUST cut off any speech still playing so the
-  countdown never falls behind.
+  Walk, or Cool down) when 5 seconds remain, then beep when 3, 2, and 1 seconds remain. In
+  get-ready it MUST only beep. Before a phase change the beep at 1 second MUST be the higher final
+  beep; on the last phase all three are normal beeps and the completion chime follows.
 - **FR-011**: If "say time left" is on, the app MUST say "<duration> left." when the remaining time
-  in a phase is a multiple of 30 seconds and more than 6 seconds, except within the first 5 seconds
+  in a phase is a multiple of 30 seconds and more than 5 seconds, except within the first 5 seconds
   of the phase and in get-ready.
 - **FR-012**: If "say halfway" is on, for runs of 2 minutes or longer the app MUST say "Halfway."
   when half the run has passed (rounded down to the second). If a time-left cue is due on the same
   second, the app MUST say both as one phrase: "Halfway. <duration> left."
 - **FR-013**: When the last phase ends, the app MUST play the completion chime followed by "Workout
   complete. Great job."
-- **FR-014**: The screen MUST NOT be kept on by the run/walk mode (spec 001 FR-021a, per-mode
-  choice: off).
+- **FR-014**: If "Keep screen on" is on, the screen MUST stay on while the run/walk screen is open
+  and a run/walk session is running or paused (spec 001 FR-021a); if it is off (the default), the
+  run/walk mode MUST NOT keep the screen on.
 - **FR-015**: The workout session MUST be fully described by its plain data (phases and voice
   options, mode "run-walk"), so that spec 001 recovery rebuilds the same cues after an OS kill.
 
 **Run/walk screen**
 
 - **FR-016**: When no run/walk session is running or paused, the run/walk screen MUST show the
-  presets, the interval settings, the warm-up and cool-down, the voice options, the total time, and
-  Start.
+  presets, the interval settings, the warm-up and cool-down, the voice options, "Keep screen on",
+  the total time, and Start.
 - **FR-017**: While running or paused, the run/walk screen MUST show the phase name in large text
   (run and walk in clearly different colours), the round for runs and walks, the time remaining,
   total elapsed and total workout time, a paused label when paused, the next phase with its length
@@ -232,7 +253,7 @@ notification at each phase change and while paused.
 ### Key Entities
 
 - **Run/walk settings**: the user's single workout setting: run and walk lengths, rounds, warm-up,
-  cool-down, and the three voice options. Stored on the device; versioned so later changes can
+  cool-down, the three voice options, and "Keep screen on". Stored on the device; versioned so later changes can
   migrate it.
 - **Preset**: a named run length, walk length, and round count. Fixed in the app; not editable.
 - **Workout session**: a spec 001 session built from a snapshot of the settings when Start is
@@ -244,10 +265,10 @@ notification at each phase change and while paused.
 ### Measurable Outcomes
 
 - **SC-001**: From the home screen, the user starts a workout in 2 taps (Run / walk, Start).
-- **SC-002**: Every announcement and countdown number plays on its due second with the accuracy of
+- **SC-002**: Every announcement and countdown beep plays on its due second with the accuracy of
   spec 001 SC-001, with the screen off and music playing, across a full run of the default
   workout (about 29 minutes).
-- **SC-003**: The spoken "1" of each countdown is followed by the next phase's announcement within
+- **SC-003**: The final beep of each countdown is followed by the next phase's announcement within
   the accuracy of spec 001 SC-001, so the user hears the switch exactly when the countdown ends.
 - **SC-004**: Switching to a preset and changing one value takes under 15 seconds.
 - **SC-005**: In 100% of trials, settings are present after a force-stop and relaunch.
@@ -259,15 +280,16 @@ notification at each phase change and while paused.
 - One workout setting per user. Saved custom plans, multi-week programs (e.g. couch-to-5K
   schedules), GPS distance and pace, and history are out of scope (roadmap: later).
 - Cue wording is English only, like specs 001 and 002.
-- The countdown is spoken ("5, 4, 3, 2, 1") rather than beeped, because spoken numbers are easier
-  to hear over music while running; this follows the prior implementation, where it worked well.
-- The 10-second get-ready gives time to lock the phone and put it away. The prior implementation
-  used 6 seconds, which proved short.
+- The countdown is "<Phase> ends in" followed by beeps on 3, 2, 1, the same beeps as the morning
+  routine, so the two modes sound alike (clarified; the prior implementation spoke the numbers).
+- The get-ready phase is a fixed 10 seconds (clarified), enough to lock the phone and put it away.
+  The prior implementation used 6 seconds, which proved short.
 - Time left every 30 seconds and halfway on runs of 2 minutes or more follow the prior
   implementation, where they kept long phases from going quiet; both can be turned off.
 - Folding the last walk into the cool-down follows the prior implementation: a walk followed by a
   walk is just a longer walk.
-- Values are changed with step buttons (15 s, 1 round, 1 min) rather than free text entry, which
+- Values are changed with − / + step buttons only (15 s, 1 round, 1 min; clarified) rather than
+  typed entry, which
   suits use with sweaty hands and is simple to test.
 - The ranges (15 s to 30 min per interval, 1 to 30 rounds, up to 30 min warm-up and cool-down) cover
   common walk/run plans with room to spare.
