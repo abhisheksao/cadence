@@ -13,3 +13,7 @@ export interface BackgroundHost {
   /** Open the battery-optimisation request, or its settings screen. */
   requestBatteryExemption(): Promise<void>;
 }
+
+// Metro loads background.android.ts or background.ios.ts instead of this file. This export is for
+// the type checker and other platforms (web), which get the no-op iOS placeholder.
+export { backgroundHost } from './background.ios';

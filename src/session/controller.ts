@@ -1,0 +1,138 @@
+import type { CuePlayer } from '@/audio/types';
+import type { Clock, Scheduler } from '@/engine/clock';
+import { Engine } from '@/engine/engine';
+import type { SessionSnapshot } from '@/engine/types';
+import type { ModeRegistry } from '@/modes/types';
+import type { BackgroundHost } from '@/platform/background';
+import type { KeyValueStore } from '@/storage/types';
+
+import type { SessionDefinition } from './types';
+import { validateDefinition } from './validate';
+
+/** Keep the service up this long after the end so the completion cue finishes (FR-014). */
+const WIND_DOWN_MS = 4_000;
+
+/** What screens show: the engine snapshot plus session-level details. */
+export type SessionState = SessionSnapshot & {
+  title: string;
+  /** True if the OS refused the background service (cues may stop with the screen off). */
+  backgroundWarning: boolean;
+};
+
+export type ControllerDeps = {
+  clock: Clock;
+  scheduler: Scheduler;
+  player: CuePlayer;
+  background: BackgroundHost;
+  store: KeyValueStore;
+  modes: ModeRegistry;
+};
+
+type Active = {
+  engine: Engine;
+  definition: SessionDefinition;
+  backgroundWarning: boolean;
+  /** Ends the background service's task. */
+  release: () => void;
+  cancelWindDown: (() => void) | null;
+  unsubscribe: () => void;
+};
+
+/**
+ * Runs one session at a time: validates it, starts the background service, wires the engine's
+ * cues to the player, and winds the service down afterwards (contracts/platform.md).
+ */
+export class SessionController {
+  private active: Active | null = null;
+  private state: SessionState | null = null;
+  private readonly listeners = new Set<(s: SessionState | null) => void>();
+
+  constructor(private readonly deps: ControllerDeps) {}
+
+  getState() {
+    return this.state;
+  }
+
+  subscribe(fn: (s: SessionState | null) => void) {
+    this.listeners.add(fn);
+    return () => {
+      this.listeners.delete(fn);
+    };
+  }
+
+  async start(definition: SessionDefinition) {
+    const { modes, player, background, clock, scheduler } = this.deps;
+    const errors = validateDefinition(definition, (id) => modes.has(id));
+    if (errors.length > 0) throw new Error(`Invalid session: ${errors.join('; ')}`);
+    const mode = modes.get(definition.modeId);
+    if (!mode) throw new Error(`Invalid session: modeId: unknown mode "${definition.modeId}"`);
+
+    this.replaceActive();
+    await player.init();
+    await background.prepare();
+
+    let release = () => {};
+    const keepAliveUntil = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const engine = new Engine(
+      definition.phases,
+      mode.cueFor(definition),
+      {
+        onCue: (cue, at, phase) => player.play(cue, at, phase),
+        onCancelPending: () => player.silence(),
+        onStatusChange: (status) => {
+          if (status === 'done') this.windDown(engine);
+        },
+      },
+      { clock, scheduler },
+    );
+    const started = await background.start({
+      title: definition.title,
+      text: definition.phases[0].title,
+      keepAliveUntil,
+    });
+
+    const active: Active = {
+      engine,
+      definition,
+      backgroundWarning: !started,
+      release,
+      cancelWindDown: null,
+      unsubscribe: () => {},
+    };
+    this.active = active;
+    active.unsubscribe = engine.subscribe((snapshot) => this.publish(active, snapshot));
+    engine.start();
+  }
+
+  /** Stops the current session (if any) without stopping the service: a new one replaces it. */
+  private replaceActive() {
+    const previous = this.active;
+    if (!previous) return;
+    this.active = null;
+    previous.unsubscribe();
+    previous.cancelWindDown?.();
+    previous.engine.stop();
+    this.deps.player.silence();
+    previous.release();
+  }
+
+  private windDown(engine: Engine) {
+    const active = this.active;
+    if (!active || active.engine !== engine) return;
+    const cancel = this.deps.scheduler.every(WIND_DOWN_MS, () => {
+      cancel();
+      active.cancelWindDown = null;
+      active.release();
+      if (this.active === active) void this.deps.background.stop();
+    });
+    active.cancelWindDown = cancel;
+  }
+
+  private publish(active: Active, snapshot: SessionSnapshot) {
+    if (this.active !== active) return;
+    this.state = { ...snapshot, title: active.definition.title, backgroundWarning: active.backgroundWarning };
+    this.listeners.forEach((fn) => fn(this.state));
+  }
+}

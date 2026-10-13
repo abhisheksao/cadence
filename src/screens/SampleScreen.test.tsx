@@ -32,16 +32,16 @@ const running: SessionState = {
 describe('Sample screen', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('starts the sample session', () => {
+  it('starts the sample session', async () => {
     withState(null);
-    render(<SampleScreen />);
-    fireEvent.press(screen.getByRole('button', { name: 'Start sample' }));
+    await render(<SampleScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Start sample' }));
     expect(controller.start).toHaveBeenCalledWith(sampleDefinition());
   });
 
-  it('shows the current phase and status', () => {
+  it('shows the current phase and status', async () => {
     withState(running);
-    render(<SampleScreen />);
+    await render(<SampleScreen />);
     expect(screen.getByText('Interval')).toBeOnTheScreen();
     expect(screen.getByText('Running')).toBeOnTheScreen();
   });

@@ -39,8 +39,8 @@ export interface CueHandler {
 export type Status = 'idle' | 'running' | 'paused' | 'done' | 'stopped';
 
 export type EngineEvents = {
-  /** A cue is due at `at` (possibly up to 1 s ahead). */
-  onCue(cue: Cue, at: number): void;
+  /** A cue is due at `at` (up to 1 s ahead; includes the cue's offsetMs). `phase` is its index. */
+  onCue(cue: Cue, at: number, phase: number): void;
   onPhaseChange?(phase: Phase, index: number): void;
   onStatusChange?(status: Status): void;
   /** Cues already handed out must be cancelled (pause, skip, back, stop). */
