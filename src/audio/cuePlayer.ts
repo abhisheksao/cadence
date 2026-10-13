@@ -11,11 +11,22 @@ type SoundCue = 'beep' | 'beepLast' | 'chime';
 
 /** Below this, a timer isn't worth it: play now. */
 const MIN_DELAY_MS = 5;
+/** Keep ducking this long after a phrase, so phrases close together share one dip. */
+const HOLD_AFTER_SPEECH_MS = 1_000;
+/**
+ * Stop waiting for focus to come back after this long. A call hands focus back when it ends; a
+ * music app the user started takes it for good, and we must not stay silent for the session.
+ */
+const FOCUS_LOST_GIVE_UP_MS = 15_000;
 
 /**
  * Plays cues on time with expo-audio (sounds) and expo-speech (phrases). Cues arrive up to 1 s
  * early with the moment they are due; each is started early by its output latency so it is
  * heard on the second (research R4).
+ *
+ * Other apps' audio is ducked, never paused (Principle II): expo-audio requests ducking focus
+ * while a sound plays. Speech requests no focus on Android, so a looping silent clip is played
+ * while speaking to hold it (research R3).
  */
 export function createCuePlayer({ log = (line: string) => console.info(line) } = {}): CuePlayer {
   const sounds = new Map<SoundCue, AudioPlayer>();
@@ -28,6 +39,49 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
   let queued = 0;
   /** Bumped when speech is flushed, so callbacks from flushed utterances are ignored. */
   let generation = 0;
+  /** The looping silent clip that holds ducking focus during speech. */
+  let hold: AudioPlayer | null = null;
+  let holdWanted = false;
+  let holdRelease: ReturnType<typeof setTimeout> | null = null;
+  /** Another app (e.g. a phone call) took focus while we held it; skip speech until it returns. */
+  let focusLost = false;
+  let focusLostAt = 0;
+
+  function acquireHold() {
+    if (holdRelease) clearTimeout(holdRelease);
+    holdRelease = null;
+    if (holdWanted) return;
+    holdWanted = true;
+    hold?.play();
+  }
+
+  function releaseHold() {
+    if (holdRelease) clearTimeout(holdRelease);
+    holdRelease = null;
+    holdWanted = false;
+    hold?.pause();
+  }
+
+  function releaseHoldSoon() {
+    if (holdRelease) clearTimeout(holdRelease);
+    holdRelease = setTimeout(releaseHold, HOLD_AFTER_SPEECH_MS);
+  }
+
+  /** expo-audio pauses its players when another app takes focus and resumes them after. */
+  function onHoldStatus(playing: boolean) {
+    if (!playing && holdWanted && !focusLost) {
+      focusLost = true;
+      focusLostAt = Date.now();
+      holdWanted = false;
+      Speech.stop();
+      queued = 0;
+      generation += 1;
+    } else if (playing && !holdWanted) {
+      // Resumed by expo-audio on regaining focus (or a stray event): we don't want it playing.
+      focusLost = false;
+      hold?.pause();
+    }
+  }
 
   function schedule(at: number, latencyMs: number, fn: () => void) {
     const delay = startDelay(at, Date.now(), latencyMs);
@@ -48,6 +102,8 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
   }
 
   function speak(text: string, interrupt: boolean, planned: number, phase: number) {
+    if (focusLost && Date.now() - focusLostAt < FOCUS_LOST_GIVE_UP_MS) return; // not replayed later
+    focusLost = false;
     if (interrupt) {
       Speech.stop();
       queued = 0;
@@ -57,9 +113,12 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
     const sentAt = Date.now();
     const gen = generation;
     const settle = () => {
-      if (gen === generation) queued = Math.max(0, queued - 1);
+      if (gen !== generation) return;
+      queued = Math.max(0, queued - 1);
+      if (queued === 0) releaseHoldSoon();
     };
     queued += 1;
+    acquireHold();
     Speech.speak(text, {
       language: 'en-US',
       rate: 1.05,
@@ -77,7 +136,11 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
   return {
     init() {
       ready ??= (async () => {
-        await setAudioModeAsync({ shouldPlayInBackground: true, playsInSilentMode: true });
+        await setAudioModeAsync({
+          interruptionMode: 'duckOthers',
+          shouldPlayInBackground: true,
+          playsInSilentMode: true,
+        });
         const sources: [SoundCue, number][] = [
           ['beep', require('../../assets/sounds/beep.wav')],
           ['beepLast', require('../../assets/sounds/beep-last.wav')],
@@ -93,6 +156,9 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
           });
           sounds.set(type, player);
         }
+        hold = createAudioPlayer(require('../../assets/sounds/silence.wav'));
+        hold.loop = true;
+        hold.addListener('playbackStatusUpdate', (status) => onHoldStatus(status.playing));
         // Binds the TTS engine up front so the first cue of a session isn't dropped.
         await Speech.getAvailableVoicesAsync().catch(() => []);
       })();
@@ -116,6 +182,7 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
       generation += 1;
       Speech.stop();
       sounds.forEach((player) => player.pause());
+      releaseHold();
     },
   };
 }

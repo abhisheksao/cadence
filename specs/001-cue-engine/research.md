@@ -58,7 +58,8 @@ reference device, is used as evidence where noted ("prior implementation").
   request is refused, so a refusal is invisible to JS. When another app takes focus, expo-audio
   pauses its players and resumes them itself on regaining focus. The cue player uses that: if the
   silent clip stops on its own mid-phrase, speech stops and is skipped until the clip resumes on
-  its own (call over), then the clip is paused again. **Known limitation**: a phrase that starts
+  its own (call over), then the clip is paused again. A music app the user starts takes focus for
+  good and never hands it back, so the player stops waiting after 15 s and speaks again. **Known limitation**: a phrase that starts
   while a call is already in progress cannot be detected and may be heard. Spec 006 requests
   focus natively and can check the result.
 - **Hold window**: the silent clip keeps playing for 1 s after a phrase, so phrases close together

@@ -152,7 +152,7 @@ D9 pass.
 
 ### Implementation for User Story 3
 
-- [ ] T053 [US3] Update src/audio/cuePlayer.ts to pass T052: set `interruptionMode: 'duckOthers'`, create a looping `silence.wav` player, and hold it during speech, and skip/stop speech when the hold player cannot play (research R3)
+- [X] T053 [US3] Update src/audio/cuePlayer.ts to pass T052: set `interruptionMode: 'duckOthers'`, create a looping `silence.wav` player, and hold it during speech, and skip/stop speech when the hold player cannot play (research R3)
 - [ ] T054 [US3] On device: run quickstart D4 (music dips for beeps and speech, returns, never pauses), D9 (silent/vibrate mode), and D11 (phone call). If the music pumps badly between close cues, tune the hold window in src/audio/cuePlayer.ts and note it in research.md R3
 
 **Checkpoint**: Cues and the user's music coexist.
