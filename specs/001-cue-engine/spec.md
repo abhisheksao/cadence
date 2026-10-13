@@ -144,7 +144,8 @@ check the notification text through a phase change, and tap it to return to the 
 
 1. **Given** a running session, **When** the user pulls down the notification shade, **Then** an
    ongoing notification shows the session title and the current phase title, updated on each
-   phase change, and it cannot be swiped away while the session runs.
+   phase change. If the user dismisses it (allowed on Android 14+), the session keeps running and
+   the notification comes back on the next phase change or pause.
 2. **Given** the session is paused, **When** the user views the notification, **Then** it says the
    session is paused, and the label goes away on resume.
 3. **Given** the session ends or is stopped, **When** it finishes, **Then** the notification is
@@ -261,7 +262,8 @@ session, and run it to completion.
 
 - **FR-013**: On Android, a running session MUST run in a foreground service with an ongoing
   notification showing the session title and current phase, with a paused label while paused.
-  It MUST be updated only on phase changes, pause, and resume (never every second), removed when
+  It MUST be updated only on phase changes, pause, and resume (never every second); if the user
+  dismisses it, the session MUST continue and the next update MUST re-post it. It MUST be removed when
   the session ends, and tapping it MUST open the app. A live countdown in the notification is
   deferred to spec 006.
 - **FR-014**: The background service MUST stay up long enough after the last phase for the

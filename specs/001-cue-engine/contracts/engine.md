@@ -71,7 +71,7 @@ export class Engine {
 | E4 | Timed phases end exactly `durationSec*1000` after they start, however late the tick | FR-006 |
 | E5 | 60 simulated minutes with jittered ticks: every `at` equals the planned offset exactly | SC-002 |
 | E6 | After a gap spanning phases, only the landing phase gets `isPhaseStart`; per-second cues > 2000 ms late are dropped | FR-007 |
-| E7 | Pause freezes elapsed; resume after N ms shifts all later `at` by N | US2 |
+| E7 | Pause freezes elapsed; resume after N ms shifts all later `at` by N; cues handed out early but due after the pause are handed out again on resume | US2 |
 | E8 | Pause/skip/back/stop call `onCancelPending` before anything else | FR-010 |
 | E9 | Skip starts the next phase at `sec 0`; skip in last phase → `done` + completion cue | US2 |
 | E10 | Back at > 3 s restarts the phase; at ≤ 3 s goes to previous; first phase restarts | US2 |

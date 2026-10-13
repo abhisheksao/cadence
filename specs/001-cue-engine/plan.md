@@ -59,7 +59,7 @@ has no React Native imports; no hand-edited `android/`/`ios/`
   `app.json`; `android/` and `ios/` stay git-ignored
 - [x] **VI. Local builds**: `expo run:android` and Gradle only (quickstart §2)
 - [x] **VII. Test-first**: every guarantee E1–E16 / C1–C8 and the pure helpers get a failing test
-  first; on-device checks D1–D10 are written as tasks before the code they verify
+  first; on-device checks D1–D11 are written as tasks before the code they verify
 - [x] **VIII. Quality gates**: strict TS; `npm run check` = lint + typecheck + tests; deps via
   `npx expo install`; ESLint config added in setup
 - [x] **IX. Traceability**: research R1 changed the clock decision (monotonic → wall clock with a
@@ -149,7 +149,7 @@ Ordered so each slice is test-first and leaves `npm run check` green:
 5. **Recovery** (clarification 1): `assessRecord` table tests, launch check, resume prompt.
 6. **Shell** (US5): home screen, sample mode, sample screen (short + 60-min soak), keep-awake,
    RNTL tests for what the user sees and taps.
-7. **Device validation**: quickstart D1–D10 and the timing report on the reference device.
+7. **Device validation**: quickstart D1–D11 and the timing report on the reference device.
 
 ## Risks
 

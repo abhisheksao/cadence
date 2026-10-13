@@ -41,7 +41,7 @@ Defined in `src/modes/sample.ts` (mode id `sample`, `keepScreenOn: true`):
 
 ## 3. On-device scenarios
 
-Each maps to a user story and is listed as an on-device task in `tasks.md` (Principle VII).
+Each maps to a user story or edge case and is listed as an on-device task in `tasks.md` (Principle VII).
 
 | # | Story | Steps | Expected |
 |---|---|---|---|
@@ -50,11 +50,12 @@ Each maps to a user story and is listed as an on-device task in `tasks.md` (Prin
 | D3 | US1 | Start the sample, lock the screen, pocket the phone | Every cue on its second, completion chime, notification disappears a few seconds later |
 | D4 | US3 | Play music in another app, run the sample | Music dips for each beep and phrase, never pauses |
 | D5 | US2 | Pause 10 s, resume, skip, back at 5 s, back at 1 s, stop | Matches the acceptance scenarios; audio silenced within 300 ms of each tap |
-| D6 | US4 | Pull down the shade during the sample, pause, resume | Title + phase; "Paused" label while paused; tap opens the app |
+| D6 | US4 | Pull down the shade during the sample, pause, resume; then swipe the notification away (Android 14+) | Title + phase; "Paused" label while paused; tap opens the app; after a swipe the session continues and the notification returns at the next phase |
 | D7 | Kill recovery | Start the sample, `adb shell am force-stop io.github.abhisheksao.cadence` during phase 3, reopen within a minute | Resume/Discard offered; Resume lands on the clock position (±1 s) and announces the phase (SC-008) |
 | D8 | Kill recovery | Repeat D7 but reopen after the session would have ended | "Session interrupted" note, no resume |
 | D9 | Edge | Silent/vibrate mode on, run the sample | Cues still heard |
 | D10 | US1/SC-003 | 60-minute session (sample phases repeated via a debug long-session option) with the screen off, 3 runs | Completes every time; no `am_kill` for the app in `adb logcat -b events` |
+| D11 | Edge | Call the phone from another phone during the sample, talk 30 s, hang up | No speech over the call; beeps may be silenced; timing continues; cues resume on schedule after the call, missed ones are not replayed |
 
 ## 4. Timing accuracy (SC-001, SC-002)
 
