@@ -140,15 +140,15 @@ untouched on the routine screen for longer than its screen timeout and confirm t
    "Paused · Step N of M: title" while paused.
 6. **Given** the routine has finished or was stopped, **Then** the screen says "All done" or
    "Stopped" and offers Start again, and editing is available again.
-7. **Given** a session is running or paused, **Then** the routine cannot be edited: the Edit
+7. **Given** a routine session is running or paused, **Then** the routine cannot be edited: the Edit
    button is hidden until the session ends.
 
 ---
 
 ### Edge Cases
 
-- **Routine started, then edited**: not possible; editing is blocked while a session runs or is
-  paused. A running session always uses the routine as it was when started.
+- **Routine started, then edited**: not possible; editing is blocked while a routine session runs
+  or is paused. A running session always uses the routine as it was when started.
 - **OS kills the app mid-routine**: spec 001 recovery applies unchanged. The resumed session uses
   the routine as it was when started, even if the stored routine differs.
 - **Another session is running** (e.g. the sample session): the routine screen shows its normal
@@ -190,7 +190,8 @@ untouched on the routine screen for longer than its screen timeout and confirm t
 - **FR-006**: A step with an empty or blank title MUST be shown and announced as "Step N", where N
   is its position.
 - **FR-007**: Editing MUST happen on a separate Edit screen, opened from the routine screen. Editing
-  MUST NOT be possible while a session is running or paused: the Edit button is not shown.
+  MUST NOT be possible while a routine session is running or paused: the Edit button is not shown.
+  (A running session of another mode does not block editing; it never uses the routine.)
 
 **Running the routine**
 
