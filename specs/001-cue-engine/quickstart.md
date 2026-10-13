@@ -33,10 +33,10 @@ Defined in `src/modes/sample.ts` (mode id `sample`, `keepScreenOn: true`):
 
 | # | Phase | Duration | Cues |
 |---|---|---|---|
-| 1 | Get ready | 10 s | says title at start; beeps at 3, 2, 1 left; final beep at 0 |
+| 1 | Get ready | 10 s | says title at start; beeps at 3 and 2 s left; final (higher) beep at 1 s left |
 | 2 | Tap Skip when ready | untimed | says title once |
-| 3 | Interval | 20 s | says title; "Halfway" at 10 s; beeps at 3, 2, 1; final beep |
-| 4 | Cool down | 15 s | says title; beeps at 3, 2, 1 |
+| 3 | Interval | 20 s | says title; "Halfway" at 10 s; beeps at 3 and 2 s left; final beep at 1 s left |
+| 4 | Cool down | 15 s | says title; beeps at 3, 2 and 1 s left |
 | — | Complete | — | chime, then "Sample complete" |
 
 ## 3. On-device scenarios

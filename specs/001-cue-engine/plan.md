@@ -90,10 +90,11 @@ specs/001-cue-engine/
 
 ```text
 src/
-├── app/                         # Expo Router routes only
-│   ├── _layout.tsx              # Stack; runs the launch recovery check
-│   ├── index.tsx                # Home: 3 modes (coming soon), sample session, battery link
-│   └── sample.tsx               # Sample session screen (short + 60-min soak variant)
+├── app/                         # Expo Router routes only (thin re-exports; no tests here)
+│   ├── _layout.tsx              # Stack; renders LaunchCheck (recovery prompt)
+│   ├── index.tsx                # → screens/HomeScreen
+│   └── sample.tsx               # → screens/SampleScreen
+├── screens/                     # HomeScreen, SampleScreen (+ RNTL tests)
 ├── engine/                      # Pure TS, no React Native imports
 │   ├── clock.ts                 # Clock, Scheduler, system implementations
 │   ├── types.ts
@@ -119,7 +120,7 @@ src/
 ├── modes/
 │   ├── types.ts, registry.ts
 │   └── sample.ts (+ .test.ts)   # sample mode: definition + cues
-├── components/                  # SessionView, Controls, ResumePrompt (+ RNTL tests)
+├── components/                  # SessionView, Controls, ResumePrompt, LaunchCheck (+ RNTL tests)
 └── test-utils/                  # FakeClock, FakeScheduler, fake ports
 plugins/withBackgroundActions.js # foreground service type (config plugin)
 scripts/

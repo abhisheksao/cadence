@@ -5,7 +5,7 @@ import type { KeyValueStore } from '@/storage/types';
 
 /** Records every call, so tests can assert on what would have been played. */
 export class FakeCuePlayer implements CuePlayer {
-  played: { cue: Cue; at: number }[] = [];
+  played: { cue: Cue; at: number; phase?: number }[] = [];
   silenced = 0;
   initialised = 0;
 
@@ -13,8 +13,8 @@ export class FakeCuePlayer implements CuePlayer {
     this.initialised += 1;
   }
 
-  play(cue: Cue, at: number) {
-    this.played.push({ cue, at });
+  play(cue: Cue, at: number, phase?: number) {
+    this.played.push({ cue, at, phase });
   }
 
   silence() {

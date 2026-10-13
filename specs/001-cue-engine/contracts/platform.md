@@ -10,7 +10,7 @@ export interface CuePlayer {
   /** Load sounds, set the audio mode (duckOthers), warm up TTS. Idempotent. */
   init(): Promise<void>;
   /** Play `cue` so it is heard at wall time `at` (latency-compensated). */
-  play(cue: Cue, at: number): void;
+  play(cue: Cue, at: number, phase?: number): void;   // phase index, for the timing log
   /** Cancel scheduled cues and stop current speech/sounds immediately. */
   silence(): void;
   // Speech is skipped (not queued for later) while another app holds full audio focus,

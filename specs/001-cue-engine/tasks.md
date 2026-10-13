@@ -24,7 +24,9 @@ its own.
 
 - **[P]**: Can run in parallel (different files, no dependencies on incomplete tasks)
 - **[Story]**: The user story the task belongs to (US1–US5)
-- Paths are relative to the repository root. Tests sit next to the code as `*.test.ts(x)`.
+- Paths are relative to the repository root. Tests sit next to the code as `*.test.ts(x)`, except
+  that nothing but routes may live in `src/app/` (Expo Router would treat a test file as a route):
+  screens live in `src/screens/` and route files re-export them.
 
 ---
 
@@ -92,11 +94,11 @@ the completion chime.
 - [ ] T028 [P] [US1] Add block "catch-up" to src/engine/engine.test.ts: E6, where a 25 s gap with no ticks across 2 phase boundaries yields exactly one `isPhaseStart` (for the landing phase) and no per-second cues more than 2000 ms late
 - [ ] T029 [P] [US1] Write src/audio/latency.test.ts: `startDelay(at, now, latency)` returns `at - latency - now` (0 if negative); `TtsLatency` starts at 400, updates as an EMA (0.7 old / 0.3 sample) of `onStart - sent + 80`, clamps to 100–900, and ignores samples flagged as queued
 - [ ] T030 [P] [US1] Write src/audio/timingLog.test.ts: `formatCueLog({type, planned, actual, phase})` returns exactly `CADENCE_CUE v=1 type=beep planned=… actual=… err=… phase=…` per contracts/timing-log.md, with `err = actual - planned`, and contains no spoken text
-- [ ] T031 [P] [US1] Write src/modes/sample.test.ts: `sampleDefinition()` passes `validateDefinition`, has the 4 phases from quickstart.md with `keepScreenOn: true`; `cueFor` returns `say(title)` at each phase start, beeps at 3/2/1 remaining, `beepLast` at the last second of phases 1 and 3, "Halfway" at 10 s of phase 3, nothing for an untimed phase after its start; `completion` returns chime then `say('Sample complete')` 700 ms later
+- [ ] T031 [P] [US1] Write src/modes/sample.test.ts: `sampleDefinition()` passes `validateDefinition`, has the 4 phases from quickstart.md with `keepScreenOn: true`; `cueFor` returns `say(title)` at each phase start, beeps at 3 and 2 remaining and `beepLast` at 1 remaining in phases 1 and 3, beeps at 3/2/1 remaining in phase 4, "Halfway" at 10 s of phase 3, nothing for an untimed phase after its start; `completion` returns chime then `say('Sample complete')` 700 ms later
 - [ ] T032 [P] [US1] Write src/session/controller.test.ts, block "start": C1 (invalid definition rejected; valid one calls `background.prepare()` then `background.start()` then starts the engine), C2 (engine cues reach `player.play(cue, at)`), C5 (after `done`, `background.stop()` is called no sooner than 4 s later), C6 (starting a second session stops the first and silences the player); use `FakeClock`, `FakeScheduler`, and fakes from T024
 - [ ] T033 [P] [US1] Write src/audio/cuePlayer.test.ts block "scheduling" with jest mocks for `expo-audio` and `expo-speech` and fake timers: a beep due at `at` plays 120 ms early; a `say` is spoken `TtsLatency` ms early; `interrupt: true` calls `Speech.stop()` before speaking; `silence()` cancels pending timers and calls `Speech.stop()`; one CADENCE_CUE line is logged per cue on playback start / `onStart`
 - [ ] T034 [P] [US1] Write src/platform/background.android.test.ts block "service" with a mock of the background library: `start` calls `BackgroundService.start` with the title, text, and `foregroundServiceType: ['mediaPlayback']` and resolves true; resolves false if it throws; `update` calls `updateNotification`; `stop` calls `stop`
-- [ ] T035 [P] [US1] Write src/app/sample.test.tsx (React Native Testing Library, session module mocked): pressing Start calls `controller.start` with the sample definition; the current phase title and status from the snapshot are shown
+- [ ] T035 [P] [US1] Write src/screens/SampleScreen.test.tsx (React Native Testing Library, session module mocked): pressing Start calls `controller.start` with the sample definition; the current phase title and status from the snapshot are shown
 
 ### Implementation for User Story 1
 
@@ -107,7 +109,7 @@ the completion chime.
 - [ ] T040 [US1] Implement src/platform/background.android.ts `start`/`update`/`stop` to pass T034, with the background library (task title and text, `foregroundServiceType: ['mediaPlayback']`, the task promise resolving on `keepAliveUntil`; `start` returns false on error) and a placeholder `prepare()` that resolves; create src/platform/background.ios.ts with no-op methods (`start` resolves true)
 - [ ] T041 [US1] Implement src/modes/sample.ts (definition + `ModeDefinition` with id `sample`) to pass T031 and register it in src/modes/index.ts
 - [ ] T042 [US1] Implement `SessionController` `start`, cue forwarding, completion wind-down (4 s), and single-session rule in src/session/controller.ts to pass T032; add the `useSession` hook in src/session/useSession.ts and a module-level controller wired to the real adapters in src/session/index.ts
-- [ ] T043 [US1] Create a minimal src/app/sample.tsx to pass T035: a Start button, the current phase title, and the status; link to it from src/app/index.tsx
+- [ ] T043 [US1] Create a minimal src/screens/SampleScreen.tsx to pass T035 (a Start button, the current phase title, and the status), route src/app/sample.tsx re-exporting it, and link to it from src/app/index.tsx
 - [ ] T044 [US1] On device: build with `npx expo run:android` and run quickstart D3 (screen off, every cue on time, chime, notification gone after the session). Record the result in the PR description
 
 **Checkpoint**: MVP. The sample session runs to completion with the screen off.
@@ -130,7 +132,7 @@ the completion chime.
 
 - [ ] T048 [US2] Implement `pause`, `resume`, `skip`, `back` (3 s rule), `stop`, untimed phases, and the backwards-clock guard (shift anchors when `now < lastSeenNow`) in src/engine/engine.ts to pass T045
 - [ ] T049 [US2] Wire controller control methods to the engine and `player.silence()` in src/session/controller.ts to pass T046
-- [ ] T050 [US2] Implement src/components/Controls.tsx to pass T047 and add it to src/app/sample.tsx
+- [ ] T050 [US2] Implement src/components/Controls.tsx to pass T047 and add it to src/screens/SampleScreen.tsx
 - [ ] T051 [US2] On device: run quickstart D5 and confirm audio stops within 300 ms of each tap (SC-005)
 
 **Checkpoint**: US1 and US2 both work on their own.
@@ -169,14 +171,14 @@ a battery exemption asked once and offered again from home.
 - [ ] T055 [P] [US4] Add block "notification" to src/session/controller.test.ts: C3 (phase change → `background.update('<phase title>')`; pause → `update('Paused · <phase title>')`; resume restores it; no other calls to `update`, including across 60 s of ticks; after a dismissal the next phase change still calls `update`, which re-posts), C7 (`background.start` returns false → session still runs and `snapshot`/controller exposes `backgroundWarning: true`)
 - [ ] T056 [P] [US4] Write src/platform/background.android.test.ts with mocks for `react-native` `PermissionsAndroid`/`Platform`, `expo-intent-launcher`, and a `MemoryStore`: `prepare()` requests POST_NOTIFICATIONS on API 33+ only and continues if denied; asks for the battery exemption only when `battery-exemption-asked:v1` is unset, then sets it; `requestBatteryExemption()` falls back to the settings screen when the request intent throws
 - [ ] T057 [P] [US4] Write src/components/BatteryLink.test.tsx: renders "App stopping mid-session? Allow it to run in the background" and calls `background.requestBatteryExemption()` on press
-- [ ] T058 [P] [US4] Add to src/app/sample.test.tsx: "Cues may stop when the screen is off" is shown only when the snapshot has `backgroundWarning: true`
+- [ ] T058 [P] [US4] Add to src/screens/SampleScreen.test.tsx: "Cues may stop when the screen is off" is shown only when the snapshot has `backgroundWarning: true`
 
 ### Implementation for User Story 4
 
 - [ ] T059 [US4] Update src/session/controller.ts to pass T055 (notification text on phase change/pause/resume only; `backgroundWarning`)
 - [ ] T060 [US4] Implement `prepare()` and `requestBatteryExemption()` in src/platform/background.android.ts to pass T056 (package name from `expo-constants`)
 - [ ] T061 [US4] Implement src/components/BatteryLink.tsx to pass T057 (rendered on Android only via a `BatteryLink.ios.tsx` that returns null)
-- [ ] T062 [US4] To pass T058, show the background warning on src/app/sample.tsx when `backgroundWarning` is true ("Cues may stop when the screen is off")
+- [ ] T062 [US4] To pass T058, show the background warning on src/screens/SampleScreen.tsx when `backgroundWarning` is true ("Cues may stop when the screen is off")
 - [ ] T063 [US4] On device: fresh install (`adb uninstall io.github.abhisheksao.cadence`), then run quickstart D2 and D6
 
 **Checkpoint**: Notification and permission flow verified.
@@ -193,19 +195,19 @@ device, D1 passes.
 
 ### Tests for User Story 5 (write first, confirm they fail) ⚠️
 
-- [ ] T064 [P] [US5] Write src/app/index.test.tsx (React Native Testing Library + expo-router testing utilities): shows "Morning routine", "Run / walk", "Breathe" each with a description and "Coming soon", a "Sample session" entry that navigates to /sample, and the battery link (from T061)
+- [ ] T064 [P] [US5] Write src/screens/HomeScreen.test.tsx (React Native Testing Library + expo-router testing utilities): shows "Morning routine", "Run / walk", "Breathe" each with a description and "Coming soon", a "Sample session" entry that navigates to /sample, and the battery link (from T061)
 - [ ] T065 [P] [US5] Write src/components/SessionView.test.tsx: shows phase title, subtitle, remaining time as m:ss for timed phases and elapsed time for untimed ones, and "Paused" while paused
 - [ ] T066 [P] [US5] Write src/session/useKeepScreenOn.test.ts with a mocked `expo-keep-awake`: activates when the definition has `keepScreenOn: true` and status is running/paused; deactivates on done/stopped/unmount; never activates when `keepScreenOn` is false (FR-021a)
 - [ ] T067 [P] [US5] Add to src/modes/sample.test.ts: `soakDefinition()` repeats the timed sample phases (no untimed phase) to a total of 60 minutes and passes validation
-- [ ] T068 [P] [US5] Add to src/app/sample.test.tsx: "Start sample" and "Start 60-minute soak" start the matching definitions; SessionView and Controls render while a session runs; `useKeepScreenOn` receives the running definition
+- [ ] T068 [P] [US5] Add to src/screens/SampleScreen.test.tsx: "Start sample" and "Start 60-minute soak" start the matching definitions; SessionView and Controls render while a session runs; `useKeepScreenOn` receives the running definition
 
 ### Implementation for User Story 5
 
-- [ ] T069 [US5] Implement src/app/index.tsx (mode tiles + sample entry + BatteryLink) to pass T064
+- [ ] T069 [US5] Implement src/screens/HomeScreen.tsx (mode tiles + sample entry + BatteryLink) to pass T064; src/app/index.tsx re-exports it
 - [ ] T070 [US5] Implement src/components/SessionView.tsx and a `formatClock` helper in src/format/clock.ts (with a small src/format/clock.test.ts written first) to pass T065
 - [ ] T071 [US5] Implement src/session/useKeepScreenOn.ts to pass T066
 - [ ] T072 [US5] Implement `soakDefinition()` in src/modes/sample.ts to pass T067
-- [ ] T073 [US5] Finish src/app/sample.tsx to pass T068: SessionView, Controls, useKeepScreenOn, "Start sample" and "Start 60-minute soak" buttons, and a header title; configure screen titles in src/app/_layout.tsx
+- [ ] T073 [US5] Finish src/screens/SampleScreen.tsx to pass T068: SessionView, Controls, useKeepScreenOn, "Start sample" and "Start 60-minute soak" buttons, and a header title; configure screen titles in src/app/_layout.tsx
 - [ ] T074 [US5] On device: run quickstart D1
 
 **Checkpoint**: All five user stories work on their own.
@@ -222,7 +224,7 @@ device, D1 passes.
 - [ ] T076 [P] Add block "recovery" to src/engine/engine.test.ts: E16 (`startAt({index, phaseElapsedMs, paused})` resumes there; the phase start cue fires once; later `at` values line up with the recovered anchor)
 - [ ] T077 [P] Add block "recovery" to src/session/controller.test.ts: C4 (record written on start, pause, resume, skip, back, and phase change; refreshed every 60 s while running; cleared on done and stop) and C8 (`checkForInterrupted()` returns the `assessRecord` result; `resumeInterrupted()` rebuilds cues through the mode registry, restarts background and notification, and plays the landing phase start; Discard clears the record)
 - [ ] T078 [P] Write src/components/ResumePrompt.test.tsx: for a resume offer shows the session title, phase, and Resume/Discard buttons wired to callbacks; for an interrupted result shows "Your session '<title>' was interrupted at <time>" with an OK button
-- [ ] T079 [P] Write src/app/_layout.test.tsx (session module mocked): with a resume offer from `checkForInterrupted`, ResumePrompt shows; Resume calls `controller.resumeInterrupted` and navigates to /sample; Discard clears the record; for an interrupted result, OK clears it; with `none`, the stack renders directly
+- [ ] T079 [P] Write src/components/LaunchCheck.test.tsx (session module mocked): with a resume offer from `checkForInterrupted`, ResumePrompt shows; Resume calls `controller.resumeInterrupted` and navigates to /sample; Discard clears the record; for an interrupted result, OK clears it; with `none`, the stack renders directly
 
 ### Implementation
 
@@ -230,7 +232,7 @@ device, D1 passes.
 - [ ] T081 Implement `Engine.startAt` in src/engine/engine.ts to pass T076
 - [ ] T082 Implement record writing, the 60 s refresh, `checkForInterrupted`, `resumeInterrupted`, and discard in src/session/controller.ts to pass T077
 - [ ] T083 Implement src/components/ResumePrompt.tsx to pass T078
-- [ ] T084 Run the launch check in src/app/_layout.tsx to pass T079 (read the record synchronously before first render; show ResumePrompt; on Resume call `controller.resumeInterrupted` and navigate to the session's screen, /sample in this spec)
+- [ ] T084 Implement src/components/LaunchCheck.tsx to pass T079 and render it from src/app/_layout.tsx (read the record synchronously before first render; show ResumePrompt; on Resume call `controller.resumeInterrupted` and navigate to the session's screen, /sample in this spec)
 - [ ] T085 On device: run quickstart D7 and D8 (force-stop mid-session; reopen within a minute, and after the session would have ended)
 
 **Checkpoint**: A killed session can be resumed in 2 taps at the clock position.
@@ -291,7 +293,7 @@ T031 src/modes/sample.test.ts
 T032 src/session/controller.test.ts (start)
 T033 src/audio/cuePlayer.test.ts (scheduling)
 T034 src/platform/background.android.test.ts (service)
-T035 src/app/sample.test.tsx
+T035 src/screens/SampleScreen.test.tsx
 
 # Then the independent pure modules together:
 T037 src/audio/latency.ts
