@@ -42,6 +42,6 @@ Cadence is built spec-first with [GitHub Spec Kit](https://github.com/github/spe
 | 007 | Workout DSL & sharing | text format parser/validator, import/export, `cadence://` deep links |
 | 008 | iOS | silent-audio keep-alive + Live Activities (Swift widget via config plugin); see `ios-live-activities.md` |
 
-Ongoing: ADRs in `docs/adr/` (no EAS, CNG, foreground service vs alarms, OnePlus kills), README with demo GIF + architecture diagram, issue/PR templates, Conventional Commits, Renovate/Dependabot.
+Ongoing: ADRs in `docs/adr/` (no EAS, CNG, foreground service vs alarms, OEM background kills), README with demo GIF + architecture diagram, issue/PR templates, Conventional Commits, Renovate/Dependabot.
 
 Roadmap only (not now): Wear OS haptics, SQLite history/stats, i18n cues, Health Connect/HealthKit, F-Droid listing.
