@@ -1,6 +1,7 @@
 import { router, type Href } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 
+import { Text } from '@/components/Text';
 import { BatteryLink } from '@/components/BatteryLink';
 import { ROUTINE_MODE_ID } from '@/modes/routine';
 import { useSession } from '@/session/useSession';

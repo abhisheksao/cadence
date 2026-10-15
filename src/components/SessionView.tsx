@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { StyleSheet, View, useColorScheme } from 'react-native';
 
+import { Text } from '@/components/Text';
 import { formatClock, spokenDuration } from '@/format/clock';
 import type { SessionState } from '@/session/controller';
 

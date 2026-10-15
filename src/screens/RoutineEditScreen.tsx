@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 
+import { Text } from '@/components/Text';
 import { StepEditor } from '@/components/StepEditor';
 import { UndoBar } from '@/components/UndoBar';
 import { MAX_STEPS } from '@/routine/defaults';
