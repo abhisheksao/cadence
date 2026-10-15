@@ -33,7 +33,7 @@ function cuesAt(r: Routine, index: number, sec: number, isPhaseStart = sec === 0
   return asList(routineMode.cueFor(def).cueFor(op));
 }
 
-describe('routineDefinition (data-model.md)', () => {
+describe('routineDefinition', () => {
   it('turns each step into a phase with "Step N of M" and keeps the screen on', () => {
     const def = routineDefinition(routine([['Water', 60], ['  ', null], ['Stretch', 300]]));
     expect(def).toMatchObject({ modeId: ROUTINE_MODE_ID, title: 'Morning routine', settings: {}, keepScreenOn: true });
@@ -55,7 +55,7 @@ describe('routineDefinition (data-model.md)', () => {
   });
 });
 
-describe('routine cues (contracts/routine.md)', () => {
+describe('routine cues', () => {
   const r = routine([['Water', 60], ['Make the bed', null], ['Stretch', 150], ['Breathing', 180], ['Plan', 15]]);
   const say = (text: string, interrupt?: boolean) => ({ type: 'say', text, ...(interrupt ? { interrupt } : {}) });
 

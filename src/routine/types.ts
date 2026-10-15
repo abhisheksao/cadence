@@ -1,4 +1,4 @@
-/** One item of the morning routine (data-model.md). */
+/** One item of the morning routine. */
 export type Step = {
   /** Unique within the routine; stable across edits and reordering. */
   id: string;

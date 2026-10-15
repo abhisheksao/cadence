@@ -32,7 +32,7 @@ function cuesAt(s: RunWalkSettings, index: number, sec: number, isPhaseStart = s
 
 const say = (text: string, interrupt?: boolean) => ({ type: 'say', text, ...(interrupt ? { interrupt } : {}) });
 
-describe('runWalkDefinition (data-model.md)', () => {
+describe('runWalkDefinition', () => {
   it('WD1: the defaults give get-ready, warm-up, 8 runs, 7 walks and the cool-down: 18 phases, 1,720 s', () => {
     const def = runWalkDefinition(defaultSettings());
     expect(def.phases).toHaveLength(18);
@@ -91,7 +91,7 @@ describe('runWalkDefinition (data-model.md)', () => {
   });
 });
 
-describe('run/walk cues (contracts/run-walk.md)', () => {
+describe('run/walk cues', () => {
   // Phases of the defaults: 0 ready, 1 warmup, 2 run 1, 3 walk 1, …, 16 run 8, 17 cooldown.
   const s = defaultSettings();
 

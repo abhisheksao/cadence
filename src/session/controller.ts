@@ -53,7 +53,7 @@ type Active = {
 
 /**
  * Runs one session at a time: validates it, starts the background service, wires the engine's
- * cues to the player, and winds the service down afterwards (contracts/platform.md).
+ * cues to the player, and winds the service down afterwards.
  */
 export class SessionController {
   private active: Active | null = null;

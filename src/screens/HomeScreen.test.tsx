@@ -1,6 +1,8 @@
 import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
+import { defaultSettings as defaultBreatheSettings } from '@/breathe/settings';
+import { breatheDefinition } from '@/modes/breathe';
 import { routineDefinition } from '@/modes/routine';
 import { runWalkDefinition } from '@/modes/runWalk';
 import { sampleDefinition } from '@/modes/sample';
@@ -30,19 +32,24 @@ function RunWalkStub() {
   return <Text>Run / walk screen</Text>;
 }
 
-const routes = { index: HomeScreen, sample: SampleStub, 'routine/index': RoutineStub, 'run-walk': RunWalkStub };
+function BreatheStub() {
+  return <Text>Breathe screen</Text>;
+}
+
+const routes = {
+  index: HomeScreen,
+  sample: SampleStub,
+  'routine/index': RoutineStub,
+  'run-walk': RunWalkStub,
+  breathe: BreatheStub,
+};
 
 describe('Home screen (FR-019)', () => {
-  it('lists Breathe with a description, marked coming soon', async () => {
+  it('shows a description for each of the three modes and none are marked coming soon (BU1)', async () => {
     await renderRouter(routes);
-    expect(screen.getByLabelText(/^Breathe, coming soon/)).toBeOnTheScreen();
-    expect(screen.getByText('Breathe')).toBeOnTheScreen();
-  });
-
-  it('shows a description for each of the three modes; only Breathe is coming soon (WU1)', async () => {
-    await renderRouter(routes);
-    expect(screen.getAllByText('Coming soon')).toHaveLength(1);
+    expect(screen.queryByText('Coming soon')).toBeNull();
     expect(screen.getAllByTestId('mode-description')).toHaveLength(3);
+    expect(screen.queryByLabelText(/^Breathe, coming soon/)).toBeNull();
     expect(screen.queryByLabelText(/^Run \/ walk, coming soon/)).toBeNull();
   });
 
@@ -52,6 +59,14 @@ describe('Home screen (FR-019)', () => {
     await fireEvent.press(screen.getByRole('button', { name: /^Run \/ walk/ }));
     expect(router.getPathname()).toBe('/run-walk');
     expect(screen.getByText('Run / walk screen')).toBeOnTheScreen();
+  });
+
+  it('opens breathe (BU1)', async () => {
+    const router = renderRouter(routes);
+    await router;
+    await fireEvent.press(screen.getByRole('button', { name: /^Breathe/ }));
+    expect(router.getPathname()).toBe('/breathe');
+    expect(screen.getByText('Breathe screen')).toBeOnTheScreen();
   });
 
   it('opens the morning routine (FR-021)', async () => {
@@ -127,6 +142,25 @@ describe('Home screen (FR-019)', () => {
       withState(live(routine, 'running'));
       await renderRouter(routes);
       expect(screen.getByRole('button', { name: /^Run \/ walk\./ })).toBeOnTheScreen();
+
+      withState(null);
+      await renderRouter(routes);
+      expect(screen.queryByText('In progress')).toBeNull();
+    });
+
+    const breathe = breatheDefinition(defaultBreatheSettings());
+
+    it.each(['running', 'paused'] as const)('shows on the breathe tile while breathe is %s (BU1)', async (status) => {
+      withState(live(breathe, status));
+      await renderRouter(routes);
+      expect(screen.getByText('In progress')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: /^Breathe, in progress/ })).toBeOnTheScreen();
+    });
+
+    it('does not show on the breathe tile for a routine session or when idle', async () => {
+      withState(live(routine, 'running'));
+      await renderRouter(routes);
+      expect(screen.getByRole('button', { name: /^Breathe\./ })).toBeOnTheScreen();
 
       withState(null);
       await renderRouter(routes);

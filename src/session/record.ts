@@ -44,7 +44,7 @@ export function parseRecord(raw: string | null): SessionRecord | null {
 }
 
 /**
- * Decides whether a saved session can be resumed, and where (data-model "Recovery assessment").
+ * Decides whether a saved session can be resumed, and where.
  * Pure: the caller passes the current wall time.
  */
 export function assessRecord(record: SessionRecord | null, now: number): RecoveryResult {

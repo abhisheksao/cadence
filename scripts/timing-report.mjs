@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Reads a captured cue log and reports timing accuracy per cue type (FR-022b,
- * contracts/timing-log.md). Exit code 1 when SC-001 or SC-002 is not met, unless --no-fail.
+ * Reads a captured cue log and reports timing accuracy per cue type (FR-022b).
+ * Exit code 1 when SC-001 or SC-002 is not met, unless --no-fail.
  *
  *   adb logcat -s ReactNativeJS:I | grep CADENCE_CUE > cues.log
  *   node scripts/timing-report.mjs cues.log

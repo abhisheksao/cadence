@@ -13,7 +13,7 @@ import {
 import type { RunWalkSettings } from './types';
 
 describe('defaultSettings (FR-002)', () => {
-  it('is the data-model default', () => {
+  it('matches the default settings', () => {
     expect(defaultSettings()).toEqual({
       version: 1,
       warmupSec: 300,
