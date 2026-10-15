@@ -1,7 +1,7 @@
 import type { KeyValueStore } from '@/storage/types';
 
-import { defaultSettings } from './settings';
-import type { RunWalkSettings } from './types';
+import { LIMITS, defaultSettings } from './settings';
+import type { RunWalkField, RunWalkSettings } from './types';
 
 /** Storage key of the run / walk settings (research R3). */
 export const RUN_WALK_KEY = 'run-walk:v1';
@@ -19,8 +19,13 @@ export function parseRunWalk(raw: string | null): RunWalkSettings | null {
   }
   if (!isObject(value) || value.version !== 1) return null;
   const d = defaultSettings();
-  const num = (k: 'warmupSec' | 'runSec' | 'walkSec' | 'rounds' | 'cooldownSec') =>
-    typeof value[k] === 'number' && Number.isFinite(value[k]) ? (value[k] as number) : d[k];
+  const num = (k: RunWalkField) => {
+    const rawVal = value[k];
+    if (typeof rawVal !== 'number' || !Number.isFinite(rawVal)) return d[k];
+    const { min, max, step } = LIMITS[k];
+    const snapped = Math.round(rawVal / step) * step;
+    return Math.max(min, Math.min(max, snapped));
+  };
   const flag = (k: 'announceRound' | 'halfway' | 'timeLeft' | 'keepScreenOn') =>
     typeof value[k] === 'boolean' ? (value[k] as boolean) : d[k];
   return {

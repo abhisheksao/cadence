@@ -3,8 +3,17 @@ import { Pressable, ScrollView, StyleSheet, View, useColorScheme } from 'react-n
 import { Text } from '@/components/Text';
 import { Controls } from '@/components/Controls';
 import { RunWalkLiveView } from '@/components/RunWalkLiveView';
+import { Stepper } from '@/components/Stepper';
 import { formatClock } from '@/format/clock';
 import { RUN_WALK_MODE_ID, runWalkDefinition } from '@/modes/runWalk';
+import {
+  PRESETS,
+  adjust,
+  applyPreset,
+  canAdjust,
+  matchingPreset,
+  totalSec,
+} from '@/runWalk/settings';
 import { useRunWalk } from '@/runWalk/useRunWalk';
 import { useSession } from '@/session/useSession';
 
@@ -15,7 +24,7 @@ import { useSession } from '@/session/useSession';
  */
 export default function RunWalkScreen() {
   const { state, controller } = useSession();
-  const { settings } = useRunWalk();
+  const { settings, store } = useRunWalk();
   const dark = useColorScheme() === 'dark';
   const color = dark ? '#E6EDF3' : '#0E1116';
 
@@ -30,16 +39,87 @@ export default function RunWalkScreen() {
     );
   }
 
-  const definition = runWalkDefinition(settings);
-  const totalSec = definition.phases.reduce((sum, p) => sum + (p.durationSec ?? 0), 0);
+  const currentPreset = matchingPreset(settings);
+  const total = totalSec(settings);
   const start = () => {
-    controller.start(definition).catch((e: unknown) => console.warn('Could not start the workout', e));
+    controller.start(runWalkDefinition(settings)).catch((e: unknown) => console.warn('Could not start the workout', e));
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.settings} />
-      <Text style={[styles.total, { color }]}>{`Total ${formatClock(totalSec)}`}</Text>
+      <ScrollView style={styles.settings} contentContainerStyle={styles.settingsContent}>
+        <View style={styles.presetsGrid}>
+          {PRESETS.map((p) => {
+            const isSelected = currentPreset?.label === p.label;
+            return (
+              <Pressable
+                key={p.label}
+                accessibilityRole="button"
+                accessibilityLabel={p.label}
+                accessibilityState={{ selected: isSelected }}
+                onPress={() => store.update((s) => applyPreset(s, p))}
+                style={({ pressed }) => [
+                  styles.preset,
+                  {
+                    backgroundColor: isSelected ? '#FF7A45' : dark ? '#1A1F27' : '#F2F4F7',
+                    borderColor: isSelected ? '#FF7A45' : dark ? '#2A313C' : '#D0D7DE',
+                    opacity: pressed ? 0.75 : 1,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.presetText,
+                    { color: isSelected ? '#0E1116' : color, fontWeight: isSelected ? '700' : '500' },
+                  ]}
+                >
+                  {p.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.steppers}>
+          <Stepper
+            label="Warm-up"
+            value={settings.warmupSec === 0 ? 'Off' : formatClock(settings.warmupSec)}
+            onChange={(dir) => store.update((s) => adjust(s, 'warmupSec', dir))}
+            canDecrease={canAdjust(settings, 'warmupSec', -1)}
+            canIncrease={canAdjust(settings, 'warmupSec', 1)}
+          />
+          <Stepper
+            label="Run"
+            value={formatClock(settings.runSec)}
+            onChange={(dir) => store.update((s) => adjust(s, 'runSec', dir))}
+            canDecrease={canAdjust(settings, 'runSec', -1)}
+            canIncrease={canAdjust(settings, 'runSec', 1)}
+          />
+          <Stepper
+            label="Walk"
+            value={formatClock(settings.walkSec)}
+            onChange={(dir) => store.update((s) => adjust(s, 'walkSec', dir))}
+            canDecrease={canAdjust(settings, 'walkSec', -1)}
+            canIncrease={canAdjust(settings, 'walkSec', 1)}
+          />
+          <Stepper
+            label="Rounds"
+            value={String(settings.rounds)}
+            onChange={(dir) => store.update((s) => adjust(s, 'rounds', dir))}
+            canDecrease={canAdjust(settings, 'rounds', -1)}
+            canIncrease={canAdjust(settings, 'rounds', 1)}
+          />
+          <Stepper
+            label="Cool-down"
+            value={settings.cooldownSec === 0 ? 'Off' : formatClock(settings.cooldownSec)}
+            onChange={(dir) => store.update((s) => adjust(s, 'cooldownSec', dir))}
+            canDecrease={canAdjust(settings, 'cooldownSec', -1)}
+            canIncrease={canAdjust(settings, 'cooldownSec', 1)}
+          />
+        </View>
+      </ScrollView>
+
+      <Text style={[styles.total, { color }]}>{`Total ${formatClock(total)}`}</Text>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Start"
@@ -56,7 +136,26 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, gap: 12 },
   live: { padding: 24, gap: 32, alignItems: 'center' },
   settings: { flex: 1 },
+  settingsContent: { gap: 16 },
+  presetsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  preset: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  presetText: { fontSize: 14 },
+  steppers: { gap: 4 },
   total: { fontSize: 15, opacity: 0.7, textAlign: 'center' },
   start: { backgroundColor: '#FF7A45', borderRadius: 14, paddingVertical: 18, alignItems: 'center' },
   startText: { color: '#0E1116', fontSize: 20, fontWeight: '700' },
 });
+

@@ -101,17 +101,17 @@ immediately and repaired if out of range.
 
 ### Tests for User Story 2 (write first, confirm they fail) ⚠️
 
-- [ ] T017 [P] [US2] Add to src/runWalk/settings.test.ts table tests: `adjust`/`canAdjust` per field at, below and above each limit, including warm-up 60 → 0 and 0 → 60 (WS1); `applyPreset` changes run, walk, rounds only, and `matchingPreset` returns the preset for an exact match and null when any one value differs (WS2); `totalSec` equals the sum of `runWalkDefinition(settings).phases` for several settings (WS3)
-- [ ] T018 [P] [US2] Add to src/runWalk/store.test.ts: WS5, a readable v1 value is repaired field by field (run 5 → 15, run 100 → 105 (snapped to 15), rounds 0 → 1, rounds 99 → 30, warm-up 2000 → 1800, missing cool-down → 300, `halfway: "yes"` → true) while the valid fields are kept
-- [ ] T019 [P] [US2] Write src/components/Stepper.test.tsx: shows the label and the formatted value; − and + call `onChange(-1)` / `onChange(1)`; each is disabled (and announced as disabled) when its `can…` prop is false; accessible labels "Decrease <label>" / "Increase <label>"
-- [ ] T020 [P] [US2] Add to src/screens/RunWalkScreen.test.tsx with a real `RunWalkStore` over `MemoryStore`: tapping a preset updates run, walk, rounds and marks it selected; + on run updates the store, unmarks the preset, and the total; − on rounds is disabled at 1; warm-up at 0 reads "Off"
+- [X] T017 [P] [US2] Add to src/runWalk/settings.test.ts table tests: `adjust`/`canAdjust` per field at, below and above each limit, including warm-up 60 → 0 and 0 → 60 (WS1); `applyPreset` changes run, walk, rounds only, and `matchingPreset` returns the preset for an exact match and null when any one value differs (WS2); `totalSec` equals the sum of `runWalkDefinition(settings).phases` for several settings (WS3)
+- [X] T018 [P] [US2] Add to src/runWalk/store.test.ts: WS5, a readable v1 value is repaired field by field (run 5 → 15, run 100 → 105 (snapped to 15), rounds 0 → 1, rounds 99 → 30, warm-up 2000 → 1800, missing cool-down → 300, `halfway: "yes"` → true) while the valid fields are kept
+- [X] T019 [P] [US2] Write src/components/Stepper.test.tsx: shows the label and the formatted value; − and + call `onChange(-1)` / `onChange(1)`; each is disabled (and announced as disabled) when its `can…` prop is false; accessible labels "Decrease <label>" / "Increase <label>"
+- [X] T020 [P] [US2] Add to src/screens/RunWalkScreen.test.tsx with a real `RunWalkStore` over `MemoryStore`: tapping a preset updates run, walk, rounds and marks it selected; + on run updates the store, unmarks the preset, and the total; − on rounds is disabled at 1; warm-up at 0 reads "Off"
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Implement `adjust`, `canAdjust`, `applyPreset`, `matchingPreset` and `totalSec` in src/runWalk/settings.ts to pass T017
-- [ ] T022 [US2] Add field-by-field repair to `parseRunWalk` in src/runWalk/store.ts to pass T018
-- [ ] T023 [P] [US2] Implement src/components/Stepper.tsx to pass T019 (Pressable − / + with `accessibilityState.disabled`, value text with tabular numbers)
-- [ ] T024 [US2] Add the presets row and the five steppers to the settings view in src/screens/RunWalkScreen.tsx to pass T020 (values as m:ss, rounds as a number, 0 warm-up/cool-down as "Off")
+- [X] T021 [US2] Implement `adjust`, `canAdjust`, `applyPreset`, `matchingPreset` and `totalSec` in src/runWalk/settings.ts to pass T017
+- [X] T022 [US2] Add field-by-field repair to `parseRunWalk` in src/runWalk/store.ts to pass T018
+- [X] T023 [P] [US2] Implement src/components/Stepper.tsx to pass T019 (Pressable − / + with `accessibilityState.disabled`, value text with tabular numbers)
+- [X] T024 [US2] Add the presets row and the five steppers to the settings view in src/screens/RunWalkScreen.tsx to pass T020 (values as m:ss, rounds as a number, 0 warm-up/cool-down as "Off")
 - [ ] T025 [US2] On device: run quickstart W9–W11
 
 **Checkpoint**: Intervals are adjustable and survive restarts.
