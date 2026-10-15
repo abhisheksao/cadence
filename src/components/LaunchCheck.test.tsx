@@ -16,7 +16,7 @@ jest.mock('@/session', () => ({
 }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('@/modes', () => {
-  const routes: Record<string, string> = { sample: '/sample', routine: '/routine' };
+  const routes: Record<string, string> = { sample: '/sample', routine: '/routine', 'run-walk': '/run-walk' };
   return { modes: { get: (id: string) => (routes[id] ? { id, route: routes[id] } : undefined) } };
 });
 
@@ -100,6 +100,7 @@ describe('LaunchCheck (FR-024, FR-025)', () => {
 
   it.each([
     ['routine', '/routine'],
+    ['run-walk', '/run-walk'],
     ['gone', '/'],
   ])('Resume of a %s session opens %s', async (modeId, route) => {
     await renderCheck({
