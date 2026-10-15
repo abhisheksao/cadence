@@ -32,6 +32,46 @@ describe('parseRunWalk', () => {
   ])('rejects %s', (_name, raw) => {
     expect(parseRunWalk(raw)).toBeNull();
   });
+
+  it('WS5: repairs out-of-range, off-step, or missing fields while keeping valid fields', () => {
+    const raw = JSON.stringify({
+      version: 1,
+      runSec: 5, // -> 15 (min)
+      walkSec: 100, // -> 105 (snapped to step 15)
+      rounds: 0, // -> 1 (min)
+      warmupSec: 2_000, // -> 1800 (max)
+      // cooldownSec missing -> 300 (default)
+      announceRound: false, // valid -> false kept
+      halfway: 'yes', // non-boolean -> true (default)
+      timeLeft: false, // valid -> false kept
+      keepScreenOn: true, // valid -> true kept
+    });
+
+    const parsed = parseRunWalk(raw);
+    expect(parsed).toEqual({
+      version: 1,
+      warmupSec: 1_800,
+      runSec: 15,
+      walkSec: 105,
+      rounds: 1,
+      cooldownSec: 300,
+      announceRound: false,
+      halfway: true,
+      timeLeft: false,
+      keepScreenOn: true,
+    });
+  });
+
+  it('WS5: repairs rounds 99 to 30 and run 100 to 105', () => {
+    const raw = JSON.stringify({
+      version: 1,
+      runSec: 100,
+      rounds: 99,
+    });
+    const parsed = parseRunWalk(raw);
+    expect(parsed?.runSec).toBe(105);
+    expect(parsed?.rounds).toBe(30);
+  });
 });
 
 describe('RunWalkStore', () => {

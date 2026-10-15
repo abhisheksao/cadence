@@ -1,12 +1,15 @@
+import { useSyncExternalStore } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { routineDefinition } from '@/modes/routine';
 import { runWalkDefinition } from '@/modes/runWalk';
 import { defaultRoutine } from '@/routine/defaults';
 import { defaultSettings } from '@/runWalk/settings';
+import { RunWalkStore } from '@/runWalk/store';
 import { useRunWalk } from '@/runWalk/useRunWalk';
 import type { SessionState } from '@/session/controller';
 import { useSession } from '@/session/useSession';
+import { MemoryStore } from '@/test-utils/fakes';
 
 import RunWalkScreen from './RunWalkScreen';
 
@@ -105,3 +108,56 @@ describe('Run/walk screen: live view (WU4)', () => {
     expect(controller.pause).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('Run/walk screen: settings editing (US2)', () => {
+  let memory: MemoryStore;
+  let store: RunWalkStore;
+
+  beforeEach(() => {
+    memory = new MemoryStore();
+    store = new RunWalkStore({ store: memory });
+    jest.mocked(useRunWalk).mockImplementation(() => {
+      const s = useSyncExternalStore(
+        (onChange) => store.subscribe(onChange),
+        () => store.get(),
+      );
+      return { settings: s, store };
+    });
+    withSession(null);
+  });
+
+  it('tapping a preset updates run, walk, rounds and marks it selected', async () => {
+    await render(<RunWalkScreen />);
+    expect(screen.getByRole('button', { name: '1:00 / 1:30 ×8', selected: true })).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: '2:00 / 1:00 ×6' }));
+    expect(store.get().runSec).toBe(120);
+    expect(store.get().walkSec).toBe(60);
+    expect(store.get().rounds).toBe(6);
+    expect(screen.getByRole('button', { name: '2:00 / 1:00 ×6', selected: true })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: '1:00 / 1:30 ×8', selected: false })).toBeOnTheScreen();
+  });
+
+  it('+ on run updates the store, unmarks the preset, and the total', async () => {
+    await render(<RunWalkScreen />);
+    expect(screen.getByText('Total 28:40')).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Increase Run' }));
+    expect(store.get().runSec).toBe(75);
+    expect(screen.queryByRole('button', { selected: true })).toBeNull();
+    expect(screen.getByText('Total 30:40')).toBeOnTheScreen();
+  });
+
+  it('− on rounds is disabled at 1', async () => {
+    store.update((s) => ({ ...s, rounds: 1 }));
+    await render(<RunWalkScreen />);
+    expect(screen.getByRole('button', { name: 'Decrease Rounds' })).toBeDisabled();
+  });
+
+  it('warm-up at 0 reads "Off"', async () => {
+    store.update((s) => ({ ...s, warmupSec: 0 }));
+    await render(<RunWalkScreen />);
+    expect(screen.getByText('Off')).toBeOnTheScreen();
+  });
+});
+
