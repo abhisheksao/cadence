@@ -31,6 +31,33 @@ describe('parseBreathe', () => {
   ])('rejects %s', (_name, raw) => {
     expect(parseBreathe(raw)).toBeNull();
   });
+
+  it('BS5: repairs out-of-range or missing fields while keeping valid fields', () => {
+    const raw = JSON.stringify({
+      version: 1,
+      inhaleSec: 0, // -> 1 (min)
+      holdSec: 45, // -> 30 (max)
+      exhaleSec: -5, // -> 1 (min)
+      // postHoldSec missing -> 4 (default)
+      targetMinutes: 100, // -> 30 (max)
+      prepEnabled: 'no', // non-boolean -> true (default)
+      cueStyle: 'telepathy', // invalid enum -> 'voice' (default)
+      keepScreenOn: true, // valid -> true kept
+    });
+
+    const parsed = parseBreathe(raw);
+    expect(parsed).toEqual({
+      version: 1,
+      inhaleSec: 1,
+      holdSec: 30,
+      exhaleSec: 1,
+      postHoldSec: 4,
+      targetMinutes: 30,
+      prepEnabled: true,
+      cueStyle: 'voice',
+      keepScreenOn: true,
+    });
+  });
 });
 
 describe('BreatheStore', () => {

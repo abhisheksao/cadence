@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, View, useColorScheme } from 'react-native';
 
 import { Text } from '@/components/Text';
@@ -18,7 +18,7 @@ export function BreatheLiveView({ state }: { state: SessionState }) {
   const elapsedSec = Math.floor(state.totalElapsedMs / 1_000);
   const totalSec = definition.phases.reduce((sum, p) => sum + (p.durationSec ?? 0), 0);
 
-  const scale = useRef(new Animated.Value(0.4)).current;
+  const [scale] = useState(() => new Animated.Value(0.4));
 
   useEffect(() => {
     if (status !== 'running') {

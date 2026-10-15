@@ -40,7 +40,7 @@ its own.
 
 **Purpose**: Confirm the starting point. No new dependencies.
 
-- [ ] T001 Confirm `004-breathe` is up to date with `develop`, clean working tree, and `npm test` and `npm run typecheck` are green before any changes
+- [x] T001 Confirm `004-breathe` is up to date with `develop`, clean working tree, and `npm test` and `npm run typecheck` are green before any changes
 
 ---
 
@@ -52,14 +52,14 @@ its own.
 
 ### Tests first
 
-- [ ] T002 [P] Write src/breathe/settings.test.ts (defaults and constants): `defaultSettings()` equals data-model defaults (inhale 4s, hold 4s, exhale 4s, post-hold 4s, targetMinutes 3, prepEnabled true, cueStyle 'voice', keepScreenOn false); exported limits per field (inhale/exhale 1–30, holds 0–30, targetMinutes 1–30); `PRESETS` lists the four presets (Box 4-4-4-4, 4-7-8, 3-4-7, Coherent) with values matching data-model
-- [ ] T003 [P] Write src/breathe/store.test.ts for `parseBreathe` (round-trip of valid settings; null for null, bad JSON, non-object, version ≠ 1) and `BreatheStore` with a `MemoryStore`: BS4 (missing/invalid data returns defaults saved under `breathe:v1`), BS6 (`update` notifies subscribers and saves the full value; a new store on the same data returns it)
+- [x] T002 [P] Write src/breathe/settings.test.ts (defaults and constants): `defaultSettings()` equals data-model defaults (inhale 4s, hold 4s, exhale 4s, post-hold 4s, targetMinutes 3, prepEnabled true, cueStyle 'voice', keepScreenOn false); exported limits per field (inhale/exhale 1–30, holds 0–30, targetMinutes 1–30); `PRESETS` lists the four presets (Box 4-4-4-4, 4-7-8, 3-4-7, Coherent) with values matching data-model
+- [x] T003 [P] Write src/breathe/store.test.ts for `parseBreathe` (round-trip of valid settings; null for null, bad JSON, non-object, version ≠ 1) and `BreatheStore` with a `MemoryStore`: BS4 (missing/invalid data returns defaults saved under `breathe:v1`), BS6 (`update` notifies subscribers and saves the full value; a new store on the same data returns it)
 
 ### Implementation
 
-- [ ] T004 [P] Create src/breathe/types.ts (`BreatheSettings`, `BreatheField`, `BreathePreset`, `BreatheCueStyle`, `BreatheVoice`) and constants, limits, and `PRESETS` in src/breathe/settings.ts to pass T002
-- [ ] T005 Implement `parseBreathe`, `BREATHE_KEY`, and `BreatheStore` in src/breathe/store.ts to pass T003 (sync load on first `get()`, fire-and-forget writes with error logging)
-- [ ] T006 [P] Create src/breathe/useBreathe.ts (app-wide `BreatheStore` over `kvStore`, `useSyncExternalStore` hook returning `{ settings, store }`)
+- [x] T004 [P] Create src/breathe/types.ts (`BreatheSettings`, `BreatheField`, `BreathePreset`, `BreatheCueStyle`, `BreatheVoice`) and constants, limits, and `PRESETS` in src/breathe/settings.ts to pass T002
+- [x] T005 Implement `parseBreathe`, `BREATHE_KEY`, and `BreatheStore` in src/breathe/store.ts to pass T003 (sync load on first `get()`, fire-and-forget writes with error logging)
+- [x] T006 [P] Create src/breathe/useBreathe.ts (app-wide `BreatheStore` over `kvStore`, `useSyncExternalStore` hook returning `{ settings, store }`)
 
 **Checkpoint**: Settings data layer tested. Tests green.
 
@@ -75,17 +75,17 @@ B1, B2, B6, and B15 pass.
 
 ### Tests for User Story 1 (write first, confirm they fail) ⚠️
 
-- [ ] T007 [P] [US1] Write src/modes/breathe.test.ts: `breatheDefinition` table tests for BD1–BD4 (defaults give 5s prep + 11 cycles of 4-4-4-4 = 45 phases, 181s; zero-duration holds omitted; passes `validateDefinition`); cue handler tests for BC1–BC6, BC12, BC14 (`isPhaseStart` voice cues for prep, inhale, hold, exhale, post-hold; prep beeps at remaining 3, 2, 1; completion chime + sign-off; nothing on other seconds); `breatheMode.id === 'breathe'`, `route === '/breathe'`
-- [ ] T008 [P] [US1] Add to src/modes/breathe.test.ts block "engine run": start a short session (1 cycle of 4-4-4-4, 5s prep) through `SessionController` with all fakes, advance `FakeScheduler`, and assert the `(cue type/text, at − T0)` sequence reaching `FakeCuePlayer` from prep countdown through inhale, hold, exhale, post-hold, and completion chime + sign-off
-- [ ] T009 [P] [US1] Write src/screens/BreatheScreen.test.tsx (mock session, breathe store, keep screen on): settings view displays preset selection, target duration, calculated cycles, total duration, and Start button (BU2, BU3); tapping Start invokes `controller.start(breatheDefinition(settings))`; running session displays live view with phase title and cycle count
-- [ ] T010 [P] [US1] Update src/screens/HomeScreen.test.tsx: Breathe tile has no "Coming soon" and navigates to `/breathe`; add to src/components/LaunchCheck.test.tsx that Resume of a `breathe` session pushes `/breathe` (BU1; extend the `@/modes` mock)
+- [x] T007 [P] [US1] Write src/modes/breathe.test.ts: `breatheDefinition` table tests for BD1–BD4 (defaults give 5s prep + 11 cycles of 4-4-4-4 = 45 phases, 181s; zero-duration holds omitted; passes `validateDefinition`); cue handler tests for BC1–BC6, BC12, BC14 (`isPhaseStart` voice cues for prep, inhale, hold, exhale, post-hold; prep beeps at remaining 3, 2, 1; completion chime + sign-off; nothing on other seconds); `breatheMode.id === 'breathe'`, `route === '/breathe'`
+- [x] T008 [P] [US1] Add to src/modes/breathe.test.ts block "engine run": start a short session (1 cycle of 4-4-4-4, 5s prep) through `SessionController` with all fakes, advance `FakeScheduler`, and assert the `(cue type/text, at − T0)` sequence reaching `FakeCuePlayer` from prep countdown through inhale, hold, exhale, post-hold, and completion chime + sign-off
+- [x] T009 [P] [US1] Write src/screens/BreatheScreen.test.tsx (mock session, breathe store, keep screen on): settings view displays preset selection, target duration, calculated cycles, total duration, and Start button (BU2, BU3); tapping Start invokes `controller.start(breatheDefinition(settings))`; running session displays live view with phase title and cycle count
+- [x] T010 [P] [US1] Update src/screens/HomeScreen.test.tsx: Breathe tile has no "Coming soon" and navigates to `/breathe`; add to src/components/LaunchCheck.test.tsx that Resume of a `breathe` session pushes `/breathe` (BU1; extend the `@/modes` mock)
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Implement `breatheDefinition`, cue handler for Voice cues, and `breatheMode` in src/modes/breathe.ts to pass T007; register in src/modes/index.ts
-- [ ] T012 [US1] Make T008 pass (ensure cue timing and session definition wiring match engine expectations)
-- [ ] T013 [P] [US1] Implement src/screens/BreatheScreen.tsx (settings view with preset summary and Start button; live view container with Controls) to pass T009; add src/app/breathe.tsx re-exporting it and register "Breathe" screen title in src/app/_layout.tsx
-- [ ] T014 [US1] Make Breathe tile interactive in src/screens/HomeScreen.tsx (navigates to `/breathe`, `modeId: BREATHE_MODE_ID`) to pass T010
+- [x] T011 [US1] Implement `breatheDefinition`, cue handler for Voice cues, and `breatheMode` in src/modes/breathe.ts to pass T007; register in src/modes/index.ts
+- [x] T012 [US1] Make T008 pass (ensure cue timing and session definition wiring match engine expectations)
+- [x] T013 [P] [US1] Implement src/screens/BreatheScreen.tsx (settings view with preset summary and Start button; live view container with Controls) to pass T009; add src/app/breathe.tsx re-exporting it and register "Breathe" screen title in src/app/_layout.tsx
+- [x] T014 [US1] Make Breathe tile interactive in src/screens/HomeScreen.tsx (navigates to `/breathe`, `modeId: BREATHE_MODE_ID`) to pass T010
 - [ ] T015 [US1] On device: run quickstart B1, B2, B6, and B15; capture timing log for SC-001
 
 **Checkpoint**: Default breathing session runs end to end. MVP.
@@ -101,15 +101,15 @@ minutes, cycles and actual total updating live, persisted and repaired if out of
 
 ### Tests for User Story 2 (write first, confirm they fail) ⚠️
 
-- [ ] T016 [P] [US2] Add to src/breathe/settings.test.ts table tests: `adjust`/`canAdjust` per field at, below, and above each limit (BS1); `applyPreset` sets breath phases and target minutes, and `matchingPreset` returns the preset for an exact match and null when any value differs (BS2); `calculateCycles` and `totalSec` accuracy across various durations (BS3)
-- [ ] T017 [P] [US2] Add to src/breathe/store.test.ts: BS5, readable v1 JSON is repaired field by field (inhale clamped 1–30, holds clamped 0–30, targetMinutes clamped 1–30, invalid cueStyle defaulted to 'voice', invalid booleans defaulted) while valid fields are kept
-- [ ] T018 [P] [US2] Add to src/screens/BreatheScreen.test.tsx with real `BreatheStore` over `MemoryStore`: tapping presets updates fields and marks preset selected; + / − steppers update settings, unmark presets when custom, and update calculated cycles and total time live; 0s holds display as "Off"
+- [x] T016 [P] [US2] Add to src/breathe/settings.test.ts table tests: `adjust`/`canAdjust` per field at, below, and above each limit (BS1); `applyPreset` sets breath phases and target minutes, and `matchingPreset` returns the preset for an exact match and null when any value differs (BS2); `calculateCycles` and `totalSec` accuracy across various durations (BS3)
+- [x] T017 [P] [US2] Add to src/breathe/store.test.ts: BS5, readable v1 JSON is repaired field by field (inhale clamped 1–30, holds clamped 0–30, targetMinutes clamped 1–30, invalid cueStyle defaulted to 'voice', invalid booleans defaulted) while valid fields are kept
+- [x] T018 [P] [US2] Add to src/screens/BreatheScreen.test.tsx with real `BreatheStore` over `MemoryStore`: tapping presets updates fields and marks preset selected; + / − steppers update settings, unmark presets when custom, and update calculated cycles and total time live; 0s holds display as "Off"
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] Implement `adjust`, `canAdjust`, `applyPreset`, `matchingPreset`, `calculateCycles`, and `totalSec` in src/breathe/settings.ts to pass T016
-- [ ] T020 [US2] Add field-by-field repair to `parseBreathe` in src/breathe/store.ts to pass T017
-- [ ] T021 [US2] Add presets row and five steppers to settings view in src/screens/BreatheScreen.tsx to pass T018 (using reusable `@/components/Stepper`)
+- [x] T019 [US2] Implement `adjust`, `canAdjust`, `applyPreset`, `matchingPreset`, `calculateCycles`, and `totalSec` in src/breathe/settings.ts to pass T016
+- [x] T020 [US2] Add field-by-field repair to `parseBreathe` in src/breathe/store.ts to pass T017
+- [x] T021 [US2] Add presets row and five steppers to settings view in src/screens/BreatheScreen.tsx to pass T018 (using reusable `@/components/Stepper`)
 - [ ] T022 [US2] On device: run quickstart B7–B10
 
 **Checkpoint**: Breath patterns and duration are customizable and survive app restarts.
