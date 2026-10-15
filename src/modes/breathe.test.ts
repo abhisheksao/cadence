@@ -152,8 +152,16 @@ describe('engine run', () => {
     const player = new FakeCuePlayer();
     const host = new FakeBackgroundHost();
     const store = new MemoryStore();
-    const registry = createModeRegistry([breatheMode]);
-    const controller = new SessionController({ clock, scheduler, player, host, store, registry });
+    const modes = createModeRegistry();
+    modes.register(breatheMode);
+    const controller = new SessionController({
+      clock,
+      scheduler,
+      player,
+      background: host,
+      store,
+      modes,
+    });
 
     const shortDef = breatheDefinition(
       settings({
@@ -161,7 +169,7 @@ describe('engine run', () => {
         holdSec: 4,
         exhaleSec: 4,
         postHoldSec: 4,
-        targetMinutes: 1, // 1m / 16s = 4 cycles, but let's override phases directly for exact 1 cycle test
+        targetMinutes: 1,
       }),
     );
     // 5s prep + 1 cycle (16s) = 21s
@@ -171,13 +179,7 @@ describe('engine run', () => {
     };
 
     await controller.start(singleCycleDef);
-
-    // T0 = 1,000,000.
-    // Advance scheduler across the 21 seconds
-    for (let sec = 0; sec <= 21; sec++) {
-      clock.advanceBy(1_000);
-      scheduler.runDue();
-    }
+    scheduler.advance(22_000);
 
     // Inspect cues dispatched to FakeCuePlayer
     const log = player.played.map((p) => ({

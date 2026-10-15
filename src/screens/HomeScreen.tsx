@@ -3,13 +3,14 @@ import { Pressable, ScrollView, StyleSheet, View, useColorScheme } from 'react-n
 
 import { Text } from '@/components/Text';
 import { BatteryLink } from '@/components/BatteryLink';
+import { BREATHE_MODE_ID } from '@/modes/breathe';
 import { ROUTINE_MODE_ID } from '@/modes/routine';
 import { RUN_WALK_MODE_ID } from '@/modes/runWalk';
 import { useSession } from '@/session/useSession';
 
 type ModeTile = { name: string; description: string; route?: Href; modeId?: string };
 
-/** The modes (roadmap). Those without a route are shown as coming soon until they ship (FR-019). */
+/** The modes. Those without a route are shown as coming soon until they ship (FR-019). */
 const MODES: ModeTile[] = [
   { name: 'Morning routine', description: 'A guided set of exercises, each with its own timer.', route: '/routine', modeId: ROUTINE_MODE_ID },
   {
@@ -18,7 +19,12 @@ const MODES: ModeTile[] = [
     route: '/run-walk',
     modeId: RUN_WALK_MODE_ID,
   },
-  { name: 'Breathe', description: 'Paced breathing with gentle cues for each breath.' },
+  {
+    name: 'Breathe',
+    description: 'Paced breathing with gentle cues for each breath.',
+    route: '/breathe',
+    modeId: BREATHE_MODE_ID,
+  },
 ];
 
 /** Lists the modes and the sample session (User Story 5). */

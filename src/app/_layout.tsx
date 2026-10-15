@@ -25,6 +25,7 @@ export default function RootLayout() {
         <Stack.Screen name="routine/index" options={{ title: 'Morning routine' }} />
         <Stack.Screen name="routine/edit" options={{ title: 'Edit routine' }} />
         <Stack.Screen name="run-walk" options={{ title: 'Run / walk' }} />
+        <Stack.Screen name="breathe" options={{ title: 'Breathe' }} />
       </Stack>
     </LaunchCheck>
   );

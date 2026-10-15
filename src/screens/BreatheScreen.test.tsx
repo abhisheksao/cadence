@@ -63,19 +63,19 @@ beforeEach(() => {
 });
 
 describe('BreatheScreen (US1 settings and live)', () => {
-  it('BU2: shows Box preset, target 3 min, 11 cycles, and Start button when idle', () => {
+  it('BU2: shows Box preset, target 3 min, 11 cycles, and Start button when idle', async () => {
     withSession(null);
-    render(<BreatheScreen />);
+    await render(<BreatheScreen />);
 
     expect(screen.getByText('Box (4-4-4-4)')).toBeOnTheScreen();
-    expect(screen.getByText(/3 min/)).toBeOnTheScreen();
+    expect(screen.getAllByText(/3 min/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/11 cycles/)).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: /^Start$/i })).toBeOnTheScreen();
   });
 
   it('BU3: tapping Start invokes controller.start with current definition', async () => {
     withSession(null);
-    render(<BreatheScreen />);
+    await render(<BreatheScreen />);
 
     await fireEvent.press(screen.getByRole('button', { name: /^Start$/i }));
 
@@ -83,16 +83,16 @@ describe('BreatheScreen (US1 settings and live)', () => {
     expect(controller.start).toHaveBeenCalledWith(definition);
   });
 
-  it('BU4: displays live view with phase title and cycle count when session is running', () => {
+  it('BU4: displays live view with phase title and cycle count when session is running', async () => {
     withSession(breatheState(1)); // Phase 1 is Inhale (after prep)
-    render(<BreatheScreen />);
+    await render(<BreatheScreen />);
 
     expect(screen.getByText('Inhale')).toBeOnTheScreen();
     expect(screen.getByText('Cycle 1 of 11')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: /pause/i })).toBeOnTheScreen();
   });
 
-  it('BU7: another mode session (e.g. run-walk) displays the idle settings view', () => {
+  it('BU7: another mode session (e.g. run-walk) displays the idle settings view', async () => {
     const rwDef = runWalkDefinition(defaultRunWalkSettings());
     withSession({
       status: 'running',
@@ -105,7 +105,7 @@ describe('BreatheScreen (US1 settings and live)', () => {
       definition: rwDef,
       backgroundWarning: false,
     });
-    render(<BreatheScreen />);
+    await render(<BreatheScreen />);
 
     expect(screen.getByText('Box (4-4-4-4)')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: /^Start$/i })).toBeOnTheScreen();
