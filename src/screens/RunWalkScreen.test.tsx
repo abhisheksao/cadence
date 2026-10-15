@@ -8,6 +8,7 @@ import { defaultSettings } from '@/runWalk/settings';
 import { RunWalkStore } from '@/runWalk/store';
 import { useRunWalk } from '@/runWalk/useRunWalk';
 import type { SessionState } from '@/session/controller';
+import { useKeepScreenOn } from '@/session/useKeepScreenOn';
 import { useSession } from '@/session/useSession';
 import { MemoryStore } from '@/test-utils/fakes';
 
@@ -159,5 +160,55 @@ describe('Run/walk screen: settings editing (US2)', () => {
     await render(<RunWalkScreen />);
     expect(screen.getByText('Off')).toBeOnTheScreen();
   });
+
+  it('switches for voice options and keep screen on update the store', async () => {
+    await render(<RunWalkScreen />);
+
+    const roundSwitch = screen.getByRole('switch', { name: 'Say the round' });
+    expect(roundSwitch.props.value).toBe(true);
+    await fireEvent(roundSwitch, 'valueChange', false);
+    expect(store.get().announceRound).toBe(false);
+
+    const halfwaySwitch = screen.getByRole('switch', { name: 'Say halfway' });
+    expect(halfwaySwitch.props.value).toBe(true);
+    await fireEvent(halfwaySwitch, 'valueChange', false);
+    expect(store.get().halfway).toBe(false);
+
+    const timeSwitch = screen.getByRole('switch', { name: 'Say time left' });
+    expect(timeSwitch.props.value).toBe(true);
+    await fireEvent(timeSwitch, 'valueChange', false);
+    expect(store.get().timeLeft).toBe(false);
+
+    const keepSwitch = screen.getByRole('switch', { name: 'Keep screen on' });
+    expect(keepSwitch.props.value).toBe(false);
+    await fireEvent(keepSwitch, 'valueChange', true);
+    expect(store.get().keepScreenOn).toBe(true);
+  });
 });
+
+describe('Run/walk screen: ended view and keep screen on (WU5, WU6)', () => {
+  it.each([
+    ['done', 'Complete'],
+    ['stopped', 'Stopped'],
+  ] as const)('shows %s with total elapsed time and Start again', async (status, banner) => {
+    withSession(runWalkState(17, { status, totalElapsedMs: 1_720_000 }));
+    await render(<RunWalkScreen />);
+    expect(screen.getByText(banner)).toBeOnTheScreen();
+    expect(screen.getByText('28:40')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Start again' })).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Start again' }));
+    expect(controller.start).toHaveBeenCalledWith(definition);
+  });
+
+  it('useKeepScreenOn receives definition and status while live, and undefined for another mode', async () => {
+    withSession(runWalkState(2, { status: 'running' }));
+    await render(<RunWalkScreen />);
+    expect(useKeepScreenOn).toHaveBeenLastCalledWith(definition, 'running');
+
+    withSession({ ...runWalkState(0), definition: routineDefinition(defaultRoutine(() => 'x')), title: 'Routine' });
+    await screen.rerender(<RunWalkScreen />);
+    expect(useKeepScreenOn).toHaveBeenLastCalledWith(undefined, undefined);
+  });
+});
+
 

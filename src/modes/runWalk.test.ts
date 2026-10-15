@@ -1,4 +1,4 @@
-import type { Cue, CueOpportunity } from '@/engine/types';
+import type { Cue, CueOpportunity, Phase } from '@/engine/types';
 import { createModeRegistry } from '@/modes/registry';
 import { defaultSettings } from '@/runWalk/settings';
 import type { RunWalkSettings } from '@/runWalk/types';
@@ -177,6 +177,117 @@ describe('run/walk cues (contracts/run-walk.md)', () => {
     expect(cuesAt(quiet, 2, 1)).toEqual([]);
     expect(cuesAt(quiet, 2, 30)).toEqual([]);
     expect(cuesAt(quiet, 3, 60)).toEqual([]);
+  });
+
+  describe('WC11: time-left cues', () => {
+    it('says time left at every multiple of 30 s with remaining > 5 and sec >= 5', () => {
+      expect(cuesAt(s, 1, 30)).toEqual([say('4 minutes 30 seconds left.')]);
+      expect(cuesAt(s, 1, 60)).toEqual([say('4 minutes left.')]);
+      expect(cuesAt(s, 1, 240)).toEqual([say('1 minute left.')]);
+      expect(cuesAt(s, 1, 270)).toEqual([say('30 seconds left.')]);
+    });
+
+    it('none when remaining <= 5', () => {
+      expect(cuesAt(s, 1, 295)).toEqual([say('Warm up ends in')]);
+    });
+
+    it('none when timeLeft is off', () => {
+      const quiet = settings({ timeLeft: false });
+      expect(cuesAt(quiet, 1, 30)).toEqual([]);
+      expect(cuesAt(quiet, 1, 60)).toEqual([]);
+      expect(cuesAt(quiet, 1, 270)).toEqual([]);
+    });
+
+    it('none at sec 0–4 of a 30 s phase or a 31 s phase', () => {
+      const shortWalk = settings({ walkSec: 30 });
+      expect(cuesAt(shortWalk, 3, 0)).toEqual([say('Walk for 30 seconds.', true)]);
+      for (let sec = 1; sec <= 4; sec++) {
+        expect(cuesAt(shortWalk, 3, sec)).toEqual([]);
+      }
+
+      const def = runWalkDefinition(defaultSettings());
+      const phase31: Phase = { kind: 'walk', title: 'Walk', durationSec: 31 };
+      const handler = runWalkMode.cueFor(def);
+      const op = (sec: number): CueOpportunity => ({
+        phase: phase31,
+        index: 1,
+        sec,
+        remaining: 31 - sec,
+        at: 0,
+        isPhaseStart: sec === 0,
+      });
+      expect(asList(handler.cueFor(op(1)))).toEqual([]);
+      expect(asList(handler.cueFor(op(2)))).toEqual([]);
+      expect(asList(handler.cueFor(op(3)))).toEqual([]);
+      expect(asList(handler.cueFor(op(4)))).toEqual([]);
+    });
+
+    it('none in get-ready phase', () => {
+      const def = runWalkDefinition(defaultSettings());
+      const ready30: Phase = { kind: 'ready', title: 'Get ready', durationSec: 30 };
+      const handler = runWalkMode.cueFor(def);
+      const op: CueOpportunity = {
+        phase: ready30,
+        index: 0,
+        sec: 0,
+        remaining: 30,
+        at: 0,
+        isPhaseStart: false,
+      };
+      expect(asList(handler.cueFor(op))).toEqual([]);
+    });
+  });
+
+  describe('WC12: halfway cues', () => {
+    it('says "Halfway. 1 minute left." merged on a 120 s run at sec 60', () => {
+      const run120 = settings({ runSec: 120 });
+      expect(cuesAt(run120, 2, 60)).toEqual([say('Halfway. 1 minute left.')]);
+    });
+
+    it('says "Halfway." on a 121 s run at sec 60', () => {
+      const def = runWalkDefinition(settings({ runSec: 120 }));
+      const run121: Phase = { kind: 'run', title: 'Run', durationSec: 121 };
+      const handler = runWalkMode.cueFor(def);
+      const op: CueOpportunity = {
+        phase: run121,
+        index: 2,
+        sec: 60,
+        remaining: 61,
+        at: 0,
+        isPhaseStart: false,
+      };
+      expect(asList(handler.cueFor(op))).toEqual([say('Halfway.')]);
+    });
+
+    it('no halfway cue on a 119 s run', () => {
+      const def = runWalkDefinition(settings({ runSec: 120 }));
+      const run119: Phase = { kind: 'run', title: 'Run', durationSec: 119 };
+      const handler = runWalkMode.cueFor(def);
+      const op: CueOpportunity = {
+        phase: run119,
+        index: 2,
+        sec: 59,
+        remaining: 60,
+        at: 0,
+        isPhaseStart: false,
+      };
+      expect(asList(handler.cueFor(op))).toEqual([say('1 minute left.')]);
+    });
+
+    it('no halfway cue on walks', () => {
+      const walk120 = settings({ walkSec: 120 });
+      expect(cuesAt(walk120, 3, 60)).toEqual([say('1 minute left.')]);
+    });
+
+    it('none when halfway is off', () => {
+      const quiet = settings({ runSec: 120, halfway: false });
+      expect(cuesAt(quiet, 2, 60)).toEqual([say('1 minute left.')]);
+    });
+
+    it('only says "Halfway." on a 120 s run when timeLeft is off', () => {
+      const noTimeLeft = settings({ runSec: 120, timeLeft: false });
+      expect(cuesAt(noTimeLeft, 2, 60)).toEqual([say('Halfway.')]);
+    });
   });
 });
 

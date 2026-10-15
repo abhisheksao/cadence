@@ -2,8 +2,10 @@ import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
 import { routineDefinition } from '@/modes/routine';
+import { runWalkDefinition } from '@/modes/runWalk';
 import { sampleDefinition } from '@/modes/sample';
 import { defaultRoutine } from '@/routine/defaults';
+import { defaultSettings } from '@/runWalk/settings';
 import type { SessionState } from '@/session/controller';
 import { useSession } from '@/session/useSession';
 
@@ -111,5 +113,25 @@ describe('Home screen (FR-019)', () => {
       await renderRouter(routes);
       expect(screen.queryByText('In progress')).toBeNull();
     });
+
+    const runWalk = runWalkDefinition(defaultSettings());
+
+    it.each(['running', 'paused'] as const)('shows on the run / walk tile while run-walk is %s', async (status) => {
+      withState(live(runWalk, status));
+      await renderRouter(routes);
+      expect(screen.getByText('In progress')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: /^Run \/ walk, in progress/ })).toBeOnTheScreen();
+    });
+
+    it('does not show on the run / walk tile for a routine session or when idle', async () => {
+      withState(live(routine, 'running'));
+      await renderRouter(routes);
+      expect(screen.getByRole('button', { name: /^Run \/ walk\./ })).toBeOnTheScreen();
+
+      withState(null);
+      await renderRouter(routes);
+      expect(screen.queryByText('In progress')).toBeNull();
+    });
   });
 });
+
