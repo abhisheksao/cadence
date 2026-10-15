@@ -25,7 +25,7 @@ const asList = (c: Cue | Cue[] | null): Cue[] => (c === null ? [] : Array.isArra
 const types = (index: number, sec: number) => asList(handler.cueFor(op(index, sec))).map((c) => c.type);
 
 describe('sample session', () => {
-  it('is a valid definition with the four phases from the quickstart', () => {
+  it('is a valid definition with four phases', () => {
     expect(validateDefinition(def, (id) => id === 'sample')).toEqual([]);
     expect(def.modeId).toBe('sample');
     expect(sampleMode.route).toBe('/sample');

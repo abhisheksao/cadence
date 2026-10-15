@@ -18,7 +18,7 @@ type Props = {
   onDelete: () => void;
 };
 
-/** Default length when an untimed step becomes timed (data-model.md). */
+/** Default length when an untimed step becomes timed. */
 const DEFAULT_SEC = 120;
 
 const split = (sec: number) => [String(Math.floor(sec / 60)), String(sec % 60)] as const;

@@ -8,7 +8,7 @@ import type { SessionDefinition } from '@/session/types';
 import { useKeepScreenOn } from '@/session/useKeepScreenOn';
 import { useSession } from '@/session/useSession';
 
-/** Runs the sample session or the 60-minute soak (quickstart.md, User Story 5). */
+/** Runs the sample session or the 60-minute soak (User Story 5). */
 export default function SampleScreen() {
   const { state, controller } = useSession();
   useKeepScreenOn(state?.definition, state?.status);

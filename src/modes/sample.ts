@@ -5,7 +5,7 @@ import type { ModeDefinition } from './types';
 
 /**
  * A short session that exercises every cue type, a timed and an untimed phase. It lets the
- * engine be checked on a device before the real modes exist (quickstart.md).
+ * engine be checked on a device before the real modes exist.
  */
 export function sampleDefinition(): SessionDefinition {
   return {
@@ -22,7 +22,7 @@ export function sampleDefinition(): SessionDefinition {
   };
 }
 
-/** Length of the soak run used to check timing drift and OS kills (SC-003, quickstart D10). */
+/** Length of the soak run used to check timing drift and OS kills (SC-003). */
 const SOAK_SEC = 60 * 60;
 
 /**

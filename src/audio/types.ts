@@ -1,6 +1,6 @@
 import type { Cue } from '@/engine/types';
 
-/** Plays cues on time (contracts/platform.md). */
+/** Plays cues on time. */
 export interface CuePlayer {
   /** Load sounds, set the audio mode (duckOthers), warm up TTS. Idempotent. */
   init(): Promise<void>;

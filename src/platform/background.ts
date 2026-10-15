@@ -1,5 +1,5 @@
 /**
- * Keeps a session running with the screen off (contracts/platform.md). Metro picks
+ * Keeps a session running with the screen off. Metro picks
  * background.android.ts or background.ios.ts; shared code imports this interface only.
  */
 export interface BackgroundHost {

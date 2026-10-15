@@ -1,4 +1,4 @@
-/** The run / walk workout setting, stored as JSON under `run-walk:v1` (data-model.md). */
+/** The run / walk workout setting, stored as JSON under `run-walk:v1`. */
 export type RunWalkSettings = {
   version: 1;
   /** 0–1800 in steps of 60; 0 means no warm-up. */
