@@ -6,6 +6,10 @@ Spoken-cue timers that keep working with the screen off: a morning routine, run/
 
 ## What works today
 
+### Run / walk intervals (spec 003)
+
+[Spec 003](specs/003-run-walk/spec.md) adds interval running: customizable run and walk intervals, rounds, warm-up, and cool-down, cued by voice over music with halfway and time-left reminders, live color cues, and screen-off timing.
+
 ### Morning routine (spec 002)
 
 [Spec 002](specs/002-morning-routine/spec.md) adds the first mode. You keep one routine of timed and untimed steps, and Cadence talks you through it: it announces each step, warns at one minute and 10 seconds left, beeps on the last 3 seconds, and waits on untimed steps until you tap **Done**. You can rename, retime, add, reorder, and delete steps (with undo) on the Edit screen. The routine is saved on the phone.
@@ -22,7 +26,7 @@ Spoken-cue timers that keep working with the screen off: a morning routine, run/
 - **Home screen and sample session.** The modes are listed on the home screen; those not built yet are marked coming soon. A sample session uses every cue type, and a 60-minute soak tests timing.
 - **Timing log.** Each cue writes one log line. `npm run timing-report` checks the log against the accuracy targets.
 
-Run / walk and Breathe come in later specs.
+Breathe comes in a later spec.
 
 ## Spec-driven development
 

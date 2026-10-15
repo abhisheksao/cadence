@@ -147,9 +147,9 @@ pass.
 
 ## Phase 6: Polish and Cross-Cutting Concerns
 
-- [ ] T035 [P] Update README.md: Run / walk moves from "coming later" to what works today, with a one-line description and a link to specs/003-run-walk/
-- [ ] T036 Review the spec against what was built; update spec.md, plan.md, research.md, data-model.md or contracts where the implementation diverged (Principle IX)
-- [ ] T037 Run `npm run check`, `npx expo-doctor`, and a local release build (`npx expo prebuild -p android && (cd android && ./gradlew assembleRelease)`); confirm the merged manifest's permissions are unchanged (no new permissions)
+- [X] T035 [P] Update README.md: Run / walk moves from "coming later" to what works today, with a one-line description and a link to specs/003-run-walk/
+- [X] T036 Review the spec against what was built; update spec.md, plan.md, research.md, data-model.md or contracts where the implementation diverged (Principle IX)
+- [X] T037 Run `npm run check`, `npx expo-doctor`, and a local release build (`npx expo prebuild -p android && (cd android && ./gradlew assembleRelease)`); confirm the merged manifest's permissions are unchanged (no new permissions)
 - [ ] T038 Open the PR from `003-run-walk` to `develop` (after explicit go-ahead, and after PR #3 is merged), listing the on-device checks W1–W15 and their results or pending status
 
 ---
