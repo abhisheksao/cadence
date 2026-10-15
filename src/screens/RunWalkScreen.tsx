@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View, useColorScheme } from 'react-native';
 
 import { Text } from '@/components/Text';
 import { Controls } from '@/components/Controls';
@@ -15,6 +15,7 @@ import {
   totalSec,
 } from '@/runWalk/settings';
 import { useRunWalk } from '@/runWalk/useRunWalk';
+import { useKeepScreenOn } from '@/session/useKeepScreenOn';
 import { useSession } from '@/session/useSession';
 
 /**
@@ -29,8 +30,10 @@ export default function RunWalkScreen() {
   const color = dark ? '#E6EDF3' : '#0E1116';
 
   const session = state?.definition.modeId === RUN_WALK_MODE_ID ? state : null;
+  const isLive = session && (session.status === 'running' || session.status === 'paused');
+  useKeepScreenOn(isLive ? session.definition : undefined, isLive ? session.status : undefined);
 
-  if (session && (session.status === 'running' || session.status === 'paused')) {
+  if (isLive) {
     return (
       <ScrollView contentContainerStyle={styles.live}>
         <RunWalkLiveView state={session} />
@@ -39,6 +42,7 @@ export default function RunWalkScreen() {
     );
   }
 
+  const ended = session && (session.status === 'done' || session.status === 'stopped');
   const currentPreset = matchingPreset(settings);
   const total = totalSec(settings);
   const start = () => {
@@ -47,6 +51,17 @@ export default function RunWalkScreen() {
 
   return (
     <View style={styles.container}>
+      {ended ? (
+        <View style={styles.ended}>
+          <Text style={[styles.endedTitle, { color }]} accessibilityRole="header">
+            {session.status === 'done' ? 'Complete' : 'Stopped'}
+          </Text>
+          <Text style={[styles.endedElapsed, { color }]}>
+            {formatClock(Math.floor(session.totalElapsedMs / 1_000))}
+          </Text>
+        </View>
+      ) : null}
+
       <ScrollView style={styles.settings} contentContainerStyle={styles.settingsContent}>
         <View style={styles.presetsGrid}>
           {PRESETS.map((p) => {
@@ -117,16 +132,51 @@ export default function RunWalkScreen() {
             canIncrease={canAdjust(settings, 'cooldownSec', 1)}
           />
         </View>
+
+        <View style={styles.switches}>
+          <View style={styles.switchRow}>
+            <Text style={[styles.switchLabel, { color }]}>Say the round</Text>
+            <Switch
+              accessibilityLabel="Say the round"
+              value={settings.announceRound}
+              onValueChange={(val) => store.update((s) => ({ ...s, announceRound: val }))}
+            />
+          </View>
+          <View style={styles.switchRow}>
+            <Text style={[styles.switchLabel, { color }]}>Say halfway</Text>
+            <Switch
+              accessibilityLabel="Say halfway"
+              value={settings.halfway}
+              onValueChange={(val) => store.update((s) => ({ ...s, halfway: val }))}
+            />
+          </View>
+          <View style={styles.switchRow}>
+            <Text style={[styles.switchLabel, { color }]}>Say time left</Text>
+            <Switch
+              accessibilityLabel="Say time left"
+              value={settings.timeLeft}
+              onValueChange={(val) => store.update((s) => ({ ...s, timeLeft: val }))}
+            />
+          </View>
+          <View style={styles.switchRow}>
+            <Text style={[styles.switchLabel, { color }]}>Keep screen on</Text>
+            <Switch
+              accessibilityLabel="Keep screen on"
+              value={settings.keepScreenOn}
+              onValueChange={(val) => store.update((s) => ({ ...s, keepScreenOn: val }))}
+            />
+          </View>
+        </View>
       </ScrollView>
 
       <Text style={[styles.total, { color }]}>{`Total ${formatClock(total)}`}</Text>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Start"
+        accessibilityLabel={ended ? 'Start again' : 'Start'}
         onPress={start}
         style={({ pressed }) => [styles.start, { opacity: pressed ? 0.8 : 1 }]}
       >
-        <Text style={styles.startText}>Start</Text>
+        <Text style={styles.startText}>{ended ? 'Start again' : 'Start'}</Text>
       </Pressable>
     </View>
   );
@@ -137,6 +187,9 @@ const styles = StyleSheet.create({
   live: { padding: 24, gap: 32, alignItems: 'center' },
   settings: { flex: 1 },
   settingsContent: { gap: 16 },
+  ended: { alignItems: 'center', gap: 4, paddingVertical: 12 },
+  endedTitle: { fontSize: 24, fontWeight: '700' },
+  endedElapsed: { fontSize: 36, fontWeight: '300', fontVariant: ['tabular-nums'] },
   presetsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -154,8 +207,12 @@ const styles = StyleSheet.create({
   },
   presetText: { fontSize: 14 },
   steppers: { gap: 4 },
+  switches: { gap: 12, paddingTop: 8 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  switchLabel: { fontSize: 16 },
   total: { fontSize: 15, opacity: 0.7, textAlign: 'center' },
   start: { backgroundColor: '#FF7A45', borderRadius: 14, paddingVertical: 18, alignItems: 'center' },
   startText: { color: '#0E1116', fontSize: 20, fontWeight: '700' },
 });
+
 

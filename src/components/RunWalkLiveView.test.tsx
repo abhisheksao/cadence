@@ -1,3 +1,4 @@
+import { StyleSheet } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 
 import { defaultSettings } from '@/runWalk/settings';
@@ -28,37 +29,27 @@ describe('RunWalkLiveView (US3)', () => {
     // 0 ready -> text color (#0E1116 in light mode)
     const { rerender } = await render(<RunWalkLiveView state={makeState(0)} />);
     const readyTitle = screen.getByRole('header', { name: 'Get ready' });
-    expect(readyTitle.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: '#0E1116' })]),
-    );
+    expect(StyleSheet.flatten(readyTitle.props.style).color).toBe('#0E1116');
 
     // 2 run -> accent (#FF7A45)
     await rerender(<RunWalkLiveView state={makeState(2)} />);
     const runTitle = screen.getByRole('header', { name: 'Run' });
-    expect(runTitle.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: '#FF7A45' })]),
-    );
+    expect(StyleSheet.flatten(runTitle.props.style).color).toBe('#FF7A45');
 
     // 3 walk -> green (#2EA043)
     await rerender(<RunWalkLiveView state={makeState(3)} />);
     const walkTitle = screen.getByRole('header', { name: 'Walk' });
-    expect(walkTitle.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: '#2EA043' })]),
-    );
+    expect(StyleSheet.flatten(walkTitle.props.style).color).toBe('#2EA043');
 
     // 1 warmup -> green (#2EA043)
     await rerender(<RunWalkLiveView state={makeState(1)} />);
     const warmupTitle = screen.getByRole('header', { name: 'Warm up' });
-    expect(warmupTitle.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: '#2EA043' })]),
-    );
+    expect(StyleSheet.flatten(warmupTitle.props.style).color).toBe('#2EA043');
 
     // 17 cooldown -> green (#2EA043)
     await rerender(<RunWalkLiveView state={makeState(17)} />);
     const cooldownTitle = screen.getByRole('header', { name: 'Cool down' });
-    expect(cooldownTitle.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: '#2EA043' })]),
-    );
+    expect(StyleSheet.flatten(cooldownTitle.props.style).color).toBe('#2EA043');
   });
 
   it('shows "elapsed / total" as m:ss', async () => {

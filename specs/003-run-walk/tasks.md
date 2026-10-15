@@ -128,17 +128,17 @@ pass.
 
 ### Tests for User Story 3 (write first, confirm they fail) ⚠️
 
-- [ ] T026 [P] [US3] Add to src/modes/runWalk.test.ts: WC11 (time left at every multiple of 30 s with `remaining > 5` and `sec ≥ 5`, in every kind but ready; none when `timeLeft` is off; none at sec 0–4 of a 30 s phase or a 31 s phase) and WC12 (halfway at `floor(d/2)` for runs of 120 s and 121 s, not 119 s, not on walks; merged "Halfway. 1 minute left." on a 120 s run; none when `halfway` is off)
-- [ ] T027 [P] [US3] Add to src/components/RunWalkLiveView.test.tsx: run and walk titles use different colours (run accent, walk green; ready the text colour); "elapsed / total" as m:ss; "Next: Walk 1:30" and none on the last phase
-- [ ] T028 [P] [US3] Add to src/screens/RunWalkScreen.test.tsx: switches for "Say the round", "Say halfway", "Say time left" and "Keep screen on" update the store; the ended view shows "Complete" (done) or "Stopped" (stopped) with the total elapsed above the settings, and Start reads "Start again" (WU5); `useKeepScreenOn` receives the run-walk definition and status while live, and `undefined` for another mode's session (WU6)
-- [ ] T029 [P] [US3] Add to src/screens/HomeScreen.test.tsx: the Run / walk tile shows "In progress" while a run-walk session is running or paused, and not for a routine session or when idle
+- [X] T026 [P] [US3] Add to src/modes/runWalk.test.ts: WC11 (time left at every multiple of 30 s with `remaining > 5` and `sec ≥ 5`, in every kind but ready; none when `timeLeft` is off; none at sec 0–4 of a 30 s phase or a 31 s phase) and WC12 (halfway at `floor(d/2)` for runs of 120 s and 121 s, not 119 s, not on walks; merged "Halfway. 1 minute left." on a 120 s run; none when `halfway` is off)
+- [X] T027 [P] [US3] Add to src/components/RunWalkLiveView.test.tsx: run and walk titles use different colours (run accent, walk green; ready the text colour); "elapsed / total" as m:ss; "Next: Walk 1:30" and none on the last phase
+- [X] T028 [P] [US3] Add to src/screens/RunWalkScreen.test.tsx: switches for "Say the round", "Say halfway", "Say time left" and "Keep screen on" update the store; the ended view shows "Complete" (done) or "Stopped" (stopped) with the total elapsed above the settings, and Start reads "Start again" (WU5); `useKeepScreenOn` receives the run-walk definition and status while live, and `undefined` for another mode's session (WU6)
+- [X] T029 [P] [US3] Add to src/screens/HomeScreen.test.tsx: the Run / walk tile shows "In progress" while a run-walk session is running or paused, and not for a routine session or when idle
 
 ### Implementation for User Story 3
 
-- [ ] T030 [US3] Add the time-left and halfway cues to the handler in src/modes/runWalk.ts to pass T026
-- [ ] T031 [P] [US3] Finish src/components/RunWalkLiveView.tsx (phase colours, elapsed / total, next phase) to pass T027
-- [ ] T032 [US3] Add the voice and keep-screen-on switches, the ended view and `useKeepScreenOn` to src/screens/RunWalkScreen.tsx to pass T028
-- [ ] T033 [US3] Make T029 pass in src/screens/HomeScreen.tsx (expected to pass already via `modeId`; fix if not)
+- [X] T030 [US3] Add the time-left and halfway cues to the handler in src/modes/runWalk.ts to pass T026
+- [X] T031 [P] [US3] Finish src/components/RunWalkLiveView.tsx (phase colours, elapsed / total, next phase) to pass T027
+- [X] T032 [US3] Add the voice and keep-screen-on switches, the ended view and `useKeepScreenOn` to src/screens/RunWalkScreen.tsx to pass T028
+- [X] T033 [US3] Make T029 pass in src/screens/HomeScreen.tsx (expected to pass already via `modeId`; fix if not)
 - [ ] T034 [US3] On device: run quickstart W3, W6–W8 and W12–W14
 
 **Checkpoint**: All three stories work on their own.

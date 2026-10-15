@@ -61,9 +61,33 @@ function handlerFor(definition: SessionDefinition<RunWalkVoice>): CueHandler {
   }
 
   return {
-    cueFor({ phase, index, remaining, next, isPhaseStart }) {
+    cueFor({ phase, index, sec, remaining, next, isPhaseStart }) {
       if (isPhaseStart) return { type: 'say', text: startPhrase(phase, index), interrupt: true };
       if (remaining === null) return null;
+
+      const isTimeLeft =
+        voice.timeLeft &&
+        phase.kind !== 'ready' &&
+        sec >= 5 &&
+        remaining > 5 &&
+        remaining % 30 === 0;
+
+      const isHalfway =
+        voice.halfway &&
+        phase.kind === 'run' &&
+        (phase.durationSec ?? 0) >= 120 &&
+        sec === Math.floor((phase.durationSec ?? 0) / 2);
+
+      if (isHalfway && isTimeLeft) {
+        return { type: 'say', text: `Halfway. ${spokenDuration(remaining)} left.` };
+      }
+      if (isHalfway) {
+        return { type: 'say', text: 'Halfway.' };
+      }
+      if (isTimeLeft) {
+        return { type: 'say', text: `${spokenDuration(remaining)} left.` };
+      }
+
       if (remaining === ENDS_IN_SEC && phase.kind !== 'ready') return { type: 'say', text: `${phase.title} ends in` };
       // The last beep before a phase change is the higher one; the last phase ends with the chime.
       if (remaining === 1 && next) return { type: 'beepLast' };
