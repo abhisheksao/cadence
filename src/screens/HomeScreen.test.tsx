@@ -1,6 +1,8 @@
 import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Text } from 'react-native';
 
+import { defaultSettings as defaultBreatheSettings } from '@/breathe/settings';
+import { breatheDefinition } from '@/modes/breathe';
 import { routineDefinition } from '@/modes/routine';
 import { runWalkDefinition } from '@/modes/runWalk';
 import { sampleDefinition } from '@/modes/sample';
@@ -140,6 +142,25 @@ describe('Home screen (FR-019)', () => {
       withState(live(routine, 'running'));
       await renderRouter(routes);
       expect(screen.getByRole('button', { name: /^Run \/ walk\./ })).toBeOnTheScreen();
+
+      withState(null);
+      await renderRouter(routes);
+      expect(screen.queryByText('In progress')).toBeNull();
+    });
+
+    const breathe = breatheDefinition(defaultBreatheSettings());
+
+    it.each(['running', 'paused'] as const)('shows on the breathe tile while breathe is %s (BU1)', async (status) => {
+      withState(live(breathe, status));
+      await renderRouter(routes);
+      expect(screen.getByText('In progress')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: /^Breathe, in progress/ })).toBeOnTheScreen();
+    });
+
+    it('does not show on the breathe tile for a routine session or when idle', async () => {
+      withState(live(routine, 'running'));
+      await renderRouter(routes);
+      expect(screen.getByRole('button', { name: /^Breathe\./ })).toBeOnTheScreen();
 
       withState(null);
       await renderRouter(routes);

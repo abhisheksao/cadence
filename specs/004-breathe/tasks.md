@@ -125,17 +125,17 @@ prep countdown toggle, keep screen on, and ended summary view.
 
 ### Tests for User Story 3 (write first, confirm they fail) ⚠️
 
-- [ ] T023 [P] [US3] Add to src/modes/breathe.test.ts: Count style tests (BC7, BC8: phase name spoken at start, seconds 2, 3, 4 counted aloud); Tones style tests (BC9–BC11, BC13: beeps for inhale, hold, exhale, chime only on completion with no speech)
-- [ ] T024 [P] [US3] Write src/components/BreatheLiveView.test.tsx: renders current phase title, cycle counter ("Cycle X of Y"), phase seconds countdown, animated pacer container, and paused indicator (BU4, BU5)
-- [ ] T025 [P] [US3] Add to src/screens/BreatheScreen.test.tsx: audio cue style selector updates store; prep countdown toggle enables/disables 5s prep phase; keep screen on toggle updates store and invokes `useKeepScreenOn`; ended view shows "Complete" or "Stopped" with total elapsed time and "Start again" action (BU6, BU7)
-- [ ] T026 [P] [US3] Add to src/screens/HomeScreen.test.tsx: Breathe tile shows "In progress" while a breathe session is running or paused, and not for other sessions or when idle
+- [x] T023 [P] [US3] Add to src/modes/breathe.test.ts: Count style tests (BC7, BC8: phase name spoken at start, seconds 2, 3, 4 counted aloud); Tones style tests (BC9–BC11, BC13: beeps for inhale, hold, exhale, chime only on completion with no speech)
+- [x] T024 [P] [US3] Write src/components/BreatheLiveView.test.tsx: renders current phase title, cycle counter ("Cycle X of Y"), phase seconds countdown, animated pacer container, and paused indicator (BU4, BU5)
+- [x] T025 [P] [US3] Add to src/screens/BreatheScreen.test.tsx: audio cue style selector updates store; prep countdown toggle enables/disables 5s prep phase; keep screen on toggle updates store and invokes `useKeepScreenOn`; ended view shows "Complete" or "Stopped" with total elapsed time and "Start again" action (BU6, BU7)
+- [x] T026 [P] [US3] Add to src/screens/HomeScreen.test.tsx: Breathe tile shows "In progress" while a breathe session is running or paused, and not for other sessions or when idle
 
 ### Implementation for User Story 3
 
-- [ ] T027 [US3] Add Count and Tones cue generation to cue handler in src/modes/breathe.ts to pass T023
-- [ ] T028 [P] [US3] Implement src/components/BreatheLiveView.tsx with smooth `Animated` circle scaling (`useNativeDriver: true`) to pass T024
-- [ ] T029 [US3] Add audio cue style selector, prep countdown switch, keep-screen-on switch, ended view, and `useKeepScreenOn` to src/screens/BreatheScreen.tsx to pass T025
-- [ ] T030 [US3] Verify Breathe tile "In progress" badge in src/screens/HomeScreen.tsx to pass T026
+- [x] T027 [US3] Add Count and Tones cue generation to cue handler in src/modes/breathe.ts to pass T023
+- [x] T028 [P] [US3] Implement src/components/BreatheLiveView.tsx with smooth `Animated` circle scaling (`useNativeDriver: true`) to pass T024
+- [x] T029 [US3] Add audio cue style selector, prep countdown switch, keep-screen-on switch, ended view, and `useKeepScreenOn` to src/screens/BreatheScreen.tsx to pass T025
+- [x] T030 [US3] Verify Breathe tile "In progress" badge in src/screens/HomeScreen.tsx to pass T026
 - [ ] T031 [US3] On device: run quickstart B3–B5, B11–B14
 
 **Checkpoint**: All three stories work together. Visual pacer, counting, tones, and customization complete.

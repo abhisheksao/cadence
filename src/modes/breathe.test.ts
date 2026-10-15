@@ -145,6 +145,61 @@ describe('breathe cues (voice style)', () => {
   });
 });
 
+describe('breathe cues (count style)', () => {
+  const s = settings({ cueStyle: 'count' });
+
+  it('BC7: speaks phase title on phase start', () => {
+    expect(cuesAt(s, 1, 0)).toEqual([say('Inhale.', true)]);
+    expect(cuesAt(s, 2, 0)).toEqual([say('Hold.', true)]);
+    expect(cuesAt(s, 3, 0)).toEqual([say('Exhale.', true)]);
+    expect(cuesAt(s, 4, 0)).toEqual([say('Hold.', true)]);
+  });
+
+  it('BC8: counts aloud seconds 2, 3, 4 during breath phases', () => {
+    expect(cuesAt(s, 1, 1)).toEqual([say('2')]);
+    expect(cuesAt(s, 1, 2)).toEqual([say('3')]);
+    expect(cuesAt(s, 1, 3)).toEqual([say('4')]);
+  });
+
+  it('BC12: completion plays chime and sign-off', () => {
+    const def = breatheDefinition(s);
+    const handler = breatheMode.cueFor(def);
+    expect(handler.completion?.(181_000)).toEqual([
+      chime(),
+      { type: 'say', text: 'Breathing complete. Well done.', offsetMs: 700 },
+    ]);
+  });
+});
+
+describe('breathe cues (tones style)', () => {
+  const s = settings({ cueStyle: 'tones' });
+
+  it('BC9: inhale start plays beep', () => {
+    expect(cuesAt(s, 1, 0)).toEqual([beep()]);
+  });
+
+  it('BC10: exhale start plays beepLast', () => {
+    expect(cuesAt(s, 3, 0)).toEqual([beepLast()]);
+  });
+
+  it('BC11: hold and post-hold starts play beep', () => {
+    expect(cuesAt(s, 2, 0)).toEqual([beep()]);
+    expect(cuesAt(s, 4, 0)).toEqual([beep()]);
+  });
+
+  it('BC14: intermediate seconds have no cues', () => {
+    expect(cuesAt(s, 1, 1)).toEqual([]);
+    expect(cuesAt(s, 1, 2)).toEqual([]);
+    expect(cuesAt(s, 1, 3)).toEqual([]);
+  });
+
+  it('BC13: completion plays chime only with no voice', () => {
+    const def = breatheDefinition(s);
+    const handler = breatheMode.cueFor(def);
+    expect(handler.completion?.(181_000)).toEqual([chime()]);
+  });
+});
+
 describe('engine run', () => {
   it('runs a short 1-cycle session end to end with correct cues and timing', async () => {
     const clock = new FakeClock(1_000_000);

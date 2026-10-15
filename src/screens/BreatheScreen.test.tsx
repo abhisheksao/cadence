@@ -8,6 +8,7 @@ import { breatheDefinition } from '@/modes/breathe';
 import { runWalkDefinition } from '@/modes/runWalk';
 import { defaultSettings as defaultRunWalkSettings } from '@/runWalk/settings';
 import type { SessionState } from '@/session/controller';
+import { useKeepScreenOn } from '@/session/useKeepScreenOn';
 import { useSession } from '@/session/useSession';
 import { MemoryStore } from '@/test-utils/fakes';
 
@@ -159,5 +160,53 @@ describe('BreatheScreen: settings editing (US2)', () => {
     await render(<BreatheScreen />);
     await fireEvent.press(screen.getByRole('button', { name: 'Coherent (5-5)' }));
     expect(screen.getAllByText('Off').length).toBe(2); // holdSec and postHoldSec are both 0
+  });
+
+  it('switches for cue style, prep countdown, and keep screen on update the store', async () => {
+    await render(<BreatheScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Count audio cues' }));
+    expect(store.get().cueStyle).toBe('count');
+    expect(screen.getByRole('button', { name: 'Count audio cues, selected' })).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Tones audio cues' }));
+    expect(store.get().cueStyle).toBe('tones');
+    expect(screen.getByRole('button', { name: 'Tones audio cues, selected' })).toBeOnTheScreen();
+
+    const prepSwitch = screen.getByRole('switch', { name: 'Get-ready countdown' });
+    expect(prepSwitch.props.value).toBe(true);
+    await fireEvent(prepSwitch, 'valueChange', false);
+    expect(store.get().prepEnabled).toBe(false);
+
+    const keepSwitch = screen.getByRole('switch', { name: 'Keep screen on' });
+    expect(keepSwitch.props.value).toBe(false);
+    await fireEvent(keepSwitch, 'valueChange', true);
+    expect(store.get().keepScreenOn).toBe(true);
+  });
+});
+
+describe('BreatheScreen: ended view and keep screen on (BU6, BU7)', () => {
+  it.each([
+    ['done', 'Complete'],
+    ['stopped', 'Stopped'],
+  ] as const)('shows %s banner with elapsed time and Start again button', async (status, banner) => {
+    withSession(breatheState(0, { status, totalElapsedMs: 181_000 }));
+    await render(<BreatheScreen />);
+    expect(screen.getByRole('header', { name: banner })).toBeOnTheScreen();
+    expect(screen.getByText('3:01')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Start again' })).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Start again' }));
+    expect(controller.start).toHaveBeenCalledWith(definition);
+  });
+
+  it('useKeepScreenOn receives definition and status while live, and undefined when not live', async () => {
+    withSession(breatheState(1, { status: 'running' }));
+    await render(<BreatheScreen />);
+    expect(useKeepScreenOn).toHaveBeenLastCalledWith(definition, 'running');
+
+    withSession(breatheState(1, { status: 'stopped' }));
+    await screen.rerender(<BreatheScreen />);
+    expect(useKeepScreenOn).toHaveBeenLastCalledWith(undefined, undefined);
   });
 });
