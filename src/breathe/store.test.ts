@@ -34,44 +34,43 @@ describe('parseBreathe', () => {
 });
 
 describe('BreatheStore', () => {
-  it('BS4: starts with the defaults when nothing is stored, and saves them', async () => {
-    const memory = new MemoryStore();
-    const store = new BreatheStore(memory);
+  it('BS4: starts with the defaults when nothing is stored, and saves them', () => {
+    const store = new MemoryStore();
+    const settings = new BreatheStore({ store });
 
-    expect(store.get()).toEqual(defaultSettings());
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(memory.getSync(BREATHE_KEY)).toBe(JSON.stringify(defaultSettings()));
+    expect(settings.get()).toEqual(defaultSettings());
+    expect(parseBreathe(store.getSync(BREATHE_KEY))).toEqual(defaultSettings());
   });
 
-  it('BS4: falls back to defaults when stored data is unreadable, overwriting it', async () => {
-    const memory = new MemoryStore();
-    memory.setSync(BREATHE_KEY, 'not json');
-    const store = new BreatheStore(memory);
+  it.each([
+    ['unreadable JSON', '{oops'],
+    ['another version', JSON.stringify({ ...custom, version: 9 })],
+  ])('BS4: falls back to defaults when stored data is %s, overwriting it', (_name, raw) => {
+    const store = new MemoryStore();
+    store.data.set(BREATHE_KEY, raw);
+    const settings = new BreatheStore({ store });
 
-    expect(store.get()).toEqual(defaultSettings());
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(memory.getSync(BREATHE_KEY)).toBe(JSON.stringify(defaultSettings()));
+    expect(settings.get()).toEqual(defaultSettings());
+    expect(parseBreathe(store.getSync(BREATHE_KEY))).toEqual(defaultSettings());
   });
 
   it('BS6: update notifies subscribers and saves the full value', async () => {
-    const memory = new MemoryStore();
-    const store = new BreatheStore(memory);
+    const store = new MemoryStore();
+    const settings = new BreatheStore({ store });
     const seen: BreatheSettings[] = [];
-    const unsubscribe = store.subscribe((s) => seen.push(s));
+    const unsubscribe = settings.subscribe((s) => seen.push(s));
 
-    store.update((s) => ({ ...s, targetMinutes: 5, cueStyle: 'count' }));
+    settings.update((s) => ({ ...s, targetMinutes: 5, cueStyle: 'count' }));
 
     expect(seen).toHaveLength(1);
     expect(seen[0]).toMatchObject({ targetMinutes: 5, cueStyle: 'count' });
-    expect(store.get()).toMatchObject({ targetMinutes: 5, cueStyle: 'count' });
+    expect(settings.get()).toMatchObject({ targetMinutes: 5, cueStyle: 'count' });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
-    const saved = JSON.parse(memory.getSync(BREATHE_KEY)!);
+    const saved = JSON.parse(store.getSync(BREATHE_KEY)!);
     expect(saved).toMatchObject({ targetMinutes: 5, cueStyle: 'count' });
 
-    const fresh = new BreatheStore(memory);
+    const fresh = new BreatheStore({ store });
     expect(fresh.get()).toMatchObject({ targetMinutes: 5, cueStyle: 'count' });
 
     unsubscribe();
