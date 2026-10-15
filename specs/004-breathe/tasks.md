@@ -144,10 +144,10 @@ prep countdown toggle, keep screen on, and ended summary view.
 
 ## Phase 6: Polish and Cross-Cutting Concerns
 
-- [ ] T032 [P] Update README.md: move Breathe from "coming soon" to working features, with brief description and link to specs/004-breathe/
-- [ ] T033 Review spec against implementation; update spec.md, plan.md, research.md, data-model.md, contracts where implementation diverged (Principle IX)
-- [ ] T034 Verify no `.md` or markdown document references were added in code, comments, or tests
-- [ ] T035 Run `npm test`, `npm run typecheck`, `expo lint`, `npx expo-doctor`, and local Android release build (`npx expo prebuild -p android && (cd android && ./gradlew assembleRelease)`); confirm permissions are unchanged
+- [x] T032 [P] Update README.md: move Breathe from "coming soon" to working features, with brief description and link to specs/004-breathe/
+- [x] T033 Review spec against implementation; update spec.md, plan.md, research.md, data-model.md, contracts where implementation diverged (Principle IX)
+- [x] T034 Verify no `.md` or markdown document references were added in code, comments, or tests
+- [x] T035 Run `npm test`, `npm run typecheck`, `expo lint`, `npx expo-doctor`, and local Android release build (`npx expo prebuild -p android && (cd android && ./gradlew assembleRelease)`); confirm permissions are unchanged
 - [ ] T036 Open PR from `004-breathe` to `develop` (after explicit go-ahead), listing on-device checks B1–B15
 
 ---

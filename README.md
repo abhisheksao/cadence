@@ -6,6 +6,10 @@ Spoken-cue timers that keep working with the screen off: a morning routine, run/
 
 ## What works today
 
+### Guided breathing (spec 004)
+
+[Spec 004](specs/004-breathe/spec.md) adds guided breathing: customizable breath patterns (inhale, hold, exhale, post-hold) with presets (Box 4-4-4-4, 4-7-8 Relax, 3-4-7 Calm, Coherent), target duration in minutes, visual expanding/contracting breath pacer animation, selectable cue styles (Voice, Count, Tones), optional preparation countdown, and screen keep-awake.
+
 ### Run / walk intervals (spec 003)
 
 [Spec 003](specs/003-run-walk/spec.md) adds interval running: customizable run and walk intervals, rounds, warm-up, and cool-down, cued by voice over music with halfway and time-left reminders, live color cues, and screen-off timing.
@@ -25,8 +29,6 @@ Spoken-cue timers that keep working with the screen off: a morning routine, run/
 - **Recovery.** If the OS kills the app mid-session, the next launch offers to resume where the clock says the session should be.
 - **Home screen and sample session.** The modes are listed on the home screen; those not built yet are marked coming soon. A sample session uses every cue type, and a 60-minute soak tests timing.
 - **Timing log.** Each cue writes one log line. `npm run timing-report` checks the log against the accuracy targets.
-
-Breathe comes in a later spec.
 
 ## Spec-driven development
 
