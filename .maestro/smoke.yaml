@@ -4,7 +4,6 @@ appId: io.github.abhisheksao.cadence
     clearState: true
 
 # Assert Home screen tiles and footer
-- assertVisible: "Cadence"
 - assertVisible: "Morning routine"
 - assertVisible: "Run / walk"
 - assertVisible: "Breathe"

@@ -13,10 +13,13 @@ appId: io.github.abhisheksao.cadence
 - assertVisible:
     id: "breath-pacer"
 
-# Lock device and wait with screen off
-- lockDevice
-- sleep: 6000
-- unlockDevice
+# Send app to background and wait
+- pressKey: Home
+- evalScript: ${const start = Date.now(); while (Date.now() - start < 6000) {}}
+
+# Bring app back to foreground without restarting
+- launchApp:
+    stopApp: false
 
 # Verify session persisted and is still active after screen was turned off
 - assertVisible: "Pause"

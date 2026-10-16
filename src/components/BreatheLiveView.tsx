@@ -5,6 +5,9 @@ import { Text } from '@/components/Text';
 import { formatClock, spokenDuration } from '@/format/clock';
 import type { SessionState } from '@/session/controller';
 
+const MIN_SCALE = 0.75;
+const MAX_SCALE = 1.0;
+
 /**
  * Visual breathing pacer and session status: expanding/contracting circle,
  * phase title, cycle counter, and countdown clock.
@@ -18,7 +21,7 @@ export function BreatheLiveView({ state }: { state: SessionState }) {
   const elapsedSec = Math.floor(state.totalElapsedMs / 1_000);
   const totalSec = definition.phases.reduce((sum, p) => sum + (p.durationSec ?? 0), 0);
 
-  const [scale] = useState(() => new Animated.Value(0.4));
+  const [scale] = useState(() => new Animated.Value(MIN_SCALE));
 
   useEffect(() => {
     if (status !== 'running') {
@@ -30,20 +33,22 @@ export function BreatheLiveView({ state }: { state: SessionState }) {
 
     if (phase?.kind === 'inhale') {
       Animated.timing(scale, {
-        toValue: 1.0,
+        toValue: MAX_SCALE,
         duration,
         useNativeDriver: true,
       }).start();
     } else if (phase?.kind === 'exhale') {
       Animated.timing(scale, {
-        toValue: 0.4,
+        toValue: MIN_SCALE,
         duration,
         useNativeDriver: true,
       }).start();
     } else if (phase?.kind === 'hold') {
-      scale.setValue(1.0);
+      scale.setValue(MAX_SCALE);
     } else if (phase?.kind === 'post-hold') {
-      scale.setValue(0.4);
+      scale.setValue(MIN_SCALE);
+    } else {
+      scale.setValue(MIN_SCALE);
     }
   }, [phase?.kind, status, phaseRemainingMs, scale]);
 
@@ -89,24 +94,24 @@ const styles = StyleSheet.create({
   title: { fontSize: 48, fontWeight: '800', textAlign: 'center' },
   subtitle: { fontSize: 20, opacity: 0.7, textAlign: 'center' },
   pacerContainer: {
-    width: 200,
-    height: 200,
+    width: 280,
+    height: 280,
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 16,
   },
   pacerCircle: {
     position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
     borderWidth: 3,
   },
   clockOverlay: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  clock: { fontSize: 52, fontWeight: '300', fontVariant: ['tabular-nums'] },
+  clock: { fontSize: 44, fontWeight: '300', fontVariant: ['tabular-nums'] },
   elapsedTotal: { fontSize: 18, opacity: 0.7, fontVariant: ['tabular-nums'] },
   badge: { color: '#FF7A45', fontSize: 18, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
 });

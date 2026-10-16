@@ -1,4 +1,6 @@
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 import process from 'node:process';
 
 /**
@@ -38,9 +40,23 @@ To run end-to-end flows locally:
     return 1;
   }
 
-  const target = args.length > 0 ? args : ['.maestro/'];
-  const res = spawnSync('maestro', ['test', ...target], { stdio: 'inherit' });
-  return res.status ?? 0;
+  const flows =
+    args.length > 0
+      ? args
+      : fs
+          .readdirSync('.maestro')
+          .filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'))
+          .sort()
+          .map((f) => path.join('.maestro', f));
+
+  for (const flow of flows) {
+    console.log(`\n▶ Running Maestro flow: ${flow}`);
+    const res = spawnSync('maestro', ['test', flow], { stdio: 'inherit' });
+    if (res.status !== 0) {
+      return res.status ?? 1;
+    }
+  }
+  return 0;
 }
 
 if (process.argv[1] && process.argv[1].endsWith('run-e2e.mjs')) {
