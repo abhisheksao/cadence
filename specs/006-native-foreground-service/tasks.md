@@ -42,10 +42,10 @@ its own.
 
 **Purpose**: Starting point and the empty module.
 
-- [ ] T001 Confirm `006-native-foreground-service` is up to date with `develop`, the working tree is clean, and `npm run check` is green apart from the spec-doc check for this folder
-- [ ] T002 Create the local module with `npx create-expo-module@latest --local` named `cadence-session` in modules/cadence-session/; delete the generated iOS, web and view files; set modules/cadence-session/expo-module.config.json to `platforms: ["android"]` and module class `io.github.abhisheksao.cadence.session.CadenceSessionModule`; leave an empty module definition `Name("CadenceSession")`
-- [ ] T003 Write modules/cadence-session/index.ts exporting the typed module from `requireOptionalNativeModule('CadenceSession')` (null off Android) with the full surface and event payload types from the contract's "Local module JS surface" (no implementation yet on the native side beyond stubs)
-- [ ] T004 Run `npx expo prebuild -p android --clean` and `(cd android && ./gradlew assembleDebug)` to prove the empty module links; `npm run check` green
+- [x] T001 Confirm `006-native-foreground-service` is up to date with `develop`, the working tree is clean, and `npm run check` is green apart from the spec-doc check for this folder
+- [x] T002 Create the local module with `npx create-expo-module@latest --local` named `cadence-session` in modules/cadence-session/; delete the generated iOS, web and view files; set modules/cadence-session/expo-module.config.json to `platforms: ["android"]` and module class `io.github.abhisheksao.cadence.session.CadenceSessionModule`; leave an empty module definition `Name("CadenceSession")`
+- [x] T003 Write modules/cadence-session/index.ts exporting the typed module from `requireOptionalNativeModule('CadenceSession')` (null off Android) with the full surface and event payload types from the contract's "Local module JS surface" (no implementation yet on the native side beyond stubs)
+- [x] T004 Run `npx expo prebuild -p android --clean` and `(cd android && ./gradlew assembleDebug)` to prove the empty module links; `npm run check` green
 
 ---
 
