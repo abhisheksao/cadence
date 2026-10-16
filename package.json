@@ -37,17 +37,22 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint",
-    "test": "jest",
+    "lint": "EXPO_NO_TELEMETRY=1 expo lint",
+    "test": "jest --watchman=false",
     "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage --watchman=false",
+    "test:e2e": "node scripts/run-e2e.mjs",
     "typecheck": "tsc --noEmit",
-    "check": "npm run lint && npm run typecheck && npm test",
+    "check:specs": "node scripts/check-spec-links.mjs",
+    "check": "npm run lint && npm run typecheck && npm run check:specs && npm test",
     "sounds": "node scripts/gen-sounds.mjs",
     "timing-report": "node scripts/timing-report.mjs"
   },
   "private": true,
   "jest": {
     "preset": "jest-expo",
+    "watchman": false,
+    "testTimeout": 10000,
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-background-actions|standard-navigation)"
     ],
@@ -58,6 +63,43 @@
       "<rootDir>/src/**/*.test.[jt]s?(x)",
       "<rootDir>/scripts/**/*.test.mjs"
     ],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.test.{ts,tsx}",
+      "!src/**/types.ts",
+      "!src/app/_layout.tsx"
+    ],
+    "coverageReporters": [
+      "text",
+      "text-summary",
+      "lcov"
+    ],
+    "coverageThreshold": {
+      "./src/engine/": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      },
+      "./src/session/": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      },
+      "./src/modes/": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      },
+      "./src/storage/": {
+        "statements": 80,
+        "branches": 80,
+        "functions": 80,
+        "lines": 80
+      }
+    },
     "moduleFileExtensions": [
       "ts",
       "tsx",
