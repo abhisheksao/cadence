@@ -67,11 +67,11 @@
 
 ### Tasks for User Story 2
 
-- [ ] T012 [P] [US2] Create GitHub Actions release workflow .github/workflows/release.yml triggered on tag pushes matching `v*`
-- [ ] T013 [US2] Add release assembly and optional signing step in .github/workflows/release.yml supporting `ANDROID_KEYSTORE_BASE64` secret with clean fallback to unsigned APK
-- [ ] T014 [US2] Add SHA-256 checksum generation step (`sha256sum`) in .github/workflows/release.yml outputting `SHA256SUMS.txt`
-- [ ] T015 [US2] Configure GitHub Release publication step (`softprops/action-gh-release@v2`) in .github/workflows/release.yml attaching the APK and `SHA256SUMS.txt`
-- [ ] T016 [US2] Validate .github/workflows/release.yml syntax and verify checksum generation logic
+- [x] T012 [P] [US2] Create GitHub Actions release workflow .github/workflows/release.yml triggered on tag pushes matching `v*`
+- [x] T013 [US2] Add release assembly and optional signing step in .github/workflows/release.yml supporting `ANDROID_KEYSTORE_BASE64` secret with clean fallback to unsigned APK
+- [x] T014 [US2] Add SHA-256 checksum generation step (`sha256sum`) in .github/workflows/release.yml outputting `SHA256SUMS.txt`
+- [x] T015 [US2] Configure GitHub Release publication step (`softprops/action-gh-release@v2`) in .github/workflows/release.yml attaching the APK and `SHA256SUMS.txt`
+- [x] T016 [US2] Validate .github/workflows/release.yml syntax and verify checksum generation logic
 
 **Checkpoint**: Tagged releases automatically generate and publish APK binaries with checksums.
 
