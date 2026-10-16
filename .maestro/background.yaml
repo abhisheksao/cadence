@@ -1,0 +1,32 @@
+appId: io.github.abhisheksao.cadence
+---
+- launchApp:
+    clearState: true
+
+# Open Breathe mode and start session
+- tapOn: "Breathe"
+- assertVisible: "Start"
+- tapOn: "Start"
+
+# Verify session is running
+- assertVisible: "Pause"
+- assertVisible:
+    id: "breath-pacer"
+
+# Send app to background and wait
+- pressKey: Home
+- evalScript: ${const start = Date.now(); while (Date.now() - start < 6000) {}}
+
+# Bring app back to foreground without restarting
+- launchApp:
+    stopApp: false
+
+# Verify session persisted and is still active after screen was turned off
+- assertVisible: "Pause"
+- assertVisible:
+    id: "breath-pacer"
+
+# Stop session
+- tapOn: "Stop"
+- assertVisible:
+    text: "Stopped"

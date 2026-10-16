@@ -30,6 +30,10 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# IDE
+.idea/
+*.iml
+
 # local env files
 .env*.local
 
@@ -47,3 +51,11 @@ yarn-error.*
 *.keystore
 google-services.json
 GoogleService-Info.plist
+
+# Spec Kit: active feature pointer (per-checkout state)
+.specify/feature.json
+
+# test coverage and logs
+coverage/
+*.log
+!scripts/__fixtures__/*.log

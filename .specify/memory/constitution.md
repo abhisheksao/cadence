@@ -1,50 +1,171 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version change: template → 1.0.0 (initial ratification)
+- Principles defined:
+  I. Screen-Off Reliability
+  II. Duck, Never Pause
+  III. Offline and Private
+  IV. Android-First, iOS-Ready
+  V. Continuous Native Generation
+  VI. Local Builds Only
+  VII. Test-First Development (NON-NEGOTIABLE)
+  VIII. Quality Gates
+  IX. Spec Traceability
+- Added sections: Platform & Technology Constraints, Development Workflow, Governance
+- Removed sections: none
+- Templates:
+  ✅ .specify/templates/plan-template.md (Constitution Check gates filled in)
+  ✅ .specify/templates/tasks-template.md (test tasks mandatory and written first)
+  ✅ .specify/templates/spec-template.md (no change needed)
+  ✅ AGENTS.md, README.md (already point to this file; no change needed)
+- Deferred TODOs: none
+-->
+
+# Cadence Constitution
+
+Cadence is an offline, Android-first (iOS-ready) Expo/React Native app that speaks timed audio
+cues for morning routines, run/walk intervals, and breathing exercises, reliably with the screen
+off.
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Screen-Off Reliability
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+- An active session MUST keep running with the screen off and the app in the background. On
+  Android this means a foreground service with a visible, ongoing notification.
+- Cue times MUST be derived from wall-clock timestamps (session start + planned offsets, adjusted
+  for pauses), never from summing timer ticks or interval callbacks.
+- If the process is delayed or throttled, the engine MUST recompute its position from the clock
+  and fire or skip overdue cues predictably; it MUST NOT drift.
+- Timing logic MUST take its clock as an injected dependency so it can be tested on a fake clock.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rationale**: A cue app that drifts or stops when the phone is in a pocket is useless. OS timers
+are throttled in the background; the wall clock is not.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Duck, Never Pause
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+- Cues MUST request transient audio focus that ducks other audio (e.g. music, podcasts) and MUST
+  release it after each cue so the other audio returns to full volume.
+- Cadence MUST NOT pause, stop, or take exclusive focus from other apps' playback.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Rationale**: Users run Cadence alongside their own music. Interrupting it is the most
+noticeable way to fail them.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Offline and Private
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- Every feature MUST work with no network connection. The app MUST NOT require an account.
+- The app MUST NOT include analytics, telemetry, crash reporting, or ad SDKs, and MUST NOT send
+  user data off the device.
+- User data (routines, presets, settings) MUST be stored on-device only. Export and sharing MUST be
+  explicit, user-initiated actions.
+- New permissions MUST be justified in the feature's plan.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+**Rationale**: Cadence handles nothing that needs a server, so it has no reason to collect
+anything.
+
+### IV. Android-First, iOS-Ready
+
+- Android is the primary target; features MUST be verified on a physical Android device before
+  release.
+- Platform-specific behavior (background execution, audio focus, notifications) MUST sit behind a
+  TypeScript interface, with per-platform implementations (`*.android.ts`, `*.ios.ts`, or native
+  modules). Shared code MUST NOT branch on `Platform.OS` for these concerns.
+- Choices that would block an iOS port MUST be called out in the plan.
+
+**Rationale**: Shipping one platform well comes first, but the design must not need a rewrite to
+add iOS later.
+
+### V. Continuous Native Generation
+
+- `android/` and `ios/` are generated by `expo prebuild` and MUST NOT be committed or edited by
+  hand.
+- All native configuration MUST be expressed in `app.json` / `app.config.*`, config plugins, or
+  local Expo modules, so a clean prebuild always reproduces the native projects.
+
+**Rationale**: Hand-edited native folders drift from config and break on the next SDK upgrade.
+
+### VI. Local Builds Only
+
+- Builds MUST be produced locally: `expo run:android` for development, `expo prebuild` +
+  Gradle `assembleRelease` for release APKs (and the Xcode equivalent for iOS).
+- EAS Build, EAS Submit, EAS Update, and other cloud build or OTA services MUST NOT be used.
+  CI MAY build APKs on its own runners with the same local commands.
+
+**Rationale**: Anyone can reproduce a build from a clone with no account or paid service, and no
+code reaches devices without going through a reviewed release.
+
+### VII. Test-First Development (NON-NEGOTIABLE)
+
+- Every behavior change starts with a test: write the test, run it and see it fail, then write the
+  smallest code that makes it pass, then refactor with tests green (red → green → refactor).
+- Logic (engine, scheduling, parsing, storage) MUST be covered by unit tests; screens and
+  components MUST be covered by React Native Testing Library tests of what the user sees and does.
+- Bug fixes MUST begin with a test that reproduces the bug.
+- Behavior that cannot be automated yet (screen off, audio focus, OEM process kills) MUST have its
+  on-device test steps written in the feature's tasks before the implementation, and those steps
+  MUST be run before the PR is merged.
+- In `tasks.md`, test tasks for a user story MUST come before its implementation tasks. Reviewers
+  SHOULD be able to see in the commit history that tests came first.
+- Exempt: config and scaffolding with no behavior, and throwaway spikes. Spike code MUST NOT be
+  merged; it is rewritten test-first.
+
+**Rationale**: Writing the test first forces each behavior to be specified precisely and keeps the
+timing engine honest; tests written afterwards tend to confirm the code rather than the spec.
+
+### VIII. Quality Gates
+
+- TypeScript `strict` MUST stay on. `any` and `@ts-ignore` / `@ts-expect-error` MUST have a comment
+  explaining why.
+- Lint (`expo lint`), typecheck (`tsc --noEmit`), and all tests MUST pass before a task is marked
+  done and before a PR is merged.
+- New dependencies MUST be added with `expo install` and MUST prefer Expo modules over third-party
+  libraries.
+
+**Rationale**: A green, strict build on every merge keeps `develop` releasable at any time.
+
+### IX. Spec Traceability
+
+- No feature code without a spec in `specs/NNN-name/` (spec → plan → tasks), produced with the
+  Spec Kit workflow.
+- Every feature PR MUST reference its spec folder. Fixes and chores that change no behavior MAY
+  skip a spec but MUST say so in the PR.
+- When implementation diverges from the spec, the spec MUST be updated in the same PR.
+
+**Rationale**: The specs are the project's design record; they are only useful if they match the
+code.
+
+## Platform & Technology Constraints
+
+- Stack: Expo (current SDK, see `package.json`), React Native, TypeScript, Expo Router with routes
+  in `src/app/`. Non-route code lives outside `src/app/`.
+- Expo and React Native APIs MUST be checked against the versioned docs for the SDK in use, not
+  recalled from memory.
+- Native code beyond Expo modules MUST be written as a local Expo module or config plugin
+  (Principle V).
+- Tests: Jest (`jest-expo` preset) with React Native Testing Library; timing tests use an
+  injected fake clock (Principle I).
+- License: Apache-2.0. Committed files MUST NOT contain secrets, keystores, or personal paths.
+
+## Development Workflow
+
+- Branches: `main` holds tagged releases only; `develop` is the integration branch. Feature
+  branches are named `NNN-name`, created from `develop`, and merged back via PR. Nothing is
+  committed directly to `main`.
+- Commits follow Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, ...).
+- Per feature: specify → clarify → plan → tasks → implement test-first (red → green → refactor)
+  → lint/typecheck/tests → local build → on-device test → PR to `develop`.
+- Human review is required after clarify and after plan, before work continues.
+- Releases: merge `develop` into `main`, tag `vX.Y.Z`, build the release APK locally.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- This constitution takes precedence over other guidance in the repository. `AGENTS.md` holds
+  day-to-day commands and MUST stay consistent with it.
+- Amendments are made by PR that updates this file, includes a Sync Impact Report, and updates any
+  affected templates in `.specify/templates/`.
+- Versioning: MAJOR for removing or redefining a principle, MINOR for adding a principle or
+  materially expanding guidance, PATCH for clarifications and wording.
+- Every plan MUST pass the Constitution Check gates; any exception MUST be recorded in the plan's
+  Complexity Tracking table with a justification.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-13

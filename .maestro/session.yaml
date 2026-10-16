@@ -1,0 +1,31 @@
+appId: io.github.abhisheksao.cadence
+---
+- launchApp:
+    clearState: true
+
+# Open Breathe mode
+- tapOn: "Breathe"
+- assertVisible: "Start"
+
+# Start breathing session
+- tapOn: "Start"
+
+# Verify visual indicator (breath-pacer) and live controls
+- assertVisible:
+    id: "breath-pacer"
+- assertVisible: "Pause"
+- assertVisible: "Stop"
+
+# Test pause control
+- tapOn: "Pause"
+- assertVisible: "Resume"
+- assertVisible: "Paused"
+
+# Test resume control
+- tapOn: "Resume"
+- assertVisible: "Pause"
+
+# Test stop control
+- tapOn: "Stop"
+- assertVisible:
+    text: "Stopped"
