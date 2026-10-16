@@ -58,3 +58,4 @@ GoogleService-Info.plist
 # test coverage and logs
 coverage/
 *.log
+!scripts/__fixtures__/*.log
