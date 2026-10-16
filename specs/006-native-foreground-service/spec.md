@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-17
 
-**Status**: Draft
+**Status**: Ready for Planning
 
 **Input**: User description: "Native foreground service (spec 006). Replace react-native-background-actions with a custom Kotlin Expo Module (local module under modules/, configured via config plugin, no hand edits to android/) that keeps a Cadence session (routine, run/walk, breathe) running with the screen off as an Android mediaPlayback foreground service, behind the existing BackgroundHost interface (src/platform/background.ts). Scope: (1) ongoing notification with live phase name and a system-run countdown to the end of the current phase (Chronometer, no per-second JS updates), plus Pause/Resume and Skip action buttons that control the session even when the app UI is not visible, and tap-to-open the session screen; (2) a sleep-inclusive clock (SystemClock.elapsedRealtime) exposed to JS so the engine is immune to manual wall-clock changes while still correct across deep sleep (fixes the "device clock changed" edge case from 001); (3) native audio focus: request AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK directly around cues and expose whether it was granted, so speech is skipped when a phone call is already in progress (fixes 001 D11 limitation) and the looping silent-clip ducking workaround can be dropped; (4) partial wake lock held only while a session runs; (5) clean stop on session end, on swipe-away/task removal, and if the JS side dies. Keep existing permissions (no new ones), keep battery-exemption and notification-permission flow, keep ducking-never-pausing music (Principle II), Android-first with iOS no-op unchanged. Remove the react-native-background-actions dependency and plugins/withBackgroundActions. Out of scope: native TTS wrapper, iOS Live Activities (spec 008), workout DSL (007)."
 
@@ -294,6 +294,8 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 - **FR-023**: The looping silent-clip workaround from 001 MUST be removed.
 - **FR-024**: A music app that takes and keeps focus MUST NOT silence Cadence for the rest of the
   session: Cadence's next request ducks it as normal.
+- **FR-024a**: Spoken cues MUST keep working for the whole session after the app's screen is
+  destroyed while the session runs (e.g. swipe-away), with the same voice, rate and language.
 
 **Lifecycle (edge cases)**
 
@@ -360,13 +362,15 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
   allows; a phone set to "no vibration" may stay still.
 - Lock-screen notification shows the session and phase titles in full; they are not considered
   sensitive.
-- Speech itself is still produced by the existing text-to-speech path; only focus handling
-  moves. A native speech wrapper is out of scope.
+- Speech uses the phone's own text-to-speech engine as before, but on Android it is driven by
+  Cadence's native service instead of the current speech library, because that library shuts
+  its engine down when the app's screen is destroyed (e.g. a swipe-away), which would break
+  FR-025 (plan research R2). Voice, rate and language are unchanged; no new speech features.
 - The 10-second script-side timeout and 1-second focus hold are starting values and may be tuned
   on device in the plan.
 - The constitution's "wall-clock timestamps" (Principle I) is read as "real elapsed time, not
   summed ticks"; a sleep-inclusive monotonic clock satisfies it better than the wall clock. The
   plan should record this reading in its Constitution Check.
-- Out of scope: native text-to-speech, iOS Live Activities (008), workout text format and deep
+- Out of scope: new speech features (voices, languages), iOS Live Activities (008), workout text format and deep
   links (007), media-session/lock-screen media controls (they would need focus that pauses
   music).
