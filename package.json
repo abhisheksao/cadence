@@ -41,6 +41,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --watchman=false",
+    "test:e2e": "node scripts/run-e2e.mjs",
     "typecheck": "tsc --noEmit",
     "check:specs": "node scripts/check-spec-links.mjs",
     "check": "npm run lint && npm run typecheck && npm run check:specs && npm test",

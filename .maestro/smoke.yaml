@@ -1,0 +1,35 @@
+appId: io.github.abhisheksao.cadence
+---
+- launchApp:
+    clearState: true
+
+# Assert Home screen tiles and footer
+- assertVisible: "Cadence"
+- assertVisible: "Morning routine"
+- assertVisible: "Run / walk"
+- assertVisible: "Breathe"
+- assertVisible: "Sample session"
+- scrollUntilVisible:
+    element: "App stopping mid-session? Allow it to run in the background"
+    direction: DOWN
+
+# Navigate to Morning routine
+- tapOn: "Morning routine"
+- assertVisible: "Morning routine"
+- assertVisible: "Start"
+- back
+
+# Navigate to Run / walk
+- tapOn: "Run / walk"
+- assertVisible: "Run / walk"
+- assertVisible: "Start"
+- back
+
+# Navigate to Breathe
+- tapOn: "Breathe"
+- assertVisible: "Breathe"
+- assertVisible: "Start"
+- back
+
+# Assert return to Home screen
+- assertVisible: "Morning routine"

@@ -85,11 +85,11 @@
 
 ### Tasks for User Story 3
 
-- [ ] T017 [P] [US3] Create .maestro/smoke.yaml verifying app launch, navigation to Morning Routine, Run / walk, and Breathe screens, and Home screen footer
-- [ ] T018 [P] [US3] Create .maestro/session.yaml verifying session start, live clock, visual indicator, pause, resume, and stop controls
-- [ ] T019 [P] [US3] Create .maestro/background.yaml verifying session start, device locking (`lockDevice`), wait duration, unlocking (`unlockDevice`), and session persistence
-- [ ] T020 [US3] Add `test:e2e` script in package.json invoking `maestro test .maestro/` with prerequisite error handling
-- [ ] T021 [US3] Verify Maestro flow syntax and element identifiers match current screen components
+- [x] T017 [P] [US3] Create .maestro/smoke.yaml verifying app launch, navigation to Morning Routine, Run / walk, and Breathe screens, and Home screen footer
+- [x] T018 [P] [US3] Create .maestro/session.yaml verifying session start, live clock, visual indicator, pause, resume, and stop controls
+- [x] T019 [P] [US3] Create .maestro/background.yaml verifying session start, device locking (`lockDevice`), wait duration, unlocking (`unlockDevice`), and session persistence
+- [x] T020 [US3] Add `test:e2e` script in package.json invoking `maestro test .maestro/` with prerequisite error handling
+- [x] T021 [US3] Verify Maestro flow syntax and element identifiers match current screen components
 
 **Checkpoint**: Local E2E testing enabled with declarative flows for device locking and user journeys.
 
