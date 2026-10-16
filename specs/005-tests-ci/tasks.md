@@ -97,10 +97,10 @@
 
 ## Phase 6: Polish and Cross-Cutting Concerns
 
-- [ ] T022 [P] Update README.md: add CI workflow badge, release information, and Maestro E2E test instructions
-- [ ] T023 Review spec and plan against implementation; ensure no divergence (Principle IX)
-- [ ] T024 Run `npm run check` (`npm run lint`, `npm run typecheck`, `npm run check:specs`, `npm test`) and `npm run test:coverage`
-- [ ] T025 Run local Android release build (`./gradlew assembleRelease` in android/) to verify zero regressions
+- [x] T022 [P] Update README.md: add CI workflow badge, release information, and Maestro E2E test instructions
+- [x] T023 Review spec and plan against implementation; ensure no divergence (Principle IX)
+- [x] T024 Run `npm run check` (`npm run lint`, `npm run typecheck`, `npm run check:specs`, `npm test`) and `npm run test:coverage`
+- [x] T025 Run local Android release build (`./gradlew assembleRelease` in android/) to verify zero regressions
 - [ ] T026 Open PR from `005-tests-ci` to `develop`, listing validation checks T1–T10
 
 ---

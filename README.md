@@ -1,10 +1,20 @@
 # Cadence
 
+[![CI](https://github.com/abhisheksao/cadence/actions/workflows/ci.yml/badge.svg)](https://github.com/abhisheksao/cadence/actions/workflows/ci.yml)
+
 Spoken-cue timers that keep working with the screen off: a morning routine, run/walk intervals, and guided breathing. Cadence is built with Expo / React Native. It targets Android first and is ready to port to iOS.
 
 > **Status:** early rebuild. Features are being specified and implemented one at a time. See [docs/roadmap.md](docs/roadmap.md).
 
 ## What works today
+
+### Tests & CI (spec 005)
+
+[Spec 005](specs/005-tests-ci/spec.md) establishes automated continuous integration, releases, end-to-end testing, and spec traceability:
+- **Continuous Integration (`ci.yml`)**: GitHub Actions pipeline for pull requests and pushes to `main` and `develop`, running lint, typecheck, spec verification, coverage-enforced unit tests, and assembling release APKs with artifact upload.
+- **Automated Releases (`release.yml`)**: Triggered on `v*` tag pushes to build the release APK, sign with keystore secrets (or fall back to unsigned release APK), generate SHA-256 checksums (`SHA256SUMS.txt`), and publish a GitHub Release with attached assets.
+- **Maestro E2E Testing**: Black-box declarative tests in `.maestro/` covering multi-mode navigation (`smoke.yaml`), live session controls (`session.yaml`), and screen-off background timing verification (`background.yaml`) with lock/unlock cycles.
+- **Code Coverage & Spec Traceability**: Enforces 80% line and branch coverage across core logic (`engine`, `session`, `modes`, `storage`) and ensures spec document completeness with zero `.md` references in source code.
 
 ### Guided breathing (spec 004)
 
@@ -63,16 +73,48 @@ npx expo prebuild -p android
 ## Tests
 
 ```bash
-npm run check             # expo lint + tsc --noEmit + jest
-npm test                  # tests only
+npm run check             # lint + tsc --noEmit + check:specs + jest
+npm run test:coverage     # jest with coverage collection & 80% core thresholds
+npm run check:specs       # spec completeness, link health, and src/ md audit
+npm run test:e2e          # Maestro end-to-end tests (.maestro/)
 ```
 
-The engine and session controller run against a fake clock, so timing behaviour, such as late ticks, deep sleep, and clock changes, is tested without a device. To check the app on a phone, follow [specs/001-cue-engine/quickstart.md](specs/001-cue-engine/quickstart.md). It lists the on-device checks and shows how to capture and analyse the timing log:
+### Unit & Integration Tests
+
+The engine and session controller run against a fake clock, so timing behaviour, such as late ticks, deep sleep, and clock changes, is tested without a device. Coverage thresholds require at least 80% line and branch coverage across core packages (`engine/`, `session/`, `modes/`, `storage/`).
+
+To capture and analyse the timing log on a physical phone:
 
 ```bash
 adb logcat -s ReactNativeJS:I | grep CADENCE_CUE > cues.log
 npm run timing-report cues.log
 ```
+
+See [specs/001-cue-engine/quickstart.md](specs/001-cue-engine/quickstart.md) for detailed timing checks.
+
+### End-to-End Tests (Maestro)
+
+Cadence includes declarative black-box E2E flows in `.maestro/`:
+- `.maestro/smoke.yaml`: Launches app and navigates through all modes (Morning Routine, Run / walk, Breathe).
+- `.maestro/session.yaml`: Starts a session, verifies the live pacer and clock, and exercises pause, resume, and stop controls.
+- `.maestro/background.yaml`: Starts a session, locks the device screen (`lockDevice`), waits 6 seconds, unlocks (`unlockDevice`), and verifies session continuity.
+
+Prerequisites:
+- [Maestro CLI](https://maestro.mobile.dev/getting-started/installing-maestro): `curl -FsSL "https://get.maestro.mobile.dev" | bash`
+- An Android device or emulator visible in `adb devices`.
+
+Run all flows:
+```bash
+npm run test:e2e
+```
+
+## Releases
+
+Releases are published automatically via GitHub Actions whenever a version tag (`v*`) is pushed:
+1. Assembles release APK via `expo prebuild -p android` and Gradle `assembleRelease`.
+2. Signs the APK if repository keystore secrets are configured (or outputs standard release APK).
+3. Computes SHA-256 hash and produces `SHA256SUMS.txt`.
+4. Creates a GitHub Release with `cadence-release.apk` and `SHA256SUMS.txt` attached.
 
 ## License
 

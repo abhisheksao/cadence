@@ -37,8 +37,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint",
-    "test": "jest",
+    "lint": "EXPO_NO_TELEMETRY=1 expo lint",
+    "test": "jest --watchman=false",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --watchman=false",
     "test:e2e": "node scripts/run-e2e.mjs",
@@ -51,6 +51,7 @@
   "private": true,
   "jest": {
     "preset": "jest-expo",
+    "watchman": false,
     "testTimeout": 10000,
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-background-actions|standard-navigation)"
