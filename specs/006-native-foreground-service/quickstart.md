@@ -53,8 +53,8 @@ music playing in another app.
 | N6 | US2 | Locked phone: Pause, wait 20 s, Resume, Skip, all from the lock screen | Each takes effect within 1 s; paused shows the frozen time; Skip plays the next phase's start cue (SC-002) |
 | N7 | US2 | App open on the session screen: tap Pause in the shade; then Resume in the app | App and notification agree within 1 s both ways (FR-014) |
 | N8 | US2 | Tap Pause/Resume 6 times fast | Ends in the state of the last tap; app and notification agree |
-| N9 | Edge | Swipe Cadence away from recents mid-session; wait 2 phase changes; tap the notification | Cues and countdown never stop; tap opens the live session, no resume prompt (FR-025) |
-| N10 | Edge | After N9, let the session finish | Speech still works after the swipe-away (R2); notification removed |
+| N9 | Edge | Swipe Cadence away from recents mid-session | Cues stop, notification gone, no Cadence wake lock within 1 s; reopening shows home with no resume prompt (FR-025, SC-006) |
+| N10 | Edge | Start a session, background the app with Home (no swipe), lock for 5 min | Session keeps running; speech works throughout |
 | N11 | US3 | Settings → turn off automatic time, move clock +5 min, later −3 min | No cue jumps or repeats (SC-004) |
 | N12 | US3 | Lock the phone idle for 15 min mid-session | No drift (timing report) |
 | N13 | US3 | `adb shell am kill io.github.abhisheksao.cadence` while backgrounded, change the clock +10 min, reopen | Resume offered at the position real elapsed time gives, not the clock |

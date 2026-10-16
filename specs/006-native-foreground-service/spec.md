@@ -36,7 +36,9 @@ in the app, the cues, the timing guarantees, and session recovery stay as specif
 - Q: Which buttons does the notification show? → A: Pause/Resume and Skip only. Stop and Back
   stay in the app so an accidental tap in a pocket cannot end a session.
 - Q: What happens when the user swipes Cadence away from recent apps mid-session? → A: The
-  session keeps running (service, cues, notification); tapping the notification reopens it.
+  session stops as if the user pressed Stop; no resume prompt on next launch. (First answered
+  "keep running"; changed after planning found that keeping speech alive after a swipe-away
+  needs a native speech engine, which is out of scope.)
 - Q: What does the notification count down to? → A: The end of the current phase only; no
   session-total time or progress bar in the notification.
 - Q: What happens to a cue whose audio focus is refused (e.g. during a call)? → A: The sound is
@@ -190,10 +192,9 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 
 ### Edge Cases
 
-- **User swipes Cadence away from recent apps mid-session**: the session keeps running: cues,
-  timing, the notification and its buttons carry on. Tapping the notification reopens the app on
-  the live session, in the same state. To end it, the user opens the app and taps Stop (or lets
-  it finish).
+- **User swipes Cadence away from recent apps mid-session**: the session stops cleanly, as if the
+  user had pressed Stop: the notification is removed, cues stop, the phone is no longer kept
+  awake, and no interrupted-session prompt is shown on next launch.
 - **The app's script side dies or reloads while the service is running** (crash, development
   reload): the service notices within 10 seconds, stops itself, and removes its notification; no
   orphan notification or wake lock is left behind. The saved session record is kept, so the next
@@ -294,15 +295,12 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 - **FR-023**: The looping silent-clip workaround from 001 MUST be removed.
 - **FR-024**: A music app that takes and keeps focus MUST NOT silence Cadence for the rest of the
   session: Cadence's next request ducks it as normal.
-- **FR-024a**: Spoken cues MUST keep working for the whole session after the app's screen is
-  destroyed while the session runs (e.g. swipe-away), with the same voice, rate and language.
 
 **Lifecycle (edge cases)**
 
 - **FR-025**: When the user removes Cadence from recent apps during a session, the session MUST
-  keep running with cues, timing, notification and buttons unaffected, and tapping the
-  notification MUST reopen the app on the live session in its current state (not a resume
-  prompt).
+  stop as if the user pressed Stop (notification removed, cues stopped, wake hold released, no
+  resume prompt on next launch).
 - **FR-026**: If the app's script side stops responding to the service for more than 10 seconds,
   the service MUST stop itself and remove its notification, keeping the saved session record so
   the next launch can offer to resume.
@@ -344,9 +342,9 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 - **SC-005**: Across a 10-minute session with a 30-second phone call spanning at least 3 cue
   times, 0 Cadence sounds are heard during the call, each phase start during the call produces
   exactly one short vibration, and music is ducked (never paused) for every cue outside it.
-- **SC-006**: After a session ends or is stopped, no Cadence notification remains and Cadence
-  holds no wake lock within 1 second (10 seconds if the script side died). Swiping the app away
-  mid-session misses 0 cues.
+- **SC-006**: After a session ends, is stopped, or the app is swiped away, no Cadence
+  notification remains and Cadence holds no wake lock within 1 second (10 seconds if the script
+  side died).
 - **SC-007**: The release build's permission list is identical to the current release build's.
 - **SC-008**: The app has one fewer third-party native dependency.
 
@@ -354,23 +352,19 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 
 - Target platform is Android only; minimum Android version is whatever the current Expo SDK
   supports (the test phone runs Android 9). iOS keeps its no-op background host until spec 008.
-- Swiping the app away keeps the session running (clarified). The original request said "clean
-  stop on swipe-away"; that was changed in clarify. The plan must confirm the script side keeps
-  running after the app's screen is destroyed, or otherwise keep the session alive.
+- Swiping the app away stops the session (clarified).
 - The phase-start vibration (FR-021) uses the vibrate permission the app already has, so FR-006
   (no new permissions) still holds. It ignores the phone's vibrate setting only as far as the OS
   allows; a phone set to "no vibration" may stay still.
 - Lock-screen notification shows the session and phase titles in full; they are not considered
   sensitive.
-- Speech uses the phone's own text-to-speech engine as before, but on Android it is driven by
-  Cadence's native service instead of the current speech library, because that library shuts
-  its engine down when the app's screen is destroyed (e.g. a swipe-away), which would break
-  FR-025 (plan research R2). Voice, rate and language are unchanged; no new speech features.
+- Speech itself is still produced by the existing text-to-speech path; only focus handling
+  moves. A native speech wrapper is out of scope.
 - The 10-second script-side timeout and 1-second focus hold are starting values and may be tuned
   on device in the plan.
 - The constitution's "wall-clock timestamps" (Principle I) is read as "real elapsed time, not
   summed ticks"; a sleep-inclusive monotonic clock satisfies it better than the wall clock. The
   plan should record this reading in its Constitution Check.
-- Out of scope: new speech features (voices, languages), iOS Live Activities (008), workout text format and deep
+- Out of scope: native text-to-speech, iOS Live Activities (008), workout text format and deep
   links (007), media-session/lock-screen media controls (they would need focus that pauses
   music).

@@ -29,13 +29,8 @@ interface CadenceSessionModule {
   abandonFocus(): void;
   vibrate(ms: number): void;
 
-  // Speech
-  warmUpSpeech(): Promise<void>;
-  speak(id: string, text: string, opts: { language: string; rate: number }): void;
-  stopSpeech(): void;
-
-  // Events: onAction { sessionId, action: 'pause'|'resume'|'skip' }, onFocusLost {},
-  // onSpeechStart { id }, onSpeechDone { id }, onSpeechStopped { id }, onSpeechError { id }
+  // Events: onAction { sessionId, action: 'pause'|'resume'|'skip' }, onTaskRemoved { sessionId },
+  // onFocusLost {}
 }
 ```
 
@@ -49,6 +44,7 @@ interface BackgroundHost {
   update(notification: NotificationState): void;  // was update(text)
   heartbeat(): void;
   onAction(fn: (action: SessionAction) => void): () => void;
+  onTaskRemoved(fn: () => void): () => void;
   stop(): Promise<void>;
   requestBatteryExemption(): Promise<void>;       // unchanged
 }
@@ -68,9 +64,11 @@ interface BackgroundHost {
 | NC5 | While running or paused, `heartbeat` is called at least every 2 s; never after stop or end | FR-026 |
 | NC6 | Actions arriving with no live session do nothing | FR-016 |
 | NC7 | Stop, end (after wind-down) and replacement each call `stop` once; the action subscription is removed | FR-004, FR-005 |
+| NC8 | `onTaskRemoved` with a live session has exactly the effect of `stop()`: engine stopped, player silenced, record cleared, `stop` called | FR-025 |
 | ND1 (device) | Countdown reaches 0:00 within 1 s of each phase change; no per-second JS updates | SC-003 |
 | ND2 (device) | Buttons work from the lock screen and the shade; app and notification agree within 1 s | SC-002, FR-014, FR-015 |
-| ND3 (device) | Tap opens the mode's live screen, also after a swipe-away | FR-013, FR-025 |
+| ND3 (device) | Tap opens the mode's live screen | FR-013 |
+| ND6 (device) | Swipe-away mid-session: notification gone, cues stop, no wake lock within 1 s; next launch shows no resume prompt | FR-025, SC-006 |
 | ND4 (device) | No notification and no Cadence wake lock 1 s after stop/end; 10 s after the JS side is frozen | SC-006 |
 | ND5 (device) | Release merged manifest has the same permission list as the 001 release | SC-007 |
 
@@ -85,14 +83,13 @@ interface BackgroundHost {
 | CL5 | `recoveryNow`: same boot → `writtenAt + (elapsed - elapsedAt)`, independent of `wallNow` | FR-018, Story 3 #4 |
 | CL6 | `recoveryNow`: different boot, missing field, or null clock → `wallNow` | Story 3 #5 |
 | CL7 | `checkForInterrupted` uses `recoveryNow` | FR-018 |
-| CL8 | `LaunchCheck` with a live session (`getState()` running or paused) opens that mode's route and shows no prompt | FR-025 |
 | CD1 (device) | Clock moved ±1 h mid-session: no cue shifts beyond the 001 tolerance | SC-004 |
 
 ## Cue player (changed, `src/audio/cuePlayer.ts`)
 
-New dependencies, injected: `clock: Clock`, `focus: AudioFocus`, `speech: SpeechEngine`,
-`vibrate(ms)`. Platform files supply them (Android: the module; iOS: expo-speech, always-granted
-focus, no-op vibrate).
+New dependencies, injected: `clock: Clock`, `focus: AudioFocus`, `vibrate(ms)`. Platform files
+supply them (Android: the module; iOS: always-granted focus, no-op vibrate). Speech stays on
+expo-speech on both platforms.
 
 | # | Guarantee | Spec |
 |---|---|---|

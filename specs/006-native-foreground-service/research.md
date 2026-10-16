@@ -21,32 +21,27 @@ research R1–R5.
   screen off); driving cue times from native alarms (`AlarmManager` is too coarse, and would move
   the engine to Kotlin, losing the tested TS engine).
 
-## R2. Swipe-away keeps running (clarification Q2)
+## R2. Swipe-away stops the session (clarification Q2)
 
-- **Findings**:
+- **Findings** (installed sources):
   - `ReactHostImpl.onHostDestroy(activity)` (RN 0.86) only moves the lifecycle state; the JS
-    runtime survives the activity. The React surface unmounts, but module-scope objects (the
-    `sessionController` singleton, the cue player) live on. The service is declared without
-    `stopWithTask`, so the process survives as a foreground-service process.
-  - **expo-audio**: releases players only in `OnDestroy` (runtime teardown), not on activity
-    destroy. Safe.
-  - **expo-speech**: `OnActivityDestroys { textToSpeech.shutdown() }`, and its `TextToSpeech`
-    is a `by lazy` value that is never recreated. **After a swipe-away, every later phrase is
-    silently lost.**
-  - `LaunchCheck` reads the saved session record on mount. When the activity is recreated over a
-    still-running session (tap the notification after a swipe-away), it would offer to "resume"
-    a session that is already running.
-- **Decision**:
-  - Speech moves into the local module: a `TextToSpeech` owned by the module/service with the
-    application context, not tied to the activity. This changes the spec's "native TTS is out
-    of scope" assumption; the spec is updated in the same change (Principle IX). It is a thin
-    wrapper (speak, stop, warm-up, start/done/stopped/error events), not a new speech feature.
-    `expo-speech` stays for iOS only.
-  - `LaunchCheck` first asks the controller whether a session is live; if so it opens that
-    mode's screen and skips the record check.
-- **Alternatives considered**: stop on swipe-away (rejected by the user in clarify); restart
-  expo-speech by re-requiring the module (not possible: the lazy value is per module instance);
-  patching expo-speech (`patch-package` against an Expo package is fragile across SDK upgrades).
+    runtime survives the activity, so JS can still run the stop path after a swipe-away.
+  - **expo-speech**: `OnActivityDestroys { textToSpeech.shutdown() }`, and its `TextToSpeech` is
+    a `by lazy` value that is never recreated. Keeping a session alive past a swipe-away would
+    have needed a native speech engine; that is why clarify Q2 was changed to "stop" after this
+    finding (the user chose not to widen scope).
+- **Decision**: The service keeps the default `stopWithTask="false"` and overrides
+  `onTaskRemoved`. On task removal it sends `onTaskRemoved` to JS, which calls
+  `sessionController.stop()` (stops the engine, silences the player, clears the saved record so
+  no resume prompt appears, and stops the service). As a backstop the service stops itself 1 s
+  later if JS has not done so; the record is then left for the next launch, as for a JS death.
+- **Known limitation (unchanged from 001)**: if the OS destroys the activity for another reason
+  while a session runs in the background (e.g. developer option "Don't keep activities"),
+  expo-speech stops speaking for the rest of that session; beeps and timing continue. Not
+  observed on the test phone; a native speech engine would fix it (future spec, if needed).
+- **Alternatives considered**: `stopWithTask="true"` (the system kills the service without
+  telling JS, so the record stays and the next launch shows a resume prompt, contradicting
+  FR-025); keeping the session alive (needs native speech, out of scope).
 
 ## R3. Sleep-proof clock (Story 3)
 
@@ -80,7 +75,6 @@ research R1–R5.
     current cue (`silence`), and simply requests again for the next cue.
   - expo-audio switches to `interruptionMode: 'mixWithOthers'`, which requests no focus
     (001 research R3, expo-audio source), so its beep players never compete with ours.
-  - The native TTS uses the same audio attributes.
 - **Why this fixes the call case**: Android's focus manager refuses focus requests while a call
   holds focus, so a cue that comes due during a call gets `false` and is skipped
   (FR-021). After the call, the next request is granted. A music app that took permanent focus

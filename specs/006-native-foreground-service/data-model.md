@@ -69,4 +69,5 @@ idle ──start(sessionId,…)──▶ foreground ──update(state)──▶
   └── stop() │ keepAlive resolved │ no heartbeat 10 s │ JS runtime destroyed
 ```
 
-Swipe-away does not leave `foreground` (clarification Q2).
+Swipe-away (`onTaskRemoved`) → JS `stop()` → idle; native backstop stops 1 s later if JS has
+not (clarification Q2).

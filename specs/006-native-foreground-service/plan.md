@@ -10,24 +10,21 @@ Replace `react-native-background-actions` with a local Expo module, `modules/cad
 (Kotlin, Android only), that runs the session as a `mediaPlayback` foreground service with a
 headless JS task (the same mechanism that keeps JS timers alive today, research R1). The module
 also provides: a notification with a system-run phase countdown and Pause/Resume + Skip actions
-(R5), a sleep-proof clock and boot count (R3), audio focus and vibration (R4), a text-to-speech
-engine that survives the activity being destroyed (R2), a partial wake lock and a JS heartbeat
-watchdog (R6). All decisions stay in tested TypeScript: what the notification shows, which action
+(R5), a sleep-proof clock and boot count (R3), audio focus and vibration (R4), swipe-away
+handling (R2), a partial wake lock and a JS heartbeat watchdog (R6). All decisions stay in tested TypeScript: what the notification shows, which action
 applies, whether a cue plays or vibrates, and which clock frame recovery uses. Kotlin is a thin
 adapter verified on device.
 
-One design finding changes the spec: keeping the session alive after a swipe-away (clarify Q2)
-is impossible with `expo-speech`, which shuts its engine down when the activity is destroyed
-and never recreates it. Speech therefore moves into the module on Android (thin wrapper, same
-behavior). The spec is updated in this change (Principle IX).
+Planning found that keeping a session alive after a swipe-away would need a native speech
+engine (`expo-speech` shuts its engine down with the activity). The user chose to stay in scope,
+so clarify Q2 was changed back to "stop on swipe-away" (spec updated).
 
 ## Technical Context
 
 **Language/Version**: TypeScript 5 (strict), Kotlin (Android Gradle plugin from Expo SDK 57)
 
 **Primary Dependencies**: Expo SDK 57 (`expo-modules-core` 57.0.22), React Native 0.86.3
-(New Architecture), Expo Router, `expo-audio` (beeps/chime), `expo-speech` (iOS only after this
-change), `expo-intent-launcher` (battery exemption). Removed: `react-native-background-actions`.
+(New Architecture), Expo Router, `expo-audio` (beeps/chime), `expo-speech`, `expo-intent-launcher` (battery exemption). Removed: `react-native-background-actions`.
 
 **Storage**: Existing `kvStore` key `session-record:v1`, with two optional fields (data-model)
 
@@ -43,7 +40,7 @@ on-device steps N1–N21 (quickstart)
 
 **Constraints**: No new permissions; duck never pause; no network; CNG (no `android/` edits)
 
-**Scale/Scope**: One module (~6 Kotlin files), ~8 TS files changed or added, 4 user stories
+**Scale/Scope**: One module (~5 Kotlin files), ~8 TS files changed or added, 4 user stories
 
 ## Constitution Check
 
@@ -60,7 +57,7 @@ on-device steps N1–N21 (quickstart)
 - [x] **III. Offline & private**: no network; no new permissions (VIBRATE, WAKE_LOCK, FGS types,
   POST_NOTIFICATIONS already present). Lock-screen text is the session/phase title only.
 - [x] **IV. Android-first, iOS-ready**: module is Android-only behind `BackgroundHost`,
-  `SessionClock`, `AudioFocus`, `SpeechEngine` interfaces with `*.android.ts` / `*.ios.ts`
+  `SessionClock`, `AudioFocus` interfaces with `*.android.ts` / `*.ios.ts`
   files. iOS keeps `Date.now()`, expo-speech and a no-op host; nothing here blocks 008.
 - [x] **V. CNG**: local Expo module with its own manifest; `plugins/withBackgroundActions.js`
   removed; `android/` stays generated.
@@ -69,7 +66,7 @@ on-device steps N1–N21 (quickstart)
   tasks; native adapter covered by device steps (allowed for screen-off/focus/OEM behavior).
 - [x] **VIII. Quality gates**: strict TS, no `any`; module created with `create-expo-module
   --local`; library removed with `npm uninstall`.
-- [x] **IX. Traceability**: spec updated for native speech (R2) and the cue hand-off change.
+- [x] **IX. Traceability**: spec updated for the swipe-away decision (Q2) made during planning.
 
 Post-design re-check: still passes. No Complexity Tracking entries.
 
@@ -99,28 +96,26 @@ modules/cadence-session/                 # NEW local Expo module (Android only)
     └── src/main/
         ├── AndroidManifest.xml          # <service mediaPlayback, exported=false>, <receiver exported=false>; no permissions
         └── java/io/github/abhisheksao/cadence/session/
-            ├── CadenceSessionModule.kt  # JS surface: clock, service, focus, vibrate, speech, events; OnDestroy → stop
-            ├── SessionService.kt        # HeadlessJsTaskService: startForeground, headless task, wake lock, watchdog
+            ├── CadenceSessionModule.kt  # JS surface: clock, service, focus, vibrate, events; OnDestroy → stop
+            ├── SessionService.kt        # HeadlessJsTaskService: startForeground, headless task, wake lock, watchdog, onTaskRemoved
             ├── SessionNotification.kt   # channel, chronometer, actions, content deep link; deletes old channel
             ├── ActionReceiver.kt        # notification buttons → module (sessionId filter)
-            ├── Focus.kt                 # AudioFocusRequest (MAY_DUCK, nav-guidance attrs), loss listener
-            └── Speech.kt                # TextToSpeech on application context, utterance events
+            └── Focus.kt                 # AudioFocusRequest (MAY_DUCK, nav-guidance attrs), loss listener, vibrate
 
 src/platform/
-├── background.ts                        # BackgroundHost interface (changed: notification state, heartbeat, onAction)
+├── background.ts                        # BackgroundHost interface (changed: notification state, heartbeat, onAction, onTaskRemoved)
 ├── background.android.ts                # rewritten on the module; keeps notification-permission + battery flow
 ├── background.ios.ts                    # no-op, new methods added
 ├── notification.ts (+ .test.ts)         # NEW pure notificationState(), time formatting
 ├── clock.ts / clock.android.ts / clock.ios.ts (+ tests)   # NEW SessionClock
-├── audio.ts / audio.android.ts / audio.ios.ts             # NEW AudioFocus, SpeechEngine, vibrate, interruption mode
+├── audio.ts / audio.android.ts / audio.ios.ts             # NEW AudioFocus, vibrate, interruption mode
 src/engine/engine.ts, types.ts           # onCue gains phaseStart
-src/audio/cuePlayer.ts (+ test)          # injected clock/focus/speech/vibrate; silent clip + give-up timer removed
+src/audio/cuePlayer.ts (+ test)          # injected clock/focus/vibrate; silent clip + give-up timer removed
 src/audio/timingLog.ts (+ test)          # adds formatSkipLog (CADENCE_SKIP)
-src/session/controller.ts (+ test)       # sessionId, route, notification state, actions, heartbeat
+src/session/controller.ts (+ test)       # sessionId, route, notification state, actions, heartbeat, stop on task removed
 src/session/record.ts (+ test), types.ts # elapsedAt/bootCount, recoveryNow()
 src/session/index.ts                     # wires session clock + platform audio
-src/components/LaunchCheck.tsx (+ test)  # live session → open its route, no prompt
-src/test-utils/fakes.ts                  # FakeBackgroundHost (actions, heartbeat), FakeAudioFocus, FakeSpeech
+src/test-utils/fakes.ts                  # FakeBackgroundHost (actions, heartbeat, task removed), FakeAudioFocus
 assets/sounds/silence.wav                # deleted
 plugins/withBackgroundActions.js         # deleted
 app.json, package.json                   # plugin entry, dependency, jest transformIgnorePatterns cleaned
@@ -134,8 +129,8 @@ in that module; shared code talks to it through `src/platform/*` interfaces.
 1. **Foundational**: create the module skeleton (`create-expo-module --local`), interfaces and
    fakes; engine `phaseStart` hand-off. No behavior change yet.
 2. **US1 (MVP)**: service + headless task + wake lock + basic notification (title/phase, tap
-   opens route) + heartbeat watchdog + LaunchCheck live-session path + native speech (needed for
-   swipe-away). Remove the library, plugin and silent clip only after N1–N3, N9, N10 pass.
+   opens route) + heartbeat watchdog + stop on swipe-away. Remove the library and plugin only
+   after N1–N3 and N9 pass.
 3. **US2**: chronometer countdown/count-up, paused text, actions and session-id filter.
 4. **US3**: session clock, record fields, `recoveryNow`.
 5. **US4**: focus owner, skip + `CADENCE_SKIP` log, phase-start vibration, `mixWithOthers`.
@@ -148,9 +143,9 @@ Each story: failing tests committed as `test(006): …`, then `feat(006): …`.
 
 | Risk | Mitigation |
 |---|---|
-| Deep link from the notification pushes a duplicate screen | `+native-intent.tsx` rewrite / navigate semantics; device check N2, N9 |
-| Headless task + bridgeless edge cases after activity recreate | Same mechanism as the current library (proven); N9/N10 early in US1 |
-| Native TTS start latency differs from expo-speech | Same `TextToSpeech` engine underneath; EMA latency compensation unchanged; check timing report N1 |
+| Deep link from the notification pushes a duplicate screen | `+native-intent.tsx` rewrite / navigate semantics; device check N2 |
+| `onTaskRemoved` not delivered on some OEM builds | 10 s heartbeat watchdog still stops the service; record then offers resume (N9) |
+| Activity destroyed by the OS mid-session silences expo-speech | Known limitation from 001 (R2); not seen on the test phone |
 | OEM suppresses vibration during a call | Accept; documented in device results (N16) |
 | Wake lock raises battery use on long sessions | Held only while a session is live; 10-min timeout renewed by heartbeat |
 | Silent lock-screen notifications hidden by default on some Android versions | Channel importance tuned on device (N6); LOW → DEFAULT without sound if needed |
