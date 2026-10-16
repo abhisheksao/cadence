@@ -101,7 +101,7 @@
 - [x] T023 Review spec and plan against implementation; ensure no divergence (Principle IX)
 - [x] T024 Run `npm run check` (`npm run lint`, `npm run typecheck`, `npm run check:specs`, `npm test`) and `npm run test:coverage`
 - [x] T025 Run local Android release build (`./gradlew assembleRelease` in android/) to verify zero regressions
-- [ ] T026 Open PR from `005-tests-ci` to `develop`, listing validation checks T1–T10
+- [x] T026 Open PR from `005-tests-ci` to `develop`, listing validation checks T1–T10
 
 ---
 
