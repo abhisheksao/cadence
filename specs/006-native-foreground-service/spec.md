@@ -29,6 +29,19 @@ This spec replaces the library with Cadence's own background service. Every mode
 routine, run/walk, breathe) benefits without change to the modes themselves: what the user sees
 in the app, the cues, the timing guarantees, and session recovery stay as specified in 001–004.
 
+## Clarifications
+
+### Session 2026-10-17
+
+- Q: Which buttons does the notification show? → A: Pause/Resume and Skip only. Stop and Back
+  stay in the app so an accidental tap in a pocket cannot end a session.
+- Q: What happens when the user swipes Cadence away from recent apps mid-session? → A: The
+  session keeps running (service, cues, notification); tapping the notification reopens it.
+- Q: What does the notification count down to? → A: The end of the current phase only; no
+  session-total time or progress bar in the notification.
+- Q: What happens to a cue whose audio focus is refused (e.g. during a call)? → A: It is skipped
+  silently; no vibration or other fallback.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Same screen-off reliability, own service (Priority: P1) 🎯 MVP
@@ -175,9 +188,10 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 
 ### Edge Cases
 
-- **User swipes Cadence away from recent apps mid-session**: the session stops cleanly, as if the
-  user had pressed Stop: the notification is removed, cues stop, the phone is no longer kept
-  awake, and no interrupted-session prompt is shown on next launch.
+- **User swipes Cadence away from recent apps mid-session**: the session keeps running: cues,
+  timing, the notification and its buttons carry on. Tapping the notification reopens the app on
+  the live session, in the same state. To end it, the user opens the app and taps Stop (or lets
+  it finish).
 - **The app's script side dies or reloads while the service is running** (crash, development
   reload): the service notices within 10 seconds, stops itself, and removes its notification; no
   orphan notification or wake lock is left behind. The saved session record is kept, so the next
@@ -232,13 +246,14 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
   current phase title, and a paused label while paused.
 - **FR-009**: For a timed phase, the notification MUST show a countdown to the end of the phase,
   advanced by the system with no per-second updates from the app, and MUST be within 1 second of
-  the session's own remaining time at each phase change.
+  the session's own remaining time at each phase change. The notification MUST NOT show
+  session-total time left or a session progress bar.
 - **FR-010**: For an untimed phase, the notification MUST show time elapsed in the phase counting
   up.
 - **FR-011**: While paused, the countdown (or count-up) MUST be frozen at the value at the moment
   of pausing.
 - **FR-012**: The notification MUST offer a Pause button while running and a Resume button while
-  paused, and a Skip button. Each MUST have exactly the effect of the corresponding in-app control
+  paused, and a Skip button, and no other buttons (Stop and Back stay in the app). Each MUST have exactly the effect of the corresponding in-app control
   (same cues, same state, same saved session record), whether or not the app's screen is open.
 - **FR-013**: Tapping the notification body MUST open the app on the live screen of the running
   session's mode.
@@ -268,7 +283,8 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
   of close cues, so other audio returns to full volume (Principle II). It MUST NOT request focus
   that pauses other apps' audio.
 - **FR-021**: If the focus request is refused (e.g. a call is in progress), the cue MUST NOT play
-  and MUST NOT be replayed later; session timing MUST continue unaffected.
+  and MUST NOT be replayed later; session timing MUST continue unaffected. No vibration or other
+  fallback replaces the skipped cue.
 - **FR-022**: If focus is lost while a cue is playing, the cue MUST be cut off, and later cues
   MUST be skipped until focus can be obtained again.
 - **FR-023**: The looping silent-clip workaround from 001 MUST be removed.
@@ -278,8 +294,9 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 **Lifecycle (edge cases)**
 
 - **FR-025**: When the user removes Cadence from recent apps during a session, the session MUST
-  stop as if the user pressed Stop (notification removed, cues stopped, wake hold released, no
-  resume prompt on next launch).
+  keep running with cues, timing, notification and buttons unaffected, and tapping the
+  notification MUST reopen the app on the live session in its current state (not a resume
+  prompt).
 - **FR-026**: If the app's script side stops responding to the service for more than 10 seconds,
   the service MUST stop itself and remove its notification, keeping the saved session record so
   the next launch can offer to resume.
@@ -321,9 +338,9 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 - **SC-005**: Across a 10-minute session with a 30-second phone call spanning at least 3 cue
   times, 0 Cadence sounds are heard during the call, and music is ducked (never paused) for
   every cue outside it.
-- **SC-006**: After a session ends, is stopped, or the app is swiped away, no Cadence
-  notification remains and Cadence holds no wake lock within 1 second (10 seconds if the script
-  side died).
+- **SC-006**: After a session ends or is stopped, no Cadence notification remains and Cadence
+  holds no wake lock within 1 second (10 seconds if the script side died). Swiping the app away
+  mid-session misses 0 cues.
 - **SC-007**: The release build's permission list is identical to the current release build's.
 - **SC-008**: The app has one fewer third-party native dependency.
 
@@ -331,10 +348,9 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 
 - Target platform is Android only; minimum Android version is whatever the current Expo SDK
   supports (the test phone runs Android 9). iOS keeps its no-op background host until spec 008.
-- Notification buttons are Pause/Resume and Skip only. Stop and Back stay in the app, to avoid
-  ending a session by an accidental tap in a pocket. (Candidate for `/speckit-clarify`.)
-- Swiping the app away stops the session, as requested; the alternative (keep running) is
-  candidate for `/speckit-clarify`.
+- Swiping the app away keeps the session running (clarified). The original request said "clean
+  stop on swipe-away"; that was changed in clarify. The plan must confirm the script side keeps
+  running after the app's screen is destroyed, or otherwise keep the session alive.
 - Lock-screen notification shows the session and phase titles in full; they are not considered
   sensitive.
 - Speech itself is still produced by the existing text-to-speech path; only focus handling
