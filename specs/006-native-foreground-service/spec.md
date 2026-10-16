@@ -39,8 +39,9 @@ in the app, the cues, the timing guarantees, and session recovery stay as specif
   session keeps running (service, cues, notification); tapping the notification reopens it.
 - Q: What does the notification count down to? → A: The end of the current phase only; no
   session-total time or progress bar in the notification.
-- Q: What happens to a cue whose audio focus is refused (e.g. during a call)? → A: It is skipped
-  silently; no vibration or other fallback.
+- Q: What happens to a cue whose audio focus is refused (e.g. during a call)? → A: The sound is
+  skipped; a phase-start cue is replaced by one short vibration. Other skipped cues (per-second
+  counts, warnings, beeps) are silent and still.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -176,7 +177,8 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
    volume for the cue and returns to full volume within about 1 second after the cue (unchanged
    behavior from 001, achieved without the silent clip).
 2. **Given** a phone call is already in progress, **When** a cue (speech, beep, or chime) comes
-   due, **Then** it does not play, and it is not replayed after the call.
+   due, **Then** it does not play, and it is not replayed after the call. If it was a phase-start
+   cue, the phone vibrates once briefly instead; other cues are skipped with no vibration.
 3. **Given** a phrase is playing, **When** a call starts, **Then** the phrase is cut off (as in
    001) and later cues are skipped until the call ends.
 4. **Given** a call has ended, **When** the next cue comes due, **Then** it plays on time.
@@ -211,7 +213,8 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 - **Notification permission revoked mid-session**: the session continues; the notification and
   its buttons are simply not shown.
 - **Audio focus refused for a reason other than a call** (e.g. another app holds exclusive
-  focus): the cue is skipped, the same as during a call; the session timing is unaffected.
+  focus): the cue is skipped (with the phase-start vibration), the same as during a call; the
+  session timing is unaffected.
 - **Phone rebooted mid-session**: the service does not restart on its own; recovery on next
   launch follows 001.
 
@@ -283,8 +286,9 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
   of close cues, so other audio returns to full volume (Principle II). It MUST NOT request focus
   that pauses other apps' audio.
 - **FR-021**: If the focus request is refused (e.g. a call is in progress), the cue MUST NOT play
-  and MUST NOT be replayed later; session timing MUST continue unaffected. No vibration or other
-  fallback replaces the skipped cue.
+  and MUST NOT be replayed later; session timing MUST continue unaffected. If the skipped cue is
+  a phase-start cue, the phone MUST vibrate once briefly (under 0.5 s) in its place; other
+  skipped cues MUST produce no vibration.
 - **FR-022**: If focus is lost while a cue is playing, the cue MUST be cut off, and later cues
   MUST be skipped until focus can be obtained again.
 - **FR-023**: The looping silent-clip workaround from 001 MUST be removed.
@@ -336,8 +340,8 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 - **SC-004**: Moving the device clock forward or backward by up to 1 hour mid-session shifts no
   cue by more than the 001 timing tolerance.
 - **SC-005**: Across a 10-minute session with a 30-second phone call spanning at least 3 cue
-  times, 0 Cadence sounds are heard during the call, and music is ducked (never paused) for
-  every cue outside it.
+  times, 0 Cadence sounds are heard during the call, each phase start during the call produces
+  exactly one short vibration, and music is ducked (never paused) for every cue outside it.
 - **SC-006**: After a session ends or is stopped, no Cadence notification remains and Cadence
   holds no wake lock within 1 second (10 seconds if the script side died). Swiping the app away
   mid-session misses 0 cues.
@@ -351,6 +355,9 @@ cues resume afterwards, and music ducked (not paused) for each cue before and af
 - Swiping the app away keeps the session running (clarified). The original request said "clean
   stop on swipe-away"; that was changed in clarify. The plan must confirm the script side keeps
   running after the app's screen is destroyed, or otherwise keep the session alive.
+- The phase-start vibration (FR-021) uses the vibrate permission the app already has, so FR-006
+  (no new permissions) still holds. It ignores the phone's vibrate setting only as far as the OS
+  allows; a phone set to "no vibration" may stay still.
 - Lock-screen notification shows the session and phase titles in full; they are not considered
   sensitive.
 - Speech itself is still produced by the existing text-to-speech path; only focus handling
