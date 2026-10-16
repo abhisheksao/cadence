@@ -49,11 +49,11 @@
 
 ### Tasks for User Story 1
 
-- [ ] T007 [P] [US1] Create GitHub Actions workflow .github/workflows/ci.yml with triggers on push and pull_request for `main` and `develop`, and concurrency group cancellation
-- [ ] T008 [US1] Add `quality` job in .github/workflows/ci.yml: Node 22 setup, npm dependency caching, `npm run lint`, `npm run typecheck`, `npm run check:specs`, and `npm run test:coverage`
-- [ ] T009 [US1] Add `build_android` job in .github/workflows/ci.yml: Temurin JDK 17 setup, Gradle caching via `gradle/actions/setup-gradle@v4`, `npx expo prebuild -p android --no-install`, and `./gradlew assembleRelease --no-daemon` inside `android/`
-- [ ] T010 [US1] Configure release APK artifact upload (`actions/upload-artifact@v4`) in .github/workflows/ci.yml under artifact name `cadence-release-apk`
-- [ ] T011 [US1] Validate .github/workflows/ci.yml syntax and verify local prebuild and assembleRelease commands succeed
+- [x] T007 [P] [US1] Create GitHub Actions workflow .github/workflows/ci.yml with triggers on push and pull_request for `main` and `develop`, and concurrency group cancellation
+- [x] T008 [US1] Add `quality` job in .github/workflows/ci.yml: Node 22 setup, npm dependency caching, `npm run lint`, `npm run typecheck`, `npm run check:specs`, and `npm run test:coverage`
+- [x] T009 [US1] Add `build_android` job in .github/workflows/ci.yml: Temurin JDK 17 setup, Gradle caching via `gradle/actions/setup-gradle@v4`, `npx expo prebuild -p android --no-install`, and `./gradlew assembleRelease --no-daemon` inside `android/`
+- [x] T010 [US1] Configure release APK artifact upload (`actions/upload-artifact@v4`) in .github/workflows/ci.yml under artifact name `cadence-release-apk`
+- [x] T011 [US1] Validate .github/workflows/ci.yml syntax and verify local prebuild and assembleRelease commands succeed
 
 **Checkpoint**: Pull request and push CI pipeline active. Automated quality gates and APK assembly operational. MVP.
 
