@@ -18,7 +18,7 @@
 
 **Purpose**: Confirm clean branch baseline and project prerequisites.
 
-- [ ] T001 Confirm `005-tests-ci` is up to date with `develop`, clean working tree, and `npm test` and `npm run typecheck` are green before any changes
+- [x] T001 Confirm `005-tests-ci` is up to date with `develop`, clean working tree, and `npm test` and `npm run typecheck` are green before any changes
 
 ---
 
@@ -28,14 +28,14 @@
 
 ### Tests first ⚠️
 
-- [ ] T002 [P] Write scripts/check-spec-links.test.mjs to test spec completeness checking (requires spec.md, plan.md, tasks.md per spec dir), relative markdown link resolution, and detection of illicit `.md` references in src/
-- [ ] T003 [P] Add unit test in scripts/timing-report.test.mjs or dedicated test asserting coverage threshold configuration in package.json
+- [x] T002 [P] Write scripts/check-spec-links.test.mjs to test spec completeness checking (requires spec.md, plan.md, tasks.md per spec dir), relative markdown link resolution, and detection of illicit `.md` references in src/
+- [x] T003 [P] Add unit test in scripts/timing-report.test.mjs or dedicated test asserting coverage threshold configuration in package.json
 
 ### Implementation
 
-- [ ] T004 Implement spec verification and link audit in scripts/check-spec-links.mjs to pass T002
-- [ ] T005 [P] Configure Jest coverage thresholds (80% lines and branches on core logic: engine, session, modes, storage) and add `test:coverage` and `check:specs` scripts to package.json to pass T003
-- [ ] T006 Integrate `npm run check:specs` into `npm run check` pipeline in package.json and verify all checks pass
+- [x] T004 Implement spec verification and link audit in scripts/check-spec-links.mjs to pass T002
+- [x] T005 [P] Configure Jest coverage thresholds (80% lines and branches on core logic: engine, session, modes, storage) and add `test:coverage` and `check:specs` scripts to package.json to pass T003
+- [x] T006 Integrate `npm run check:specs` into `npm run check` pipeline in package.json and verify all checks pass
 
 **Checkpoint**: Coverage reporting and spec verification tools operational. Tests green.
 
