@@ -57,14 +57,14 @@ its own.
 
 ### Tests first
 
-- [ ] T005 [P] Add to src/engine/engine.test.ts: `onCue` receives `phaseStart = true` for cues from a phase's second 0 and for the catch-up announcement, `false` for all other seconds and for completion cues
-- [ ] T006 [P] Write src/platform/notification.test.ts for `notificationState(definition, snapshot)` and `formatClock(ms)`: NS1–NS5 (countdown for running timed phase; elapsed for running untimed; paused text with frozen `m:ss left` / `m:ss`, timer null; null for idle/done/stopped; clamp at 0; `h:mm:ss` from 1 h; subtitle forms "<subtitle>: <title>")
+- [x] T005 [P] Add to src/engine/engine.test.ts: `onCue` receives `phaseStart = true` for cues from a phase's second 0 and for the catch-up announcement, `false` for all other seconds and for completion cues
+- [x] T006 [P] Write src/platform/notification.test.ts for `notificationState(definition, snapshot)` and `formatClock(ms)`: NS1–NS5 (countdown for running timed phase; elapsed for running untimed; paused text with frozen `m:ss left` / `m:ss`, timer null; null for idle/done/stopped; clamp at 0; `h:mm:ss` from 1 h; subtitle forms "<subtitle>: <title>")
 
 ### Implementation
 
-- [ ] T007 Add `phaseStart: boolean` as the 4th argument of `EngineEvents.onCue` in src/engine/types.ts and pass it in src/engine/engine.ts to pass T005; extend `CuePlayer.play(cue, at, phase?, phaseStart?)` in src/audio/types.ts, `FakeCuePlayer` in src/test-utils/fakes.ts (record it), and the controller's `onCue` wiring in src/session/controller.ts; existing tests stay green
-- [ ] T008 [P] Implement `NotificationState`, `notificationState`, and `formatClock` in src/platform/notification.ts to pass T006
-- [ ] T009 Change the `BackgroundHost` interface in src/platform/background.ts to the contract shape (`start({ sessionId, route, notification, keepAliveUntil })`, `update(notification)`, `heartbeat()`, `onAction(fn)`, `onTaskRemoved(fn)`, `SessionAction` type); update `FakeBackgroundHost` in src/test-utils/fakes.ts (records start/update/heartbeat/stop with full payloads; `emitAction(action)` and `emitTaskRemoved()` helpers; `listenerCount()`); update src/platform/background.ios.ts no-ops; adapt the controller and existing tests to the new call shapes with today's behavior (text only via `notificationState(...).text`), all tests green
+- [x] T007 Add `phaseStart: boolean` as the 4th argument of `EngineEvents.onCue` in src/engine/types.ts and pass it in src/engine/engine.ts to pass T005; extend `CuePlayer.play(cue, at, phase?, phaseStart?)` in src/audio/types.ts, `FakeCuePlayer` in src/test-utils/fakes.ts (record it), and the controller's `onCue` wiring in src/session/controller.ts; existing tests stay green
+- [x] T008 [P] Implement `NotificationState`, `notificationState`, and `formatClock` in src/platform/notification.ts to pass T006
+- [x] T009 Change the `BackgroundHost` interface in src/platform/background.ts to the contract shape (`start({ sessionId, route, notification, keepAliveUntil })`, `update(notification)`, `heartbeat()`, `onAction(fn)`, `onTaskRemoved(fn)`, `SessionAction` type); update `FakeBackgroundHost` in src/test-utils/fakes.ts (records start/update/heartbeat/stop with full payloads; `emitAction(action)` and `emitTaskRemoved()` helpers; `listenerCount()`); update src/platform/background.ios.ts no-ops; adapt the controller and existing tests to the new call shapes with today's behavior (text only via `notificationState(...).text`), all tests green
 
 **Checkpoint**: Interfaces in place, tests green, app behaves as before on the old library.
 

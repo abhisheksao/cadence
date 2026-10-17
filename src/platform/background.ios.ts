@@ -1,4 +1,4 @@
-import type { BackgroundHost } from './background';
+import type { BackgroundHost, SessionAction } from './background';
 
 /**
  * Placeholder until spec 008 (silent-audio keep-alive and Live Activities). Sessions run while
@@ -11,6 +11,13 @@ export const backgroundHost: BackgroundHost = {
     return true;
   },
   update() {},
+  heartbeat() {},
+  onAction(_fn: (action: SessionAction) => void) {
+    return () => {};
+  },
+  onTaskRemoved(_fn: () => void) {
+    return () => {};
+  },
   async stop() {},
   async requestBatteryExemption() {},
 };

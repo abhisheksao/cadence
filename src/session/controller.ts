@@ -1,9 +1,10 @@
 import type { CuePlayer } from '@/audio/types';
 import type { Clock, Scheduler } from '@/engine/clock';
 import { Engine } from '@/engine/engine';
-import type { Phase, SessionSnapshot } from '@/engine/types';
+import type { SessionSnapshot } from '@/engine/types';
 import type { ModeRegistry } from '@/modes/types';
 import type { BackgroundHost } from '@/platform/background';
+import { notificationState } from '@/platform/notification';
 import type { KeyValueStore } from '@/storage/types';
 
 import { RECORD_KEY, assessRecord, parseRecord, toRecord } from './record';
@@ -16,11 +17,6 @@ const WIND_DOWN_MS = 4_000;
 const RECORD_REFRESH_MS = 60_000;
 
 type Position = Omit<ResumeAssessment, 'definition'>;
-
-/** Notification text for a phase: "<subtitle>: <title>", or just the title (C3). */
-function phaseText(phase: Phase) {
-  return phase.subtitle ? `${phase.subtitle}: ${phase.title}` : phase.title;
-}
 
 /** What screens show: the engine snapshot plus session-level details. */
 export type SessionState = SessionSnapshot & {
@@ -115,7 +111,7 @@ export class SessionController {
       definition.phases,
       mode.cueFor(definition),
       {
-        onCue: (cue, at, phase) => player.play(cue, at, phase),
+        onCue: (cue, at, phase, phaseStart) => player.play(cue, at, phase, phaseStart),
         onCancelPending: () => player.silence(),
         // The first phase's title goes out with background.start().
         onPhaseChange: () => {
@@ -136,10 +132,25 @@ export class SessionController {
       },
       { clock, scheduler },
     );
-    const firstText = phaseText(definition.phases[position?.index ?? 0]);
+    const initialIndex = position?.index ?? 0;
+    const initialPhase = definition.phases[initialIndex];
+    const initialDurationMs = initialPhase?.durationSec == null ? null : initialPhase.durationSec * 1_000;
+    const initialRemainingMs =
+      initialDurationMs === null ? null : Math.max(0, initialDurationMs - (position?.phaseElapsedMs ?? 0));
+    const initialSnapshot: SessionSnapshot = {
+      status: position?.paused ? 'paused' : 'running',
+      index: initialIndex,
+      phase: initialPhase,
+      phaseElapsedMs: position?.phaseElapsedMs ?? 0,
+      phaseRemainingMs: initialRemainingMs,
+      totalElapsedMs: 0,
+    };
+    const initialNotification = notificationState(definition, initialSnapshot)!;
+    const route = typeof mode.route === 'string' ? mode.route : (mode.route.pathname ?? '/');
     const serviceStarted = await background.start({
-      title: definition.title,
-      text: position?.paused ? `Paused · ${firstText}` : firstText,
+      sessionId: String(clock.now()),
+      route,
+      notification: initialNotification,
       keepAliveUntil,
     });
 
@@ -211,9 +222,10 @@ export class SessionController {
    */
   private updateNotification(engine: Engine) {
     if (this.active?.engine !== engine) return;
-    const { status, phase } = engine.snapshot();
-    if (!phase || (status !== 'running' && status !== 'paused')) return;
-    this.deps.background.update(status === 'paused' ? `Paused · ${phaseText(phase)}` : phaseText(phase));
+    const notification = notificationState(this.active.definition, engine.snapshot());
+    if (notification) {
+      this.deps.background.update(notification);
+    }
   }
 
   private saveRecord(engine: Engine) {

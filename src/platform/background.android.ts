@@ -54,13 +54,13 @@ export function createBackgroundHost(store: KeyValueStore): BackgroundHost {
       await store.set(BATTERY_ASKED_KEY, '1');
     },
 
-    async start({ title, text, keepAliveUntil }) {
+    async start({ notification, keepAliveUntil }) {
       try {
         if (BackgroundService.isRunning()) await BackgroundService.stop();
         await BackgroundService.start(() => keepAliveUntil, {
           taskName: 'CadenceSession',
-          taskTitle: title,
-          taskDesc: text,
+          taskTitle: notification.title,
+          taskDesc: notification.text,
           taskIcon: { name: 'ic_launcher', type: 'mipmap' },
           color: '#FF7A45',
           foregroundServiceType: ['mediaPlayback'],
@@ -72,8 +72,20 @@ export function createBackgroundHost(store: KeyValueStore): BackgroundHost {
       }
     },
 
-    update(text) {
-      if (BackgroundService.isRunning()) BackgroundService.updateNotification({ taskDesc: text }).catch(() => {});
+    update(notification) {
+      if (BackgroundService.isRunning()) {
+        BackgroundService.updateNotification({ taskDesc: notification.text }).catch(() => {});
+      }
+    },
+
+    heartbeat() {},
+
+    onAction() {
+      return () => {};
+    },
+
+    onTaskRemoved() {
+      return () => {};
     },
 
     async stop() {

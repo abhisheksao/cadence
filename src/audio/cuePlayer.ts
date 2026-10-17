@@ -174,7 +174,7 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
       return ready;
     },
 
-    play(cue: Cue, at: number, phase = -1) {
+    play(cue: Cue, at: number, phase = -1, _phaseStart = false) {
       if (cue.type === 'say') {
         schedule(at, tts.value, () => speak(cue.text, cue.interrupt ?? false, at, phase));
       } else {

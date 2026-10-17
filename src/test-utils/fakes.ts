@@ -1,11 +1,12 @@
 import type { CuePlayer } from '@/audio/types';
 import type { Cue } from '@/engine/types';
-import type { BackgroundHost } from '@/platform/background';
+import type { BackgroundHost, SessionAction } from '@/platform/background';
+import type { NotificationState } from '@/platform/notification';
 import type { KeyValueStore } from '@/storage/types';
 
 /** Records every call, so tests can assert on what would have been played. */
 export class FakeCuePlayer implements CuePlayer {
-  played: { cue: Cue; at: number; phase?: number }[] = [];
+  played: { cue: Cue; at: number; phase?: number; phaseStart?: boolean }[] = [];
   silenced = 0;
   initialised = 0;
 
@@ -13,8 +14,8 @@ export class FakeCuePlayer implements CuePlayer {
     this.initialised += 1;
   }
 
-  play(cue: Cue, at: number, phase?: number) {
-    this.played.push({ cue, at, phase });
+  play(cue: Cue, at: number, phase?: number, phaseStart?: boolean) {
+    this.played.push({ cue, at, phase, phaseStart });
   }
 
   silence() {
@@ -24,8 +25,16 @@ export class FakeCuePlayer implements CuePlayer {
 
 type BackgroundCall =
   | { kind: 'prepare' }
-  | { kind: 'start'; title: string; text: string }
-  | { kind: 'update'; text: string }
+  | {
+      kind: 'start';
+      sessionId: string;
+      route: string;
+      notification: NotificationState;
+      title: string;
+      text: string;
+    }
+  | { kind: 'update'; notification: NotificationState; text: string }
+  | { kind: 'heartbeat' }
   | { kind: 'stop' }
   | { kind: 'requestBatteryExemption' };
 
@@ -35,19 +44,65 @@ export class FakeBackgroundHost implements BackgroundHost {
   /** What start() resolves to; set false to simulate the OS refusing the service. */
   startResult = true;
   keepAliveUntil: Promise<void> | null = null;
+  private actionListeners = new Set<(action: SessionAction) => void>();
+  private taskRemovedListeners = new Set<() => void>();
 
   async prepare() {
     this.calls.push({ kind: 'prepare' });
   }
 
-  async start(info: { title: string; text: string; keepAliveUntil: Promise<void> }) {
-    this.calls.push({ kind: 'start', title: info.title, text: info.text });
+  async start(info: {
+    sessionId: string;
+    route: string;
+    notification: NotificationState;
+    keepAliveUntil: Promise<void>;
+  }) {
+    this.calls.push({
+      kind: 'start',
+      sessionId: info.sessionId,
+      route: info.route,
+      notification: info.notification,
+      title: info.notification.title,
+      text: info.notification.text,
+    });
     this.keepAliveUntil = info.keepAliveUntil;
     return this.startResult;
   }
 
-  update(text: string) {
-    this.calls.push({ kind: 'update', text });
+  update(notification: NotificationState) {
+    this.calls.push({ kind: 'update', notification, text: notification.text });
+  }
+
+  heartbeat() {
+    this.calls.push({ kind: 'heartbeat' });
+  }
+
+  onAction(fn: (action: SessionAction) => void): () => void {
+    this.actionListeners.add(fn);
+    return () => {
+      this.actionListeners.delete(fn);
+    };
+  }
+
+  onTaskRemoved(fn: () => void): () => void {
+    this.taskRemovedListeners.add(fn);
+    return () => {
+      this.taskRemovedListeners.delete(fn);
+    };
+  }
+
+  emitAction(action: SessionAction) {
+    this.actionListeners.forEach((fn) => fn(action));
+  }
+
+  emitTaskRemoved() {
+    this.taskRemovedListeners.forEach((fn) => fn());
+  }
+
+  listenerCount(event?: 'action' | 'taskRemoved') {
+    if (event === 'action') return this.actionListeners.size;
+    if (event === 'taskRemoved') return this.taskRemovedListeners.size;
+    return this.actionListeners.size + this.taskRemovedListeners.size;
   }
 
   async stop() {

@@ -209,12 +209,12 @@ describe('SessionController: notification', () => {
     scheduler.advance(5_000);
 
     controller.pause();
-    expect(updates(background)).toEqual(['Paused · Run 1']);
+    expect(updates(background)).toEqual(['Paused · Run 1 · 0:25 left']);
     scheduler.advance(60_000);
-    expect(updates(background)).toEqual(['Paused · Run 1']);
+    expect(updates(background)).toEqual(['Paused · Run 1 · 0:25 left']);
 
     controller.resume();
-    expect(updates(background)).toEqual(['Paused · Run 1', 'Run 1']);
+    expect(updates(background)).toEqual(['Paused · Run 1 · 0:25 left', 'Run 1']);
   });
 
   it('C3: skip and back update the title, keeping the paused label while paused', async () => {
@@ -226,7 +226,7 @@ describe('SessionController: notification', () => {
     expect(updates(background)).toEqual(['Run 2']);
     controller.pause();
     controller.back();
-    expect(updates(background)).toEqual(['Run 2', 'Paused · Run 2', 'Paused · Run 1']);
+    expect(updates(background)).toEqual(['Run 2', 'Paused · Run 2 · 0:30 left', 'Paused · Run 1 · 0:30 left']);
   });
 
   it('C3: keeps updating after the user dismisses the notification (the update re-posts it)', async () => {
@@ -381,7 +381,7 @@ describe('SessionController: recovery', () => {
       paused: true,
     });
     expect(controller.getState()?.status).toBe('paused');
-    expect(background.callsOf('start')[0]).toMatchObject({ text: 'Paused · Run 1' });
+    expect(background.callsOf('start')[0]).toMatchObject({ text: 'Paused · Run 1 · 0:55 left' });
   });
 
   it('C8: resumeInterrupted rejects a definition whose mode is unknown', async () => {
@@ -438,7 +438,7 @@ describe('SessionController: notification text from the phase subtitle', () => {
     controller.resume();
     expect(background.callsOf('update').map((c) => c.text)).toEqual([
       'Step 2 of 2: Stretch',
-      'Paused · Step 2 of 2: Stretch',
+      'Paused · Step 2 of 2: Stretch · 0:29 left',
       'Step 2 of 2: Stretch',
     ]);
   });
@@ -446,6 +446,6 @@ describe('SessionController: notification text from the phase subtitle', () => {
   it('C3: a paused recovery starts with the paused subtitle text', async () => {
     const { controller, background } = setup();
     await controller.resumeInterrupted({ definition: withSubtitles(), index: 1, phaseElapsedMs: 5_000, paused: true });
-    expect(background.callsOf('start')[0]).toMatchObject({ text: 'Paused · Step 2 of 2: Stretch' });
+    expect(background.callsOf('start')[0]).toMatchObject({ text: 'Paused · Step 2 of 2: Stretch · 0:25 left' });
   });
 });

@@ -49,9 +49,14 @@ describe('Android background host: service', () => {
 
   it('starts a media-playback foreground service with the session title and phase', async () => {
     const keepAliveUntil = Promise.resolve();
-    await expect(backgroundHost.start({ title: 'Sample session', text: 'Get ready', keepAliveUntil })).resolves.toBe(
-      true,
-    );
+    await expect(
+      backgroundHost.start({
+        sessionId: 's1',
+        route: '/sample',
+        notification: { title: 'Sample session', text: 'Get ready', timer: null, paused: false },
+        keepAliveUntil,
+      }),
+    ).resolves.toBe(true);
 
     expect(service.start).toHaveBeenCalledTimes(1);
     const [task, options] = service.start.mock.calls[0];
@@ -66,20 +71,30 @@ describe('Android background host: service', () => {
 
   it('stops a service that is still running before starting a new one', async () => {
     service.isRunning.mockReturnValueOnce(true);
-    await backgroundHost.start({ title: 'Run', text: 'Warm up', keepAliveUntil: Promise.resolve() });
+    await backgroundHost.start({
+      sessionId: 's1',
+      route: '/run',
+      notification: { title: 'Run', text: 'Warm up', timer: null, paused: false },
+      keepAliveUntil: Promise.resolve(),
+    });
     expect(service.stop.mock.invocationCallOrder[0]).toBeLessThan(service.start.mock.invocationCallOrder[0]);
   });
 
   it('resolves false when the OS refuses to start the service', async () => {
     service.start.mockRejectedValueOnce(new Error('ForegroundServiceStartNotAllowedException'));
     await expect(
-      backgroundHost.start({ title: 'Run', text: 'Warm up', keepAliveUntil: Promise.resolve() }),
+      backgroundHost.start({
+        sessionId: 's1',
+        route: '/run',
+        notification: { title: 'Run', text: 'Warm up', timer: null, paused: false },
+        keepAliveUntil: Promise.resolve(),
+      }),
     ).resolves.toBe(false);
   });
 
   it('updates the notification text', () => {
     service.isRunning.mockReturnValue(true);
-    backgroundHost.update('Paused · Interval');
+    backgroundHost.update({ title: 'Run', text: 'Paused · Interval', timer: null, paused: true });
     expect(service.updateNotification).toHaveBeenCalledWith({ taskDesc: 'Paused · Interval' });
   });
 
