@@ -16,6 +16,8 @@ object SessionNotification {
   private const val CHANNEL_DESCRIPTION = "Ongoing Cadence session"
   private const val OLD_CHANNEL_ID = "RN_BACKGROUND_ACTIONS_CHANNEL"
   private const val BRAND_COLOR = 0xFFFF7A45.toInt()
+  private const val REQUEST_CODE_PAUSE_RESUME = 101
+  private const val REQUEST_CODE_SKIP = 102
 
   fun ensureChannel(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -43,6 +45,7 @@ object SessionNotification {
 
   fun buildNotification(
     context: Context,
+    sessionId: String,
     title: String,
     text: String,
     route: String,
@@ -80,20 +83,62 @@ object SessionNotification {
       .setContentIntent(pendingContentIntent)
 
     if (!paused && timerKind == "countdown" && timerMs != null && timerMs > 0) {
+      builder.setShowWhen(true)
       builder.setUsesChronometer(true)
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
         builder.setChronometerCountDown(true)
       }
       builder.setWhen(System.currentTimeMillis() + timerMs)
     } else if (!paused && timerKind == "elapsed" && timerMs != null && timerMs >= 0) {
+      builder.setShowWhen(true)
       builder.setUsesChronometer(true)
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
         builder.setChronometerCountDown(false)
       }
       builder.setWhen(System.currentTimeMillis() - timerMs)
     } else {
+      builder.setShowWhen(false)
       builder.setUsesChronometer(false)
     }
+
+    // Action 1: Pause or Resume
+    val pauseResumeActionName = if (paused) "resume" else "pause"
+    val pauseResumeIntent = Intent(context, ActionReceiver::class.java).apply {
+      action = "io.github.abhisheksao.cadence.session.ACTION_${pauseResumeActionName.uppercase()}"
+      putExtra("sessionId", sessionId)
+      putExtra("action", pauseResumeActionName)
+    }
+    val pendingPauseResume = PendingIntent.getBroadcast(
+      context,
+      REQUEST_CODE_PAUSE_RESUME,
+      pauseResumeIntent,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    val pauseResumeAction = NotificationCompat.Action.Builder(
+      if (paused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause,
+      if (paused) "Resume" else "Pause",
+      pendingPauseResume
+    ).build()
+    builder.addAction(pauseResumeAction)
+
+    // Action 2: Skip
+    val skipIntent = Intent(context, ActionReceiver::class.java).apply {
+      action = "io.github.abhisheksao.cadence.session.ACTION_SKIP"
+      putExtra("sessionId", sessionId)
+      putExtra("action", "skip")
+    }
+    val pendingSkip = PendingIntent.getBroadcast(
+      context,
+      REQUEST_CODE_SKIP,
+      skipIntent,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    val skipAction = NotificationCompat.Action.Builder(
+      android.R.drawable.ic_media_next,
+      "Skip",
+      pendingSkip
+    ).build()
+    builder.addAction(skipAction)
 
     return builder.build()
   }

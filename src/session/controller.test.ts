@@ -678,7 +678,7 @@ describe('SessionController: US2 notification controls (NC2, NC3, NC4, NC6)', ()
     // emitAction skip
     const playedBefore = player.played.length;
     background.emitAction('skip');
-    expect(controller.getState()?.phaseIndex).toBe(1);
+    expect(controller.getState()?.index).toBe(1);
     expect(player.played.length).toBeGreaterThan(playedBefore);
     expect(background.callsOf('update').at(-1)?.notification).toMatchObject({
       paused: false,

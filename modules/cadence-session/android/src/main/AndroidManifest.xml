@@ -4,5 +4,8 @@
       android:name=".SessionService"
       android:foregroundServiceType="mediaPlayback"
       android:exported="false" />
+    <receiver
+      android:name=".ActionReceiver"
+      android:exported="false" />
   </application>
 </manifest>

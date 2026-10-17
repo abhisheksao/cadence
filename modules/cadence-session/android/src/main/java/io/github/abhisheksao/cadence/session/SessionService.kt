@@ -34,6 +34,7 @@ class SessionService : HeadlessJsTaskService() {
   private val mainHandler = Handler(Looper.getMainLooper())
 
   private var sessionId: String = ""
+  val currentSessionId: String get() = sessionId
   private var route: String = ""
   private var currentTitle: String = ""
   private var currentText: String = ""
@@ -85,6 +86,7 @@ class SessionService : HeadlessJsTaskService() {
 
     val notification = SessionNotification.buildNotification(
       context = this,
+      sessionId = sessionId,
       title = currentTitle,
       text = currentText,
       route = route,
@@ -152,6 +154,7 @@ class SessionService : HeadlessJsTaskService() {
 
     val notification = SessionNotification.buildNotification(
       context = this,
+      sessionId = sessionId,
       title = title,
       text = text,
       route = route,

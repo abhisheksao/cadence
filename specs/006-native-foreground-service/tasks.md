@@ -108,13 +108,13 @@ buttons that act exactly like the in-app controls.
 
 ### Tests for User Story 2 (write first, confirm they fail) ⚠️
 
-- [ ] T020 [P] [US2] Add to src/session/controller.test.ts: NC2 (phase change, pause, resume, skip and back each call `update` once with the right `NotificationState`: countdown `remainingMs` equals the snapshot's at that moment, elapsed for untimed, paused text with frozen value), NC3 (`emitAction('pause'|'resume'|'skip')` gives the same cues, record writes and state as `pause()`/`resume()`/`skip()`), NC4 (pause while paused / resume while running ignored; `pause, resume, pause` ends paused), NC6 (actions with no live session do nothing, no throw)
+- [x] T020 [P] [US2] Add to src/session/controller.test.ts: NC2 (phase change, pause, resume, skip and back each call `update` once with the right `NotificationState`: countdown `remainingMs` equals the snapshot's at that moment, elapsed for untimed, paused text with frozen value), NC3 (`emitAction('pause'|'resume'|'skip')` gives the same cues, record writes and state as `pause()`/`resume()`/`skip()`), NC4 (pause while paused / resume while running ignored; `pause, resume, pause` ends paused), NC6 (actions with no live session do nothing, no throw)
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Subscribe to `background.onAction` in src/session/controller.ts per session and map actions to pause/resume/skip with the guards of NC4; send `notificationState` on every phase/status change to pass T020
-- [ ] T022 [US2] Kotlin: chronometer in SessionNotification.kt — countdown `setUsesChronometer(true)` + `setChronometerCountDown(true)` + `setWhen(now + remainingMs)`; elapsed `setWhen(now - elapsedMs)` counting up; paused: no chronometer; Pause/Resume (label by `paused`) and Skip actions as `PendingIntent.getBroadcast` (`FLAG_IMMUTABLE`) carrying `sessionId`
-- [ ] T023 [US2] Kotlin: ActionReceiver.kt (non-exported, declared in the module manifest) forwarding to the module, which emits `onAction` only when `sessionId` matches the running service's id (FR-016)
+- [x] T021 [US2] Subscribe to `background.onAction` in src/session/controller.ts per session and map actions to pause/resume/skip with the guards of NC4; send `notificationState` on every phase/status change to pass T020
+- [x] T022 [US2] Kotlin: chronometer in SessionNotification.kt — countdown `setUsesChronometer(true)` + `setChronometerCountDown(true)` + `setWhen(now + remainingMs)`; elapsed `setWhen(now - elapsedMs)` counting up; paused: no chronometer; Pause/Resume (label by `paused`) and Skip actions as `PendingIntent.getBroadcast` (`FLAG_IMMUTABLE`) carrying `sessionId`
+- [x] T023 [US2] Kotlin: ActionReceiver.kt (non-exported, declared in the module manifest) forwarding to the module, which emits `onAction` only when `sessionId` matches the running service's id (FR-016)
 - [ ] T024 [US2] Release build; run N5–N8 and N2 again (tap-to-open; add `src/app/+native-intent.tsx` with navigate semantics only if a duplicate screen appears); record results below
 
 **Checkpoint**: Notification controls work from the shade and lock screen.

@@ -53,6 +53,7 @@ type Active = {
   cancelHeartbeat: () => void;
   unsubscribe: () => void;
   unsubTaskRemoved: () => void;
+  unsubAction: () => void;
 };
 
 /**
@@ -167,6 +168,17 @@ export class SessionController {
     const unsubTaskRemoved = background.onTaskRemoved(() => {
       this.stop();
     });
+    const unsubAction = background.onAction((action) => {
+      const state = this.getState();
+      if (!state) return;
+      if (action === 'pause') {
+        if (state.status === 'running') this.pause();
+      } else if (action === 'resume') {
+        if (state.status === 'paused') this.resume();
+      } else if (action === 'skip') {
+        this.skip();
+      }
+    });
 
     const active: Active = {
       engine,
@@ -178,6 +190,7 @@ export class SessionController {
       cancelHeartbeat,
       unsubscribe: () => {},
       unsubTaskRemoved,
+      unsubAction,
     };
     this.active = active;
     active.unsubscribe = engine.subscribe((snapshot) => this.publish(active, snapshot));
@@ -217,6 +230,7 @@ export class SessionController {
     active.cancelRefresh();
     active.cancelHeartbeat();
     active.unsubTaskRemoved();
+    active.unsubAction();
     active.cancelWindDown?.();
     active.cancelWindDown = null;
     active.release();
@@ -232,6 +246,7 @@ export class SessionController {
     previous.cancelRefresh();
     previous.cancelHeartbeat();
     previous.unsubTaskRemoved();
+    previous.unsubAction();
     previous.cancelWindDown?.();
     previous.engine.stop();
     this.deps.player.silence();
@@ -274,6 +289,7 @@ export class SessionController {
       cancel();
       active.cancelHeartbeat();
       active.unsubTaskRemoved();
+      active.unsubAction();
       active.unsubscribe();
       active.cancelWindDown = null;
       active.release();
