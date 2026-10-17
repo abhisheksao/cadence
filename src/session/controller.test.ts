@@ -564,3 +564,164 @@ describe('SessionController: US1 native service contract (NC1, NC5, NC7, NC8)', 
   });
 });
 
+describe('SessionController: US2 notification controls (NC2, NC3, NC4, NC6)', () => {
+  it('NC2: phase change, pause, resume, skip and back each call update once with the right NotificationState', async () => {
+    const { controller, scheduler, background } = setup();
+    const untimedDef: SessionDefinition = {
+      modeId: 'test',
+      title: 'Workout',
+      phases: [
+        { kind: 'step', title: 'Warmup', durationSec: 30 },
+        { kind: 'step', title: 'Stretch', durationSec: null },
+        { kind: 'step', title: 'Cool', durationSec: 20 },
+      ],
+      settings: {},
+      keepScreenOn: false,
+    };
+    await controller.start(untimedDef);
+    background.calls.length = 0;
+
+    // Advance 5 s into Warmup
+    scheduler.advance(5_000);
+    expect(background.callsOf('update')).toHaveLength(0); // no update on plain ticks
+
+    // Pause
+    controller.pause();
+    expect(background.callsOf('update')).toHaveLength(1);
+    expect(background.callsOf('update')[0].notification).toEqual({
+      title: 'Workout',
+      text: 'Paused · Warmup · 0:25 left',
+      timer: null,
+      paused: true,
+    });
+
+    // Resume
+    controller.resume();
+    expect(background.callsOf('update')).toHaveLength(2);
+    expect(background.callsOf('update')[1].notification).toEqual({
+      title: 'Workout',
+      text: 'Warmup',
+      timer: { kind: 'countdown', remainingMs: 25_000 },
+      paused: false,
+    });
+
+    // Skip to untimed Stretch
+    controller.skip();
+    expect(background.callsOf('update')).toHaveLength(3);
+    expect(background.callsOf('update')[2].notification).toEqual({
+      title: 'Workout',
+      text: 'Stretch',
+      timer: { kind: 'elapsed', elapsedMs: 0 },
+      paused: false,
+    });
+
+    // Advance 12 s in untimed Stretch
+    scheduler.advance(12_000);
+    // Pause during untimed phase
+    controller.pause();
+    expect(background.callsOf('update')).toHaveLength(4);
+    expect(background.callsOf('update')[3].notification).toEqual({
+      title: 'Workout',
+      text: 'Paused · Stretch · 0:12',
+      timer: null,
+      paused: true,
+    });
+
+    // Back to start of Stretch
+    controller.back();
+    expect(background.callsOf('update')).toHaveLength(5);
+    expect(background.callsOf('update')[4].notification).toEqual({
+      title: 'Workout',
+      text: 'Paused · Stretch · 0:00',
+      timer: null,
+      paused: true,
+    });
+
+    // Back to Warmup while paused
+    controller.back();
+    expect(background.callsOf('update')).toHaveLength(6);
+    expect(background.callsOf('update')[5].notification).toEqual({
+      title: 'Workout',
+      text: 'Paused · Warmup · 0:30 left',
+      timer: null,
+      paused: true,
+    });
+  });
+
+  it('NC3: emitAction(pause|resume|skip) gives the same cues, record writes and state as in-app controls', async () => {
+    const { controller, scheduler, background, player, store } = setup();
+    await controller.start(definition('Run', [30, 30]));
+    scheduler.advance(5_000);
+
+    // emitAction pause
+    background.emitAction('pause');
+    expect(controller.getState()?.status).toBe('paused');
+    expect(player.silenced).toBeGreaterThan(0);
+    const pausedRecord = JSON.parse(store.getSync(RECORD_KEY)!);
+    expect(pausedRecord.status).toBe('paused');
+    expect(background.callsOf('update').at(-1)?.notification).toMatchObject({
+      paused: true,
+      text: 'Paused · Run 1 · 0:25 left',
+    });
+
+    // emitAction resume
+    background.emitAction('resume');
+    expect(controller.getState()?.status).toBe('running');
+    const runningRecord = JSON.parse(store.getSync(RECORD_KEY)!);
+    expect(runningRecord.status).toBe('running');
+    expect(background.callsOf('update').at(-1)?.notification).toMatchObject({
+      paused: false,
+      text: 'Run 1',
+      timer: { kind: 'countdown', remainingMs: 25_000 },
+    });
+
+    // emitAction skip
+    const playedBefore = player.played.length;
+    background.emitAction('skip');
+    expect(controller.getState()?.phaseIndex).toBe(1);
+    expect(player.played.length).toBeGreaterThan(playedBefore);
+    expect(background.callsOf('update').at(-1)?.notification).toMatchObject({
+      paused: false,
+      text: 'Run 2',
+      timer: { kind: 'countdown', remainingMs: 30_000 },
+    });
+  });
+
+  it('NC4: pause while paused / resume while running are ignored; sequence ends in last state', async () => {
+    const { controller, scheduler, background } = setup();
+    await controller.start(definition('Run', [30, 30]));
+    scheduler.advance(5_000);
+
+    // Resume while running is ignored
+    const updatesBefore = background.callsOf('update').length;
+    background.emitAction('resume');
+    expect(background.callsOf('update')).toHaveLength(updatesBefore);
+    expect(controller.getState()?.status).toBe('running');
+
+    // Pause
+    background.emitAction('pause');
+    expect(controller.getState()?.status).toBe('paused');
+    const updatesAfterPause = background.callsOf('update').length;
+
+    // Pause while paused is ignored
+    background.emitAction('pause');
+    expect(background.callsOf('update')).toHaveLength(updatesAfterPause);
+    expect(controller.getState()?.status).toBe('paused');
+
+    // Sequence: pause -> resume -> pause ends paused
+    background.emitAction('resume');
+    expect(controller.getState()?.status).toBe('running');
+    background.emitAction('pause');
+    expect(controller.getState()?.status).toBe('paused');
+  });
+
+  it('NC6: actions with no live session do nothing and do not throw', () => {
+    const { background } = setup();
+    expect(() => {
+      background.emitAction('pause');
+      background.emitAction('resume');
+      background.emitAction('skip');
+    }).not.toThrow();
+  });
+});
+
