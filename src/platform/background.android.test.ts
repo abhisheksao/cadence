@@ -3,22 +3,24 @@ import { AppRegistry, PermissionsAndroid, Platform } from 'react-native';
 
 import { MemoryStore } from '@/test-utils/fakes';
 
-import { BATTERY_ASKED_KEY, createBackgroundHost } from './background.android';
+import cadenceSession from 'modules/cadence-session';
 
-const mockModule = {
-  startService: jest.fn(() => Promise.resolve(true)),
-  updateNotification: jest.fn(),
-  heartbeat: jest.fn(),
-  stopService: jest.fn(() => Promise.resolve()),
-  addListener: jest.fn((_event: string, _fn: (...args: unknown[]) => void) => ({
-    remove: jest.fn(),
-  })),
-};
+import { BATTERY_ASKED_KEY, createBackgroundHost, registerCadenceSessionTask } from './background.android';
 
 jest.mock('modules/cadence-session', () => ({
   __esModule: true,
-  default: mockModule,
+  default: {
+    startService: jest.fn(() => Promise.resolve(true)),
+    updateNotification: jest.fn(),
+    heartbeat: jest.fn(),
+    stopService: jest.fn(() => Promise.resolve()),
+    addListener: jest.fn((_event: string, _fn: (...args: unknown[]) => void) => ({
+      remove: jest.fn(),
+    })),
+  },
 }));
+
+const mockModule = jest.mocked(cadenceSession!);
 
 jest.mock('expo-intent-launcher', () => ({
   startActivityAsync: jest.fn(() => Promise.resolve({ resultCode: 0 })),
@@ -146,7 +148,7 @@ describe('Android background host: service (US1)', () => {
 
   it('registers the headless task CadenceSession with AppRegistry and resolves on keepAliveUntil', async () => {
     const registerSpy = jest.spyOn(AppRegistry, 'registerHeadlessTask');
-    // Re-create host or check registration
+    registerCadenceSessionTask(true);
     expect(registerSpy).toHaveBeenCalledWith('CadenceSession', expect.any(Function));
 
     const taskFactory = registerSpy.mock.calls.find((call) => call[0] === 'CadenceSession')?.[1];

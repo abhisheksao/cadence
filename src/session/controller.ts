@@ -35,6 +35,12 @@ export type ControllerDeps = {
   modes: ModeRegistry;
 };
 
+let sessionCounter = 0;
+function newSessionId(now: number): string {
+  sessionCounter += 1;
+  return `${now.toString(36)}-${sessionCounter.toString(36)}`;
+}
+
 type Active = {
   engine: Engine;
   definition: SessionDefinition;
@@ -44,7 +50,9 @@ type Active = {
   cancelWindDown: (() => void) | null;
   /** Stops the periodic record refresh. */
   cancelRefresh: () => void;
+  cancelHeartbeat: () => void;
   unsubscribe: () => void;
+  unsubTaskRemoved: () => void;
 };
 
 /**
@@ -147,11 +155,17 @@ export class SessionController {
     };
     const initialNotification = notificationState(definition, initialSnapshot)!;
     const route = typeof mode.route === 'string' ? mode.route : (mode.route.pathname ?? '/');
+    const sessionId = newSessionId(clock.now());
     const serviceStarted = await background.start({
-      sessionId: String(clock.now()),
+      sessionId,
       route,
       notification: initialNotification,
       keepAliveUntil,
+    });
+
+    const cancelHeartbeat = scheduler.every(2_000, () => background.heartbeat());
+    const unsubTaskRemoved = background.onTaskRemoved(() => {
+      this.stop();
     });
 
     const active: Active = {
@@ -161,7 +175,9 @@ export class SessionController {
       release,
       cancelWindDown: null,
       cancelRefresh: () => {},
+      cancelHeartbeat,
       unsubscribe: () => {},
+      unsubTaskRemoved,
     };
     this.active = active;
     active.unsubscribe = engine.subscribe((snapshot) => this.publish(active, snapshot));
@@ -196,24 +212,31 @@ export class SessionController {
     const active = this.active;
     if (!active) return;
     active.engine.stop();
+    this.active = null;
+    active.unsubscribe();
     active.cancelRefresh();
+    active.cancelHeartbeat();
+    active.unsubTaskRemoved();
     active.cancelWindDown?.();
     active.cancelWindDown = null;
     active.release();
     void this.deps.background.stop();
   }
 
-  /** Stops the current session (if any) without stopping the service: a new one replaces it. */
+  /** Stops the current session (if any) and its service: a new one replaces it. */
   private replaceActive() {
     const previous = this.active;
     if (!previous) return;
     this.active = null;
     previous.unsubscribe();
     previous.cancelRefresh();
+    previous.cancelHeartbeat();
+    previous.unsubTaskRemoved();
     previous.cancelWindDown?.();
     previous.engine.stop();
     this.deps.player.silence();
     previous.release();
+    void this.deps.background.stop();
   }
 
   /**
@@ -249,9 +272,15 @@ export class SessionController {
     active.cancelRefresh();
     const cancel = this.deps.scheduler.every(WIND_DOWN_MS, () => {
       cancel();
+      active.cancelHeartbeat();
+      active.unsubTaskRemoved();
+      active.unsubscribe();
       active.cancelWindDown = null;
       active.release();
-      if (this.active === active) void this.deps.background.stop();
+      if (this.active === active) {
+        this.active = null;
+        void this.deps.background.stop();
+      }
     });
     active.cancelWindDown = cancel;
   }

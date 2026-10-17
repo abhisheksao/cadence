@@ -16,3 +16,8 @@ android {
     abortOnError false
   }
 }
+
+dependencies {
+  implementation 'com.facebook.react:react-android'
+  implementation 'androidx.core:core-ktx:1.15.0'
+}
