@@ -1,19 +1,23 @@
 import * as IntentLauncher from 'expo-intent-launcher';
-import { PermissionsAndroid, Platform } from 'react-native';
-import BackgroundService from 'react-native-background-actions';
+import { AppRegistry, PermissionsAndroid, Platform } from 'react-native';
 
 import { MemoryStore } from '@/test-utils/fakes';
 
 import { BATTERY_ASKED_KEY, createBackgroundHost } from './background.android';
 
-jest.mock('react-native-background-actions', () => ({
+const mockModule = {
+  startService: jest.fn(() => Promise.resolve(true)),
+  updateNotification: jest.fn(),
+  heartbeat: jest.fn(),
+  stopService: jest.fn(() => Promise.resolve()),
+  addListener: jest.fn((_event: string, _fn: (...args: unknown[]) => void) => ({
+    remove: jest.fn(),
+  })),
+};
+
+jest.mock('modules/cadence-session', () => ({
   __esModule: true,
-  default: {
-    start: jest.fn(() => Promise.resolve()),
-    stop: jest.fn(() => Promise.resolve()),
-    updateNotification: jest.fn(() => Promise.resolve()),
-    isRunning: jest.fn(() => false),
-  },
+  default: mockModule,
 }));
 
 jest.mock('expo-intent-launcher', () => ({
@@ -29,7 +33,6 @@ jest.mock('expo-constants', () => ({
   default: { expoConfig: { android: { package: 'io.github.abhisheksao.cadence' } } },
 }));
 
-const service = jest.mocked(BackgroundService);
 const startActivity = jest.mocked(IntentLauncher.startActivityAsync);
 const backgroundHost = createBackgroundHost(new MemoryStore());
 
@@ -40,68 +43,136 @@ function setApiLevel(version: number) {
   Object.defineProperty(Platform, 'Version', { get: () => version, configurable: true });
 }
 
-describe('Android background host: service', () => {
-  beforeEach(() => jest.clearAllMocks());
+describe('Android background host: service (US1)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it('can ask for the battery exemption', () => {
     expect(backgroundHost.canRequestBatteryExemption).toBe(true);
   });
 
-  it('starts a media-playback foreground service with the session title and phase', async () => {
+  it('start calls startService with sessionId, route, and notification payload and returns true', async () => {
     const keepAliveUntil = Promise.resolve();
-    await expect(
-      backgroundHost.start({
-        sessionId: 's1',
-        route: '/sample',
-        notification: { title: 'Sample session', text: 'Get ready', timer: null, paused: false },
-        keepAliveUntil,
-      }),
-    ).resolves.toBe(true);
-
-    expect(service.start).toHaveBeenCalledTimes(1);
-    const [task, options] = service.start.mock.calls[0];
-    expect(options).toMatchObject({
-      taskTitle: 'Sample session',
-      taskDesc: 'Get ready',
-      foregroundServiceType: ['mediaPlayback'],
+    const result = await backgroundHost.start({
+      sessionId: 'sess-123',
+      route: '/routine',
+      notification: {
+        title: 'Morning Routine',
+        text: 'Pushups',
+        timer: { kind: 'countdown', remainingMs: 30_000 },
+        paused: false,
+      },
+      keepAliveUntil,
     });
-    // The service task lives exactly as long as the session needs it.
-    await expect(task(undefined)).resolves.toBeUndefined();
+
+    expect(result).toBe(true);
+    expect(mockModule.startService).toHaveBeenCalledTimes(1);
+    expect(mockModule.startService).toHaveBeenCalledWith({
+      sessionId: 'sess-123',
+      route: '/routine',
+      title: 'Morning Routine',
+      text: 'Pushups',
+      timer: { kind: 'countdown', remainingMs: 30_000 },
+      paused: false,
+    });
   });
 
-  it('stops a service that is still running before starting a new one', async () => {
-    service.isRunning.mockReturnValueOnce(true);
-    await backgroundHost.start({
-      sessionId: 's1',
-      route: '/run',
-      notification: { title: 'Run', text: 'Warm up', timer: null, paused: false },
+  it('start resolves false and warns when startService rejects', async () => {
+    mockModule.startService.mockRejectedValueOnce(new Error('ForegroundServiceStartNotAllowedException'));
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = await backgroundHost.start({
+      sessionId: 'sess-err',
+      route: '/routine',
+      notification: {
+        title: 'Morning Routine',
+        text: 'Pushups',
+        timer: null,
+        paused: false,
+      },
       keepAliveUntil: Promise.resolve(),
     });
-    expect(service.stop.mock.invocationCallOrder[0]).toBeLessThan(service.start.mock.invocationCallOrder[0]);
+
+    expect(result).toBe(false);
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 
-  it('resolves false when the OS refuses to start the service', async () => {
-    service.start.mockRejectedValueOnce(new Error('ForegroundServiceStartNotAllowedException'));
-    await expect(
-      backgroundHost.start({
-        sessionId: 's1',
-        route: '/run',
-        notification: { title: 'Run', text: 'Warm up', timer: null, paused: false },
-        keepAliveUntil: Promise.resolve(),
-      }),
-    ).resolves.toBe(false);
+  it('update calls updateNotification with the notification payload', () => {
+    const notification = {
+      title: 'Morning Routine',
+      text: 'Paused · Pushups · 0:25 left',
+      timer: null,
+      paused: true,
+    };
+    backgroundHost.update(notification);
+    expect(mockModule.updateNotification).toHaveBeenCalledWith(notification);
   });
 
-  it('updates the notification text', () => {
-    service.isRunning.mockReturnValue(true);
-    backgroundHost.update({ title: 'Run', text: 'Paused · Interval', timer: null, paused: true });
-    expect(service.updateNotification).toHaveBeenCalledWith({ taskDesc: 'Paused · Interval' });
+  it('heartbeat calls module heartbeat', () => {
+    backgroundHost.heartbeat();
+    expect(mockModule.heartbeat).toHaveBeenCalledTimes(1);
   });
 
-  it('stops the service', async () => {
-    service.isRunning.mockReturnValue(true);
+  it('stop calls stopService', async () => {
     await backgroundHost.stop();
-    expect(service.stop).toHaveBeenCalledTimes(1);
+    expect(mockModule.stopService).toHaveBeenCalledTimes(1);
+  });
+
+  it('onAction subscribes to module onAction and returned function removes listener', () => {
+    const removeFn = jest.fn();
+    mockModule.addListener.mockReturnValueOnce({ remove: removeFn });
+    const actionListener = jest.fn();
+
+    const unsubscribe = backgroundHost.onAction(actionListener);
+    expect(mockModule.addListener).toHaveBeenCalledWith('onAction', expect.any(Function));
+
+    unsubscribe();
+    expect(removeFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('onTaskRemoved subscribes to module onTaskRemoved and returned function removes listener', () => {
+    const removeFn = jest.fn();
+    mockModule.addListener.mockReturnValueOnce({ remove: removeFn });
+    const taskRemovedListener = jest.fn();
+
+    const unsubscribe = backgroundHost.onTaskRemoved(taskRemovedListener);
+    expect(mockModule.addListener).toHaveBeenCalledWith('onTaskRemoved', expect.any(Function));
+
+    unsubscribe();
+    expect(removeFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('registers the headless task CadenceSession with AppRegistry and resolves on keepAliveUntil', async () => {
+    const registerSpy = jest.spyOn(AppRegistry, 'registerHeadlessTask');
+    // Re-create host or check registration
+    expect(registerSpy).toHaveBeenCalledWith('CadenceSession', expect.any(Function));
+
+    const taskFactory = registerSpy.mock.calls.find((call) => call[0] === 'CadenceSession')?.[1];
+    expect(taskFactory).toBeDefined();
+
+    let resolveKeepAlive!: () => void;
+    const keepAliveUntil = new Promise<void>((resolve) => {
+      resolveKeepAlive = resolve;
+    });
+
+    await backgroundHost.start({
+      sessionId: 'sess-task',
+      route: '/routine',
+      notification: {
+        title: 'Morning Routine',
+        text: 'Pushups',
+        timer: null,
+        paused: false,
+      },
+      keepAliveUntil,
+    });
+
+    const task = taskFactory!();
+    const taskPromise = task({});
+    resolveKeepAlive();
+    await expect(taskPromise).resolves.toBeUndefined();
   });
 });
 

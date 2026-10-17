@@ -449,3 +449,118 @@ describe('SessionController: notification text from the phase subtitle', () => {
     expect(background.callsOf('start')[0]).toMatchObject({ text: 'Paused · Step 2 of 2: Stretch · 0:25 left' });
   });
 });
+
+describe('SessionController: US1 native service contract (NC1, NC5, NC7, NC8)', () => {
+  it('NC1: start passes a fresh sessionId per launch, route, and notificationState of the first phase', async () => {
+    const { controller, background } = setup();
+    await controller.start(definition('Run', [30]));
+    const start1 = background.callsOf('start')[0];
+    expect(start1.sessionId).toBeTruthy();
+    expect(start1.route).toBe('/sample');
+    expect(start1.notification).toEqual({
+      title: 'Run',
+      text: 'Run 1',
+      timer: { kind: 'countdown', remainingMs: 30_000 },
+      paused: false,
+    });
+
+    controller.stop();
+    await controller.start(definition('Run', [30]));
+    const start2 = background.callsOf('start')[1];
+    expect(start2.sessionId).toBeTruthy();
+    expect(start2.sessionId).not.toBe(start1.sessionId);
+  });
+
+  it('NC1: a resumed paused session starts with the paused notificationState', async () => {
+    const { controller, background } = setup();
+    await controller.resumeInterrupted({
+      definition: definition('Run', [30]),
+      index: 0,
+      phaseElapsedMs: 5_000,
+      paused: true,
+    });
+    const startCall = background.callsOf('start')[0];
+    expect(startCall.notification).toEqual({
+      title: 'Run',
+      text: 'Paused · Run 1 · 0:25 left',
+      timer: null,
+      paused: true,
+    });
+  });
+
+  it('NC5: heartbeat is called at least every 2 s while running and while paused; none after stop or end', async () => {
+    const { controller, scheduler, background } = setup();
+    await controller.start(definition('Run', [60]));
+    background.calls.length = 0;
+
+    scheduler.advance(6_000);
+    const runningBeats = background.callsOf('heartbeat').length;
+    expect(runningBeats).toBeGreaterThanOrEqual(3);
+
+    controller.pause();
+    background.calls.length = 0;
+    scheduler.advance(6_000);
+    const pausedBeats = background.callsOf('heartbeat').length;
+    expect(pausedBeats).toBeGreaterThanOrEqual(3);
+
+    controller.stop();
+    background.calls.length = 0;
+    scheduler.advance(10_000);
+    expect(background.callsOf('heartbeat')).toHaveLength(0);
+  });
+
+  it('NC5: no heartbeat after wind-down completes', async () => {
+    const { controller, scheduler, background } = setup();
+    await controller.start(definition('Run', [1]));
+    scheduler.advance(1_000); // reaches done
+    scheduler.advance(4_500); // completes windDown
+    background.calls.length = 0;
+
+    scheduler.advance(10_000);
+    expect(background.callsOf('heartbeat')).toHaveLength(0);
+  });
+
+  it('NC7: stop, end after wind-down, and replacement each call stop once and unsubscribe listeners', async () => {
+    const { controller, scheduler, background } = setup();
+    await controller.start(definition('Run', [10]));
+    expect(background.listenerCount()).toBeGreaterThan(0);
+
+    controller.stop();
+    expect(background.callsOf('stop')).toHaveLength(1);
+    expect(background.listenerCount()).toBe(0);
+
+    // End after wind-down
+    await controller.start(definition('Run', [1]));
+    expect(background.listenerCount()).toBeGreaterThan(0);
+    scheduler.advance(1_000); // done
+    scheduler.advance(4_500); // wind down finished
+    expect(background.callsOf('stop')).toHaveLength(2);
+    expect(background.listenerCount()).toBe(0);
+
+    // Replacement
+    await controller.start(definition('Run', [10]));
+    expect(background.listenerCount()).toBeGreaterThan(0);
+    await controller.start(definition('Run 2', [10]));
+    expect(background.callsOf('stop')).toHaveLength(3);
+  });
+
+  it('NC8: emitTaskRemoved with live session stops engine, silences player, clears record, calls stop', async () => {
+    const { controller, background, player, store } = setup();
+    await controller.start(definition('Run', [30]));
+
+    background.emitTaskRemoved();
+
+    expect(controller.getState()?.status).toBe('stopped');
+    expect(player.silenced).toBeGreaterThan(0);
+    expect(store.getSync(RECORD_KEY)).toBeNull();
+    expect(background.callsOf('stop')).toHaveLength(1);
+    expect(background.listenerCount()).toBe(0);
+  });
+
+  it('NC8: emitTaskRemoved with no live session does nothing', () => {
+    const { background } = setup();
+    expect(() => background.emitTaskRemoved()).not.toThrow();
+    expect(background.callsOf('stop')).toHaveLength(0);
+  });
+});
+

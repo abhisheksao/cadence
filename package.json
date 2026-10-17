@@ -57,7 +57,8 @@
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-background-actions|standard-navigation)"
     ],
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1"
+      "^@/(.*)$": "<rootDir>/src/$1",
+      "^modules/(.*)$": "<rootDir>/modules/$1"
     },
     "testMatch": [
       "<rootDir>/src/**/*.test.[jt]s?(x)",
