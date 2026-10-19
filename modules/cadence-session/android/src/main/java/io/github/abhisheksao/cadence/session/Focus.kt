@@ -13,8 +13,7 @@ class Focus(context: Context) {
 
   private val listener = AudioManager.OnAudioFocusChangeListener { focusChange ->
     if (focusChange == AudioManager.AUDIOFOCUS_LOSS ||
-        focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT ||
-        focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+        focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
       isHeld = false
       CadenceSessionModule.emitFocusLost()
     }
