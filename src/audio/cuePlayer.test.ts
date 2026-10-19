@@ -256,6 +256,19 @@ describe('cue player: focus and ducking (CP2–CP8)', () => {
     expect(speech.speak).toHaveBeenCalledWith('Next', expect.any(Object));
   });
 
+  it('CP6: onFocusLost abandons the request so other audio regains focus after the interruption', async () => {
+    const player = await ready();
+    player.play({ type: 'say', text: 'Interval' }, 10_000, 0);
+    expect(focus.abandonCalls).toBe(0);
+
+    focus.emitLoss();
+    expect(focus.abandonCalls).toBe(1);
+
+    // No second abandon from a pending hold release.
+    jest.advanceTimersByTime(2_000);
+    expect(focus.abandonCalls).toBe(1);
+  });
+
   it('CP7: granted focus after an earlier loss plays at once with no 15 s give-up timer', async () => {
     const player = await ready();
     player.play({ type: 'say', text: 'First' }, 10_000, 0);
