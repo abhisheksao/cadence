@@ -134,3 +134,36 @@ export class MemoryStore implements KeyValueStore {
     this.data.delete(key);
   }
 }
+
+export interface AudioFocus {
+  request(): boolean;
+  abandon(): void;
+  onLoss(fn: () => void): () => void;
+}
+
+export class FakeAudioFocus implements AudioFocus {
+  private lossListeners = new Set<() => void>();
+  public shouldGrant = true;
+  public requestCalls = 0;
+  public abandonCalls = 0;
+
+  request(): boolean {
+    this.requestCalls += 1;
+    return this.shouldGrant;
+  }
+
+  abandon(): void {
+    this.abandonCalls += 1;
+  }
+
+  onLoss(fn: () => void): () => void {
+    this.lossListeners.add(fn);
+    return () => {
+      this.lossListeners.delete(fn);
+    };
+  }
+
+  emitLoss(): void {
+    this.lossListeners.forEach((fn) => fn());
+  }
+}
