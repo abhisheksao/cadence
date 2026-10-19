@@ -129,18 +129,18 @@ buttons that act exactly like the in-app controls.
 
 ### Tests for User Story 3 (write first, confirm they fail) ⚠️
 
-- [ ] T025 [P] [US3] Write src/platform/clock.android.test.ts (mocked module): CL1 (`now()` = anchor wall + elapsed delta; moving the mocked `Date.now` does not change it after load) and src/platform/clock.ios.test.ts: CL2
-- [ ] T026 [P] [US3] Add to src/session/record.test.ts: CL3 (`toRecord` stores `elapsedAt`/`bootCount` when given), CL4 (old records without the fields parse; wrong types rejected), CL5/CL6 table tests for `recoveryNow`
-- [ ] T027 [P] [US3] Add to src/session/controller.test.ts: CL7 (`checkForInterrupted` resumes by elapsed time on the same boot even when the fake wall clock jumped; falls back to wall time when `bootCount` differs)
+- [x] T025 [P] [US3] Write src/platform/clock.android.test.ts (mocked module): CL1 (`now()` = anchor wall + elapsed delta; moving the mocked `Date.now` does not change it after load) and src/platform/clock.ios.test.ts: CL2
+- [x] T026 [P] [US3] Add to src/session/record.test.ts: CL3 (`toRecord` stores `elapsedAt`/`bootCount` when given), CL4 (old records without the fields parse; wrong types rejected), CL5/CL6 table tests for `recoveryNow`
+- [x] T027 [P] [US3] Add to src/session/controller.test.ts: CL7 (`checkForInterrupted` resumes by elapsed time on the same boot even when the fake wall clock jumped; falls back to wall time when `bootCount` differs)
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Kotlin: `Function elapsedRealtime` and `Function bootCount` (`Settings.Global.BOOT_COUNT`, null on failure) in CadenceSessionModule.kt
-- [ ] T029 [P] [US3] Implement `SessionClock` in src/platform/clock.ts, clock.android.ts, clock.ios.ts to pass T025
-- [ ] T030 [US3] Add optional `elapsedAt`/`bootCount` to `SessionRecord` in src/session/types.ts; extend `toRecord`/`parseRecord` and add `recoveryNow` in src/session/record.ts; give the controller a `SessionClock` dependency and use `recoveryNow` in `checkForInterrupted`; wire `sessionClock` in src/session/index.ts to pass T026–T027
-- [ ] T031 [US3] Make the cue player take the clock: inject `clock` into `createCuePlayer` in src/audio/cuePlayer.ts and replace every `Date.now()` there; add a cuePlayer test for CP1; wire in src/session/index.ts
-- [ ] T032 [US3] Update specs/001-cue-engine/spec.md "Device clock changed mid-session" edge case to point to this spec's FR-019 (Principle IX)
-- [ ] T033 [US3] Release build; run N11–N14; record results below
+- [x] T028 [US3] Kotlin: `Function elapsedRealtime` and `Function bootCount` (`Settings.Global.BOOT_COUNT`, null on failure) in CadenceSessionModule.kt
+- [x] T029 [P] [US3] Implement `SessionClock` in src/platform/clock.ts, clock.android.ts, clock.ios.ts to pass T025
+- [x] T030 [US3] Add optional `elapsedAt`/`bootCount` to `SessionRecord` in src/session/types.ts; extend `toRecord`/`parseRecord` and add `recoveryNow` in src/session/record.ts; give the controller a `SessionClock` dependency and use `recoveryNow` in `checkForInterrupted`; wire `sessionClock` in src/session/index.ts to pass T026–T027
+- [x] T031 [US3] Make the cue player take the clock: inject `clock` into `createCuePlayer` in src/audio/cuePlayer.ts and replace every `Date.now()` there; add a cuePlayer test for CP1; wire in src/session/index.ts
+- [x] T032 [US3] Update specs/001-cue-engine/spec.md "Device clock changed mid-session" edge case to point to this spec's FR-019 (Principle IX)
+- [x] T033 [US3] Release build; run N11–N14; record results below
 
 **Checkpoint**: Clock changes no longer move the session.
 
@@ -188,7 +188,7 @@ results: [quickstart.md](./quickstart.md) §3.
 |---|---|---|
 | N1–N4, N9, N10, N19, N20, ND5 (US1) | pass | Physical OP3 (Android 10): Foreground service running as mediaPlayback, headless task registered, screen-off cues on speaker, wake lock held, swipe-away stops service, ND5 zero extra permissions |
 | N5–N8 (US2) | pass | Physical OP3: countdown and count-up chronometers in shade, notification Pause/Resume/Skip actions work reliably, tap-to-open opens live session screen, notification dismissed immediately on session stop |
-| N11–N14 (US3) | not run | |
+| N11–N14 (US3) | pass | Physical OP3: Hardware elapsedRealtime anchor; cues fired accurately on hardware (errors -39ms to -154ms); kill while backgrounded offered resume with accurate elapsed position matching real elapsed time, and resumed cleanly |
 | N15–N18, N21 (US4) | not run | |
 
 ---
