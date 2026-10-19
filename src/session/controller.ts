@@ -63,6 +63,7 @@ type Active = {
  */
 export class SessionController {
   private active: Active | null = null;
+  private lastActive: Active | null = null;
   private state: SessionState | null = null;
   private readonly listeners = new Set<(s: SessionState | null) => void>();
 
@@ -234,6 +235,7 @@ export class SessionController {
     if (!active) return;
     active.engine.stop();
     this.active = null;
+    this.lastActive = null;
     active.unsubscribe();
     active.cancelRefresh();
     active.cancelHeartbeat();
@@ -250,6 +252,7 @@ export class SessionController {
     const previous = this.active;
     if (!previous) return;
     this.active = null;
+    this.lastActive = null;
     previous.unsubscribe();
     previous.cancelRefresh();
     previous.cancelHeartbeat();
@@ -309,6 +312,7 @@ export class SessionController {
       active.release();
       if (this.active === active) {
         this.active = null;
+        this.lastActive = null;
         void this.deps.background.stop();
       }
     });
@@ -317,7 +321,33 @@ export class SessionController {
 
   private publish(active: Active, snapshot: SessionSnapshot) {
     if (this.active !== active) return;
-    this.state = { ...snapshot, title: active.definition.title, definition: active.definition, backgroundWarning: active.backgroundWarning };
-    this.listeners.forEach((fn) => fn(this.state));
+    const nextState: SessionState = {
+      ...snapshot,
+      title: active.definition.title,
+      definition: active.definition,
+      backgroundWarning: active.backgroundWarning,
+    };
+    if (this.lastActive !== active || hasVisibleChange(this.state, nextState)) {
+      this.lastActive = active;
+      this.state = nextState;
+      this.listeners.forEach((fn) => fn(this.state));
+    }
   }
 }
+
+function toRemainingSec(ms: number | null): number | null {
+  return ms === null ? null : Math.ceil(ms / 1_000);
+}
+
+function hasVisibleChange(prev: SessionState | null, next: SessionState): boolean {
+  if (!prev) return true;
+  return (
+    prev.status !== next.status ||
+    prev.index !== next.index ||
+    prev.backgroundWarning !== next.backgroundWarning ||
+    Math.floor(prev.phaseElapsedMs / 1_000) !== Math.floor(next.phaseElapsedMs / 1_000) ||
+    toRemainingSec(prev.phaseRemainingMs) !== toRemainingSec(next.phaseRemainingMs) ||
+    Math.floor(prev.totalElapsedMs / 1_000) !== Math.floor(next.totalElapsedMs / 1_000)
+  );
+}
+
