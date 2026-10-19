@@ -1,6 +1,7 @@
+import { sessionClock } from './clock.ios';
+
 describe('iOS SessionClock (CL2)', () => {
-  it('uses Date.now() and returns null for elapsed and bootCount', async () => {
-    const { sessionClock } = await import('./clock.ios');
+  it('uses Date.now() and returns null for elapsed and bootCount', () => {
     const before = Date.now();
     const now = sessionClock.now();
     const after = Date.now();

@@ -129,6 +129,28 @@ describe('cue player: scheduling', () => {
 
     expect(log).toHaveBeenCalledWith('CADENCE_CUE v=1 type=say planned=10400 actual=10380 err=-20 phase=3');
   });
+
+  it('CP1: uses the injected clock for start delays and timing log actual times', async () => {
+    let clockTime = 50_000;
+    const fakeClock = { now: () => clockTime };
+    const player = createCuePlayer({ log, clock: fakeClock });
+    await player.init();
+
+    // Cue is planned for 51_000. Beep latency is 120 ms, so planned start is 50_880.
+    // fakeClock is at 50_000, so delay is 880 ms regardless of system Date.now() (which is at 10_000).
+    player.play({ type: 'beep' }, 51_000, 1);
+
+    jest.advanceTimersByTime(879);
+    expect(mockPlayers[BEEP].play).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(1);
+    expect(mockPlayers[BEEP].play).toHaveBeenCalledTimes(1);
+
+    // When reporting playback, actual time should be clock.now()
+    clockTime = 50_900;
+    mockPlayers[BEEP].emit({ playing: true });
+    expect(log).toHaveBeenCalledWith('CADENCE_CUE v=1 type=beep planned=51000 actual=50900 err=-100 phase=1');
+  });
 });
 
 /** The looping silent clip is the fourth player created in init(). */

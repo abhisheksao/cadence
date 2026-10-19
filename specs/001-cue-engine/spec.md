@@ -190,10 +190,10 @@ session, and run it to completion.
   waking it works out the correct phase and second from the clock. It announces the start of the
   phase it is now in (only the current phase, not every phase it missed) and drops per-second cues
   more than 2 seconds late instead of playing them in a burst.
-- **Device clock changed mid-session**: if the clock moves backwards, progress MUST NOT jump back;
-  the session carries on as if the change had not happened. A forward change cannot be told apart
-  from the phone sleeping, so the session follows the clock forward. (A sleep-proof clock needs
-  native code and comes with spec 006.)
+- **Device clock changed mid-session**: handled by the native foreground service (006 FR-019).
+  Timing uses the device elapsed clock, which counts through deep sleep and is unaffected by
+  manual time changes, network time updates, or time zone shifts; both forward and backward
+  clock changes are ignored.
 - **Pause during a cue**: the cue in progress is cut off and any cue scheduled ahead is cancelled;
   on resume, cues due from that point are played again.
 - **Skip or back during a cue**: queued speech from the old phase is dropped so the new phase's

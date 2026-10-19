@@ -4,10 +4,11 @@ import { Engine } from '@/engine/engine';
 import type { SessionSnapshot } from '@/engine/types';
 import type { ModeRegistry } from '@/modes/types';
 import type { BackgroundHost } from '@/platform/background';
+import type { SessionClock } from '@/platform/clock';
 import { notificationState } from '@/platform/notification';
 import type { KeyValueStore } from '@/storage/types';
 
-import { RECORD_KEY, assessRecord, parseRecord, toRecord } from './record';
+import { RECORD_KEY, assessRecord, parseRecord, recoveryNow, toRecord } from './record';
 import type { RecoveryResult, ResumeAssessment, SessionDefinition } from './types';
 import { validateDefinition } from './validate';
 
@@ -27,7 +28,7 @@ export type SessionState = SessionSnapshot & {
 };
 
 export type ControllerDeps = {
-  clock: Clock;
+  clock: SessionClock | Clock;
   scheduler: Scheduler;
   player: CuePlayer;
   background: BackgroundHost;
@@ -91,7 +92,14 @@ export class SessionController {
 
   /** On launch: is there a session that was killed mid-way (FR-024, FR-025)? */
   checkForInterrupted(): RecoveryResult {
-    return assessRecord(parseRecord(this.deps.store.getSync(RECORD_KEY)), this.deps.clock.now());
+    const record = parseRecord(this.deps.store.getSync(RECORD_KEY));
+    if (!record) return { kind: 'none' };
+    const wallNow = this.deps.clock.now();
+    const clock = this.deps.clock;
+    const elapsed = 'elapsed' in clock && typeof clock.elapsed === 'function' ? clock.elapsed() : null;
+    const bootCount = 'bootCount' in clock && typeof clock.bootCount === 'function' ? clock.bootCount() : null;
+    const now = recoveryNow(record, { elapsed, bootCount, wallNow });
+    return assessRecord(record, now);
   }
 
   /** Forgets an interrupted session: after Discard, or once the user has seen it was lost. */
@@ -269,7 +277,13 @@ export class SessionController {
   private saveRecord(engine: Engine) {
     const active = this.active;
     if (active?.engine !== engine) return;
-    const record = toRecord(active.definition, engine.snapshot(), this.deps.clock.now());
+    const clock = this.deps.clock;
+    const elapsed = 'elapsed' in clock && typeof clock.elapsed === 'function' ? clock.elapsed() : null;
+    const bootCount = 'bootCount' in clock && typeof clock.bootCount === 'function' ? clock.bootCount() : null;
+    const record = toRecord(active.definition, engine.snapshot(), clock.now(), {
+      elapsedAt: elapsed ?? undefined,
+      bootCount: bootCount ?? undefined,
+    });
     this.deps.store.set(RECORD_KEY, JSON.stringify(record)).catch((e: unknown) => {
       console.warn('Could not save the session record', e);
     });

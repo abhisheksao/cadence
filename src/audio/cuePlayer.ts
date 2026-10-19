@@ -1,6 +1,7 @@
 import { type AudioPlayer, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import * as Speech from 'expo-speech';
 
+import { type Clock, systemClock } from '@/engine/clock';
 import type { Cue } from '@/engine/types';
 
 import { BEEP_LATENCY_MS, TtsLatency, startDelay } from './latency';
@@ -28,7 +29,13 @@ const FOCUS_LOST_GIVE_UP_MS = 15_000;
  * while a sound plays. Speech requests no focus on Android, so a looping silent clip is played
  * while speaking to hold it (research R3).
  */
-export function createCuePlayer({ log = (line: string) => console.info(line) } = {}): CuePlayer {
+export function createCuePlayer({
+  log = (line: string) => console.info(line),
+  clock = systemClock,
+}: {
+  log?: (line: string) => void;
+  clock?: Clock;
+} = {}): CuePlayer {
   const sounds = new Map<SoundCue, AudioPlayer>();
   /** Per sound, the cue waiting for its playback-start event, for the timing log. */
   const awaitingStart = new Map<SoundCue, { planned: number; phase: number }>();
@@ -80,7 +87,7 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
       holdConfirmed = true;
     } else if (!playing && holdWanted && holdConfirmed && !focusLost) {
       focusLost = true;
-      focusLostAt = Date.now();
+      focusLostAt = clock.now();
       holdWanted = false;
       Speech.stop();
       queued = 0;
@@ -93,7 +100,7 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
   }
 
   function schedule(at: number, latencyMs: number, fn: () => void) {
-    const delay = startDelay(at, Date.now(), latencyMs);
+    const delay = startDelay(at, clock.now(), latencyMs);
     if (delay <= MIN_DELAY_MS) return fn();
     const timer = setTimeout(() => {
       pending.delete(timer);
@@ -111,7 +118,7 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
   }
 
   function speak(text: string, interrupt: boolean, planned: number, phase: number) {
-    if (focusLost && Date.now() - focusLostAt < FOCUS_LOST_GIVE_UP_MS) return; // not replayed later
+    if (focusLost && clock.now() - focusLostAt < FOCUS_LOST_GIVE_UP_MS) return; // not replayed later
     focusLost = false;
     if (interrupt) {
       Speech.stop();
@@ -119,7 +126,7 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
       generation += 1;
     }
     const wasQueued = queued > 0;
-    const sentAt = Date.now();
+    const sentAt = clock.now();
     const gen = generation;
     const settle = () => {
       if (gen !== generation) return;
@@ -132,7 +139,7 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
       language: 'en-US',
       rate: 1.05,
       onStart: () => {
-        const now = Date.now();
+        const now = clock.now();
         tts.sample(now - sentAt, wasQueued);
         log(formatCueLog({ type: 'say', planned, actual: now, phase }));
       },
@@ -161,7 +168,7 @@ export function createCuePlayer({ log = (line: string) => console.info(line) } =
             const waiting = awaitingStart.get(type);
             if (!status.playing || !waiting) return;
             awaitingStart.delete(type);
-            log(formatCueLog({ type, planned: waiting.planned, actual: Date.now(), phase: waiting.phase }));
+            log(formatCueLog({ type, planned: waiting.planned, actual: clock.now(), phase: waiting.phase }));
           });
           sounds.set(type, player);
         }
