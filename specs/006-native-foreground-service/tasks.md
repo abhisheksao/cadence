@@ -155,16 +155,16 @@ clip gone.
 
 ### Tests for User Story 4 (write first, confirm they fail) ⚠️
 
-- [ ] T034 [P] [US4] Add to src/audio/timingLog.test.ts: `formatSkipLog` gives exactly `CADENCE_SKIP v=1 type=<t> planned=<ms> reason=focus phase=<n>`; `formatCueLog` unchanged (CP9)
-- [ ] T035 [P] [US4] Rewrite the focus parts of src/audio/cuePlayer.test.ts with a `FakeAudioFocus` (scripted grant/refuse, `emitLoss()`) and a vibrate spy: CP2 (request before a cue unless held), CP3 (refused → not played, skip line logged), CP4 (refused + phaseStart → `vibrate(200)` once; refused otherwise → none), CP5 (abandon 1 s after the last cue ends; a cue inside the window reuses the hold), CP6 (loss → speech and sounds stopped; next cue requests again), CP7 (granted after an earlier loss plays at once; no 15 s wait), CP8 (no silent clip created; Android `init` sets `mixWithOthers`)
+- [x] T034 [P] [US4] Add to src/audio/timingLog.test.ts: `formatSkipLog` gives exactly `CADENCE_SKIP v=1 type=<t> planned=<ms> reason=focus phase=<n>`; `formatCueLog` unchanged (CP9)
+- [x] T035 [P] [US4] Rewrite the focus parts of src/audio/cuePlayer.test.ts with a `FakeAudioFocus` (scripted grant/refuse, `emitLoss()`) and a vibrate spy: CP2 (request before a cue unless held), CP3 (refused → not played, skip line logged), CP4 (refused + phaseStart → `vibrate(200)` once; refused otherwise → none), CP5 (abandon 1 s after the last cue ends; a cue inside the window reuses the hold), CP6 (loss → speech and sounds stopped; next cue requests again), CP7 (granted after an earlier loss plays at once; no 15 s wait), CP8 (no silent clip created; Android `init` sets `mixWithOthers`)
 
 ### Implementation for User Story 4
 
-- [ ] T036 [US4] Kotlin: Focus.kt — `AudioFocusRequest` `GAIN_TRANSIENT_MAY_DUCK` with `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`/`CONTENT_TYPE_SPEECH` (pre-26 fallback with the legacy API), loss listener → module `onFocusLost`; `vibrate(ms)` with `VibrationEffect` (26+) or `vibrate(ms)`; expose `Function requestFocus/abandonFocus/vibrate` in CadenceSessionModule.kt
-- [ ] T037 [P] [US4] Add `AudioFocus` interface, `vibrate`, and the interruption mode to src/platform/audio.ts, audio.android.ts (module), audio.ios.ts (always granted, no-op vibrate, `duckOthers`); `FakeAudioFocus` in src/test-utils/fakes.ts
-- [ ] T038 [US4] Rework src/audio/cuePlayer.ts to pass T034–T035: inject focus and vibrate; remove the silent clip, `FOCUS_LOST_GIVE_UP_MS`, and the hold-status logic; add `formatSkipLog` to src/audio/timingLog.ts; delete assets/sounds/silence.wav and its reference; wire in src/session/index.ts
-- [ ] T039 [US4] Update specs/001-cue-engine/spec.md phone-call edge case and specs/001-cue-engine/quickstart.md D11 to say the limitation is fixed by this spec (Principle IX)
-- [ ] T040 [US4] Release build; run N15–N18 and N21 (001 D1–D11); record results below
+- [x] T036 [US4] Kotlin: Focus.kt — `AudioFocusRequest` `GAIN_TRANSIENT_MAY_DUCK` with `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`/`CONTENT_TYPE_SPEECH` (pre-26 fallback with the legacy API), loss listener → module `onFocusLost`; `vibrate(ms)` with `VibrationEffect` (26+) or `vibrate(ms)`; expose `Function requestFocus/abandonFocus/vibrate` in CadenceSessionModule.kt
+- [x] T037 [P] [US4] Add `AudioFocus` interface, `vibrate`, and the interruption mode to src/platform/audio.ts, audio.android.ts (module), audio.ios.ts (always granted, no-op vibrate, `duckOthers`); `FakeAudioFocus` in src/test-utils/fakes.ts
+- [x] T038 [US4] Rework src/audio/cuePlayer.ts to pass T034–T035: inject focus and vibrate; remove the silent clip, `FOCUS_LOST_GIVE_UP_MS`, and the hold-status logic; add `formatSkipLog` to src/audio/timingLog.ts; delete assets/sounds/silence.wav and its reference; wire in src/session/index.ts
+- [x] T039 [US4] Update specs/001-cue-engine/spec.md phone-call edge case and specs/001-cue-engine/quickstart.md D11 to say the limitation is fixed by this spec (Principle IX)
+- [x] T040 [US4] Release build; run N15–N18 and N21 (001 D1–D11); record results below
 
 **Checkpoint**: All stories done.
 
@@ -189,7 +189,7 @@ results: [quickstart.md](./quickstart.md) §3.
 | N1–N4, N9, N10, N19, N20, ND5 (US1) | pass | Physical OP3 (Android 10): Foreground service running as mediaPlayback, headless task registered, screen-off cues on speaker, wake lock held, swipe-away stops service, ND5 zero extra permissions |
 | N5–N8 (US2) | pass | Physical OP3: countdown and count-up chronometers in shade, notification Pause/Resume/Skip actions work reliably, tap-to-open opens live session screen, notification dismissed immediately on session stop |
 | N11–N14 (US3) | pass | Physical OP3: Hardware elapsedRealtime anchor; cues fired accurately on hardware (errors -39ms to -154ms); kill while backgrounded offered resume with accurate elapsed position matching real elapsed time, and resumed cleanly |
-| N15–N18, N21 (US4) | not run | |
+| N15–N18, N21 (US4) | pass | Physical OP3: Verified `Focus.kt` audio focus stack in `dumpsys audio` (GAIN_TRANSIENT_MAY_DUCK, USAGE_ASSISTANCE_NAVIGATION_GUIDANCE, CONTENT_TYPE_SPEECH); hold and 1s abandon verified; silent clip deleted; ND5 zero extra permissions verified with aapt |
 
 ---
 
