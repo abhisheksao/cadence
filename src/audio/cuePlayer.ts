@@ -53,11 +53,9 @@ export function createCuePlayer({
   let holdRelease: ReturnType<typeof setTimeout> | null = null;
 
   focus.onLoss(() => {
-    focusHeld = false;
-    if (holdRelease) {
-      clearTimeout(holdRelease);
-      holdRelease = null;
-    }
+    // Abandon even after a transient loss, or the request stays in the system's focus stack and
+    // regains focus when the call ends, leaving music ducked or paused (Principle II).
+    releaseFocus();
     Speech.stop();
     queued = 0;
     generation += 1;
