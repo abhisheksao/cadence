@@ -357,6 +357,38 @@ describe('SessionController: recovery', () => {
     expect(controller.checkForInterrupted()).toMatchObject({ kind: 'interrupted', reason: 'finished', title: 'Run' });
   });
 
+  it('CL7: checkForInterrupted resumes by elapsed time on the same boot even when wall clock jumped', async () => {
+    const { controller, store, clock } = setup();
+    clock.setBootCount(12);
+    clock.setElapsed(100_000);
+
+    const def = definition('Run', [60, 60]);
+    store.data.set(
+      RECORD_KEY,
+      JSON.stringify(toRecord(def, snapshotAt(0, 20_000), T0, clock)),
+    );
+
+    // Wall clock jumps forward by 10 minutes (600_000 ms), but real elapsed only advances by 30_000 ms (to 130_000 ms)
+    clock.set(T0 + 600_000);
+    clock.setElapsed(130_000);
+
+    // With wall clock it would have finished (600 s > 120 s). But with elapsed, only 30 s passed!
+    // Phase 0 had 20s elapsed, so 20s + 30s = 50s into phase 0.
+    expect(controller.checkForInterrupted()).toEqual({
+      kind: 'resume',
+      assessment: { definition: def, index: 0, phaseElapsedMs: 50_000, paused: false },
+    });
+
+    // When bootCount differs (e.g. rebooted: bootCount = 13), it falls back to wall time
+    clock.setBootCount(13);
+    // At T0 + 600_000 with wall clock, 120s session is finished:
+    expect(controller.checkForInterrupted()).toMatchObject({
+      kind: 'interrupted',
+      reason: 'finished',
+      title: 'Run',
+    });
+  });
+
   it('C8: resumeInterrupted rebuilds the cues, restarts the service and announces the phase', async () => {
     const { controller, scheduler, player, background, store } = setup();
     const def = definition('Run', [60, 60]);
