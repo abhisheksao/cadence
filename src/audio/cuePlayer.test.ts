@@ -251,7 +251,7 @@ describe('cue player: focus and ducking (CP2–CP8)', () => {
 
     // Next cue requests focus again
     speech.speak.mockClear();
-    player.play({ type: 'say', text: 'Next' }, 12_000, 0);
+    player.play({ type: 'say', text: 'Next' }, 10_000, 0);
     expect(focus.requestCalls).toBe(2);
     expect(speech.speak).toHaveBeenCalledWith('Next', expect.any(Object));
   });

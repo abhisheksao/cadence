@@ -14,6 +14,15 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import java.lang.ref.WeakReference
 
 class CadenceSessionModule : Module() {
+  private var focus: Focus? = null
+
+  private fun getFocus(): Focus? {
+    if (focus == null) {
+      appContext.reactContext?.let { focus = Focus(it) }
+    }
+    return focus
+  }
+
   companion object {
     private var instance: WeakReference<CadenceSessionModule>? = null
 
@@ -43,6 +52,10 @@ class CadenceSessionModule : Module() {
       if (instance?.get() == this@CadenceSessionModule) {
         instance = null
       }
+      try {
+        focus?.abandon()
+        focus = null
+      } catch (_: Exception) {}
       try {
         appContext.reactContext?.let { ctx ->
           ctx.stopService(Intent(ctx, SessionService::class.java))
@@ -135,12 +148,13 @@ class CadenceSessionModule : Module() {
       null
     }
 
-    // Audio focus and vibration stubs (extended in US4)
+    // Audio focus and vibration
     Function("requestFocus") {
-      true
+      getFocus()?.request() ?: false
     }
 
     Function("abandonFocus") {
+      getFocus()?.abandon()
     }
 
     Function("vibrate") { ms: Long ->
