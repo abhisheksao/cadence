@@ -125,6 +125,58 @@ describe('SessionController: start', () => {
     expect(seen).toContain('running');
     expect(seen[seen.length - 1]).toBe('done');
   });
+
+  it('notifies listeners only on visible changes: ten 100 ms ticks inside one second notify at most once; second boundary, phase change, pause notify', async () => {
+    const { controller, scheduler } = setup();
+    await controller.start(definition('Run', [2, 2]));
+
+    const listener = jest.fn();
+    controller.subscribe(listener);
+
+    // Ten 100 ms ticks inside one second: ticks 1..9 (100 ms to 900 ms) cause no visible change.
+    for (let i = 0; i < 9; i++) {
+      scheduler.advance(100);
+    }
+    expect(listener).toHaveBeenCalledTimes(0);
+
+    // Tick 10 (at 1_000 ms) hits the second boundary: notifies once.
+    scheduler.advance(100);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener).toHaveBeenLastCalledWith(
+      expect.objectContaining({ phaseElapsedMs: 1_000, phaseRemainingMs: 1_000 }),
+    );
+
+    // Ticks 1,100 ms to 1,900 ms do not notify.
+    for (let i = 0; i < 9; i++) {
+      scheduler.advance(100);
+    }
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    // Second boundary + phase change at 2,000 ms notifies.
+    scheduler.advance(100);
+    expect(listener).toHaveBeenCalledTimes(2);
+    expect(listener).toHaveBeenLastCalledWith(
+      expect.objectContaining({ index: 1 }),
+    );
+
+    // Pause notifies.
+    controller.pause();
+    expect(listener).toHaveBeenCalledTimes(3);
+    expect(listener).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: 'paused' }),
+    );
+
+    // Ticks while paused do not notify.
+    scheduler.advance(500);
+    expect(listener).toHaveBeenCalledTimes(3);
+
+    // Resume notifies.
+    controller.resume();
+    expect(listener).toHaveBeenCalledTimes(4);
+    expect(listener).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: 'running' }),
+    );
+  });
 });
 
 describe('SessionController: controls', () => {
