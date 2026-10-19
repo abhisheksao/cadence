@@ -201,6 +201,12 @@ class SessionService : HeadlessJsTaskService() {
     } catch (_: Exception) {}
     wakeLock = null
 
+    try {
+      ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+      val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+      notificationManager?.cancel(NOTIFICATION_ID)
+    } catch (_: Exception) {}
+
     if (currentInstance == this) {
       currentInstance = null
     }

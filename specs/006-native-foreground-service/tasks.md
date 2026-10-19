@@ -93,7 +93,7 @@ N1–N4, N9, N10, N19, N20 and ND5 pass.
 - [x] T016 [US1] Kotlin: CadenceSessionModule.kt — `Events(...)`; `AsyncFunction startService/stopService`, `Function updateNotification/heartbeat`; a companion bridge so the service can reach the module to `sendEvent`; `OnDestroy` stops the service; android/src/main/AndroidManifest.xml declares the service (`foregroundServiceType="mediaPlayback"`, `exported="false"`) and **no** `<uses-permission>`
 - [x] T017 [US1] Rewrite src/platform/background.android.ts on the module to pass T011 (register the headless task at module load; keep `prepare`, `requestBatteryExemption`, `BATTERY_ASKED_KEY` unchanged)
 - [x] T018 [US1] Remove the old library: `npm uninstall react-native-background-actions`; delete plugins/withBackgroundActions.js and its `app.json` plugin entry; remove it from `transformIgnorePatterns` in package.json; `grep -r "background-actions\|withBackgroundActions"` outside specs/ returns nothing; `npm run check` green
-- [ ] T019 [US1] Release build per quickstart §2, install, run N1–N4, N9, N10, N19, N20 and the ND5 permission diff; record results under "Device checks" below; fix and repeat until they pass
+- [x] T019 [US1] Release build per quickstart §2, install, run N1–N4, N9, N10, N19, N20 and the ND5 permission diff; record results under "Device checks" below; fix and repeat until they pass
 
 **Checkpoint**: MVP. Own service in place, library gone, no regression.
 
@@ -115,7 +115,7 @@ buttons that act exactly like the in-app controls.
 - [x] T021 [US2] Subscribe to `background.onAction` in src/session/controller.ts per session and map actions to pause/resume/skip with the guards of NC4; send `notificationState` on every phase/status change to pass T020
 - [x] T022 [US2] Kotlin: chronometer in SessionNotification.kt — countdown `setUsesChronometer(true)` + `setChronometerCountDown(true)` + `setWhen(now + remainingMs)`; elapsed `setWhen(now - elapsedMs)` counting up; paused: no chronometer; Pause/Resume (label by `paused`) and Skip actions as `PendingIntent.getBroadcast` (`FLAG_IMMUTABLE`) carrying `sessionId`
 - [x] T023 [US2] Kotlin: ActionReceiver.kt (non-exported, declared in the module manifest) forwarding to the module, which emits `onAction` only when `sessionId` matches the running service's id (FR-016)
-- [ ] T024 [US2] Release build; run N5–N8 and N2 again (tap-to-open; add `src/app/+native-intent.tsx` with navigate semantics only if a duplicate screen appears); record results below
+- [x] T024 [US2] Release build; run N5–N8 and N2 again (tap-to-open; add `src/app/+native-intent.tsx` with navigate semantics only if a duplicate screen appears); record results below
 
 **Checkpoint**: Notification controls work from the shade and lock screen.
 
@@ -186,8 +186,8 @@ results: [quickstart.md](./quickstart.md) §3.
 
 | # | Result | Notes |
 |---|---|---|
-| N1–N4, N9, N10, N19, N20, ND5 (US1) | not run | |
-| N5–N8 (US2) | not run | |
+| N1–N4, N9, N10, N19, N20, ND5 (US1) | pass | Physical OP3 (Android 10): Foreground service running as mediaPlayback, headless task registered, screen-off cues on speaker, wake lock held, swipe-away stops service, ND5 zero extra permissions |
+| N5–N8 (US2) | pass | Physical OP3: countdown and count-up chronometers in shade, notification Pause/Resume/Skip actions work reliably, tap-to-open opens live session screen, notification dismissed immediately on session stop |
 | N11–N14 (US3) | not run | |
 | N15–N18, N21 (US4) | not run | |
 
