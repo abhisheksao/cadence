@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <service
+      android:name=".SessionService"
+      android:foregroundServiceType="mediaPlayback"
+      android:exported="false" />
+    <receiver
+      android:name=".ActionReceiver"
+      android:exported="false" />
+  </application>
+</manifest>

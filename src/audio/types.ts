@@ -9,7 +9,7 @@ export interface CuePlayer {
    * queued, while another app holds full audio focus, e.g. during a phone call. `phase` is the
    * phase index, for the timing log.
    */
-  play(cue: Cue, at: number, phase?: number): void;
+  play(cue: Cue, at: number, phase?: number, phaseStart?: boolean): void;
   /** Cancel scheduled cues and stop current speech and sounds immediately. */
   silence(): void;
 }

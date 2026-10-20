@@ -243,7 +243,7 @@ export class Engine {
       this.completionSent = true;
       // After a gap that ran past the end, play the completion cue now rather than in the past.
       const at = start >= now - STALE_MS ? start : now;
-      this.deliver(this.handler.completion(at), at, i - 1);
+      this.deliver(this.handler.completion(at), at, i - 1, false);
     }
   }
 
@@ -273,13 +273,13 @@ export class Engine {
       at: due,
       isPhaseStart,
     });
-    this.deliver(cues, due, index);
+    this.deliver(cues, due, index, isPhaseStart);
   }
 
-  private deliver(cues: Cue | Cue[] | null, at: number, phase: number) {
+  private deliver(cues: Cue | Cue[] | null, at: number, phase: number, phaseStart: boolean = false) {
     if (cues === null) return;
     for (const cue of Array.isArray(cues) ? cues : [cues]) {
-      this.events.onCue(cue, at + (cue.offsetMs ?? 0), phase);
+      this.events.onCue(cue, at + (cue.offsetMs ?? 0), phase, phaseStart);
     }
   }
 
@@ -299,7 +299,7 @@ export class Engine {
     if (status === 'done' && !this.completionSent) {
       this.completionSent = true;
       const at = this.deps.clock.now();
-      this.deliver(this.handler.completion(at), at, this.index);
+      this.deliver(this.handler.completion(at), at, this.index, false);
     }
     this.setStatus(status);
     this.emit();
