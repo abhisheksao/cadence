@@ -175,7 +175,7 @@ clip gone.
 - [x] T041 [P] Update README.md (how background running works now; notification controls) and docs/roadmap.md (006 done)
 - [x] T042 Spec-vs-build review (Principle IX): every FR and SC in spec.md maps to a test or a device check; update spec/plan where the build diverged
 - [x] T043 `npm run check`, `npx expo-doctor`, clean release build, ND5 permission diff once more; full device pass N1–N21 on the final build
-- [ ] T044 Open the PR to `develop` referencing specs/006-native-foreground-service (only after the user says go; push as the personal account)
+- [X] T044 Open the PR to `develop` referencing specs/006-native-foreground-service (only after the user says go; push as the personal account)
 
 ---
 
