@@ -186,7 +186,8 @@ results: [quickstart.md](./quickstart.md) §3.
 
 | # | Result | Notes |
 |---|---|---|
-| N1–N4, N9, N10, N19, N20, ND5 (US1) | pass | Physical OP3 (Android 10): Foreground service running as mediaPlayback, headless task registered, screen-off cues on speaker, wake lock held, swipe-away stops service, ND5 zero extra permissions |
+| N1 (60-min soak) | pass | Physical OP3 (Android 10): Completed full 60-min session (11:55:17–12:55:17, 240 phases); no am_kill in events log; timing-report PASS (beep: n=481, p50=32ms, p95=54ms; beepLast: n=239, p50=36ms, p95=55ms; chime: n=1, p50=19ms, p95=19ms; say: n=321, p50=67ms, p95=121ms) |
+| N2–N4, N9, N10, N19, N20, ND5 (US1) | pass | Physical OP3 (Android 10): Foreground service running as mediaPlayback, headless task registered, screen-off cues on speaker, wake lock held, swipe-away stops service, ND5 zero extra permissions |
 | N5–N8 (US2) | pass | Physical OP3: countdown and count-up chronometers in shade, notification Pause/Resume/Skip actions work reliably, tap-to-open opens live session screen, notification dismissed immediately on session stop |
 | N11–N14 (US3) | pass | Physical OP3: Hardware elapsedRealtime anchor; cues fired accurately on hardware (errors -39ms to -154ms); kill while backgrounded offered resume with accurate elapsed position matching real elapsed time, and resumed cleanly |
 | N15–N18, N21 (US4) | pass | Physical OP3: Verified `Focus.kt` audio focus stack in `dumpsys audio` (GAIN_TRANSIENT_MAY_DUCK, USAGE_ASSISTANCE_NAVIGATION_GUIDANCE, CONTENT_TYPE_SPEECH); hold and 1s abandon verified; silent clip deleted; ND5 zero extra permissions verified with aapt |
