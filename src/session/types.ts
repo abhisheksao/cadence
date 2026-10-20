@@ -32,6 +32,10 @@ export type SessionRecord = {
   pausedAt: number | null;
   /** Wall time of the last write. */
   writtenAt: number;
+  /** Raw elapsedRealtime in ms at the write (FR-018). */
+  elapsedAt?: number;
+  /** Boot count of the device at the write (FR-018). */
+  bootCount?: number;
 };
 
 /** Where to resume a recovered session. */

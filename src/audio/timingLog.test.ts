@@ -1,4 +1,4 @@
-import { formatCueLog } from './timingLog';
+import { formatCueLog, formatSkipLog } from './timingLog';
 
 describe('formatCueLog', () => {
   it('formats one grep-able line per cue', () => {
@@ -22,5 +22,19 @@ describe('formatCueLog', () => {
       'err',
       'phase',
     ]);
+  });
+});
+
+describe('formatSkipLog (CP9)', () => {
+  it('formats exactly CADENCE_SKIP v=1 type=<t> planned=<ms> reason=focus phase=<n>', () => {
+    expect(
+      formatSkipLog({ type: 'say', planned: 1_700_000_001_000, reason: 'focus', phase: 2 }),
+    ).toBe('CADENCE_SKIP v=1 type=say planned=1700000001000 reason=focus phase=2');
+  });
+
+  it('works for beep cues', () => {
+    expect(
+      formatSkipLog({ type: 'beep', planned: 5_000, reason: 'focus', phase: 0 }),
+    ).toBe('CADENCE_SKIP v=1 type=beep planned=5000 reason=focus phase=0');
   });
 });

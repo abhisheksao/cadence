@@ -2,7 +2,7 @@
   "expo": {
     "name": "Cadence",
     "slug": "cadence",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -24,6 +24,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "io.github.abhisheksao.cadence",
+      "versionCode": 2,
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.WAKE_LOCK",
@@ -53,7 +54,6 @@
           "microphonePermission": false
         }
       ],
-      "./plugins/withBackgroundActions",
       "expo-sqlite",
       "expo-asset"
     ],

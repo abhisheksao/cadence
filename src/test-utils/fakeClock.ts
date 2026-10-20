@@ -2,6 +2,9 @@ import type { Clock, Scheduler } from '@/engine/clock';
 
 /** A clock that only moves when a test says so. */
 export class FakeClock implements Clock {
+  private fakeElapsed: number | null = null;
+  private fakeBootCount: number | null = null;
+
   constructor(private time = 0) {}
 
   now() {
@@ -14,6 +17,25 @@ export class FakeClock implements Clock {
 
   advance(ms: number) {
     this.time += ms;
+    if (this.fakeElapsed !== null) {
+      this.fakeElapsed += ms;
+    }
+  }
+
+  setElapsed(elapsed: number | null) {
+    this.fakeElapsed = elapsed;
+  }
+
+  setBootCount(count: number | null) {
+    this.fakeBootCount = count;
+  }
+
+  elapsed() {
+    return this.fakeElapsed;
+  }
+
+  bootCount() {
+    return this.fakeBootCount;
   }
 }
 

@@ -1,16 +1,17 @@
 import { createCuePlayer } from '@/audio/cuePlayer';
-import { systemClock, systemScheduler } from '@/engine/clock';
+import { systemScheduler } from '@/engine/clock';
 import { modes } from '@/modes';
 import { backgroundHost } from '@/platform/background';
+import { sessionClock } from '@/platform/clock';
 import { kvStore } from '@/storage/kv';
 
 import { SessionController } from './controller';
 
 /** The app's single session controller, wired to the real adapters. */
 export const sessionController = new SessionController({
-  clock: systemClock,
+  clock: sessionClock,
   scheduler: systemScheduler,
-  player: createCuePlayer(),
+  player: createCuePlayer({ clock: sessionClock }),
   background: backgroundHost,
   store: kvStore,
   modes,

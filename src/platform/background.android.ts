@@ -1,18 +1,34 @@
 import Constants from 'expo-constants';
 import { ActivityAction, startActivityAsync } from 'expo-intent-launcher';
-import { PermissionsAndroid, Platform } from 'react-native';
-import BackgroundService from 'react-native-background-actions';
+import { AppRegistry, PermissionsAndroid, Platform } from 'react-native';
+import cadenceSession from 'modules/cadence-session';
 
 import { kvStore } from '@/storage/kv';
 import type { KeyValueStore } from '@/storage/types';
 
-import type { BackgroundHost } from './background';
+import type { BackgroundHost, SessionAction } from './background';
 
 /** Set once the battery exemption has been asked for, so it is asked only once (FR-017). */
 export const BATTERY_ASKED_KEY = 'battery-exemption-asked:v1';
 
 /** Notification permission exists from Android 13 (API 33). */
 const NOTIFICATION_PERMISSION_API = 33;
+
+let activeKeepAlive: Promise<void> | null = null;
+let taskRegistered = false;
+
+export function registerCadenceSessionTask(force = false) {
+  if (taskRegistered && !force) return;
+  taskRegistered = true;
+  AppRegistry.registerHeadlessTask('CadenceSession', () => async () => {
+    if (activeKeepAlive) {
+      await activeKeepAlive;
+    }
+  });
+}
+
+// Register headless task once at module load time (research R1)
+registerCadenceSessionTask();
 
 async function requestNotificationPermission() {
   if (Number(Platform.Version) < NOTIFICATION_PERMISSION_API) return;
@@ -36,8 +52,8 @@ async function openBatteryExemption() {
 }
 
 /**
- * Runs the session inside an Android foreground service (research R5), which keeps the JS
- * timers and audio going with the screen off. The service's task simply waits for the session.
+ * Runs the session inside Cadence's own Android foreground service, which keeps the JS
+ * timers and audio going with the screen off.
  */
 export function createBackgroundHost(store: KeyValueStore): BackgroundHost {
   return {
@@ -54,30 +70,49 @@ export function createBackgroundHost(store: KeyValueStore): BackgroundHost {
       await store.set(BATTERY_ASKED_KEY, '1');
     },
 
-    async start({ title, text, keepAliveUntil }) {
+    async start({ sessionId, route, notification, keepAliveUntil }) {
+      activeKeepAlive = keepAliveUntil;
       try {
-        if (BackgroundService.isRunning()) await BackgroundService.stop();
-        await BackgroundService.start(() => keepAliveUntil, {
-          taskName: 'CadenceSession',
-          taskTitle: title,
-          taskDesc: text,
-          taskIcon: { name: 'ic_launcher', type: 'mipmap' },
-          color: '#FF7A45',
-          foregroundServiceType: ['mediaPlayback'],
+        const started = await cadenceSession?.startService({
+          sessionId,
+          route,
+          ...notification,
         });
-        return true;
+        return started ?? false;
       } catch (e) {
         console.warn('Background service failed to start; cues may stop when the screen is off.', e);
         return false;
       }
     },
 
-    update(text) {
-      if (BackgroundService.isRunning()) BackgroundService.updateNotification({ taskDesc: text }).catch(() => {});
+    update(notification) {
+      cadenceSession?.updateNotification(notification);
+    },
+
+    heartbeat() {
+      cadenceSession?.heartbeat();
+    },
+
+    onAction(fn: (action: SessionAction) => void) {
+      const subscription = cadenceSession?.addListener('onAction', (event) => {
+        fn(event.action);
+      });
+      return () => {
+        subscription?.remove();
+      };
+    },
+
+    onTaskRemoved(fn: () => void) {
+      const subscription = cadenceSession?.addListener('onTaskRemoved', () => {
+        fn();
+      });
+      return () => {
+        subscription?.remove();
+      };
     },
 
     async stop() {
-      if (BackgroundService.isRunning()) await BackgroundService.stop();
+      await cadenceSession?.stopService();
     },
 
     async requestBatteryExemption() {

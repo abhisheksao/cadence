@@ -8,6 +8,15 @@ Spoken-cue timers that keep working with the screen off: a morning routine, run/
 
 ## What works today
 
+### Native foreground service & notification controls (spec 006)
+
+[Spec 006](specs/006-native-foreground-service/spec.md) replaces `react-native-background-actions` with a dedicated Kotlin Expo Module (`modules/cadence-session`):
+- **Native Android `mediaPlayback` foreground service**: Runs a headless JS task and holds a partial wake lock while the session is active.
+- **Notification chronometer & action controls**: Shows a live system countdown (or count-up for untimed steps) directly in the Android notification shade and lock screen. Supports direct Pause/Resume and Skip actions carrying validated session IDs.
+- **Sleep-proof clock**: Anchored to hardware monotonic `SystemClock.elapsedRealtime()`, ensuring cue scheduling and crash recovery ignore manual wall-clock or NTP adjustments mid-session.
+- **Native audio focus & ducking**: Focus is managed directly via `AudioFocusRequest` (`GAIN_TRANSIENT_MAY_DUCK`, `USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`, `CONTENT_TYPE_SPEECH`), ducking music cleanly without silent loop clips and falling back to haptic vibration (`vibrate(200)`) on refused phase starts during phone calls.
+- **Swipe-away cleanup**: Swiping Cadence away from Recents stops the foreground service and dismisses the notification within 1 second.
+
 ### Tests & CI (spec 005)
 
 [Spec 005](specs/005-tests-ci/spec.md) establishes automated continuous integration, releases, end-to-end testing, and spec traceability:

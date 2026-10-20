@@ -13,7 +13,7 @@ function setup(phases: Phase[], options: { jitterMs?: number; seed?: number } = 
   const scheduler = new FakeScheduler(clock, options);
   const ops: { op: CueOpportunity; calledAt: number }[] = [];
   const completions: { at: number; calledAt: number }[] = [];
-  const cues: { cue: Cue; at: number; phase: number }[] = [];
+  const cues: { cue: Cue; at: number; phase: number; phaseStart?: boolean }[] = [];
   const handler: CueHandler = {
     cueFor(op) {
       ops.push({ op, calledAt: clock.now() });
@@ -29,7 +29,7 @@ function setup(phases: Phase[], options: { jitterMs?: number; seed?: number } = 
     phases,
     handler,
     {
-      onCue: (cue, at, phase) => cues.push({ cue, at, phase }),
+      onCue: (cue, at, phase, ...rest) => cues.push({ cue, at, phase, phaseStart: rest[0] as boolean }),
       onStatusChange: (s) => statuses.push(s),
     },
     { clock, scheduler },
@@ -488,3 +488,49 @@ describe('Engine: recovery', () => {
     expect(events).toEqual([]);
   });
 });
+
+describe('Engine: phaseStart on onCue (T005)', () => {
+  it('delivers phaseStart = true for sec 0 and false for other seconds', () => {
+    const { engine, scheduler, cues } = setup([timed('A', 3), timed('B', 2)]);
+    engine.start();
+    scheduler.advance(4_000);
+
+    const phaseCues = cues.filter((c) => c.cue.type === 'beep');
+    expect(phaseCues.map((c) => [c.phase, c.phaseStart])).toEqual([
+      [0, true],
+      [0, false],
+      [0, false],
+      [1, true],
+      [1, false],
+    ]);
+  });
+
+  it('delivers phaseStart = true for catch-up announcements', () => {
+    const { engine, scheduler, cues } = setup([timed('A', 10), timed('B', 10), timed('C', 10)]);
+    engine.start();
+    scheduler.advance(3_000);
+    const beforeCount = cues.length;
+
+    scheduler.suspend(25_000); // app frozen; resumes 8 s into phase C
+    scheduler.advance(100);
+
+    const afterCues = cues.slice(beforeCount).filter((c) => c.cue.type === 'beep');
+    const catchUpCue = afterCues.find((c) => c.phase === 2);
+    expect(catchUpCue?.phaseStart).toBe(true);
+  });
+
+  it('delivers phaseStart = false for completion cues', () => {
+    const { engine, scheduler, cues } = setup([timed('A', 1)]);
+    engine.start();
+    scheduler.advance(3_000);
+
+    const completionCues = cues.filter(
+      (c) => c.cue.type === 'chime' || (c.cue.type === 'say' && c.cue.text === 'Done'),
+    );
+    expect(completionCues.length).toBeGreaterThan(0);
+    for (const c of completionCues) {
+      expect(c.phaseStart).toBe(false);
+    }
+  });
+});
+

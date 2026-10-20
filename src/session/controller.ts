@@ -1,12 +1,14 @@
 import type { CuePlayer } from '@/audio/types';
 import type { Clock, Scheduler } from '@/engine/clock';
 import { Engine } from '@/engine/engine';
-import type { Phase, SessionSnapshot } from '@/engine/types';
+import type { SessionSnapshot } from '@/engine/types';
 import type { ModeRegistry } from '@/modes/types';
 import type { BackgroundHost } from '@/platform/background';
+import type { SessionClock } from '@/platform/clock';
+import { notificationState } from '@/platform/notification';
 import type { KeyValueStore } from '@/storage/types';
 
-import { RECORD_KEY, assessRecord, parseRecord, toRecord } from './record';
+import { RECORD_KEY, assessRecord, parseRecord, recoveryNow, toRecord } from './record';
 import type { RecoveryResult, ResumeAssessment, SessionDefinition } from './types';
 import { validateDefinition } from './validate';
 
@@ -17,11 +19,6 @@ const RECORD_REFRESH_MS = 60_000;
 
 type Position = Omit<ResumeAssessment, 'definition'>;
 
-/** Notification text for a phase: "<subtitle>: <title>", or just the title (C3). */
-function phaseText(phase: Phase) {
-  return phase.subtitle ? `${phase.subtitle}: ${phase.title}` : phase.title;
-}
-
 /** What screens show: the engine snapshot plus session-level details. */
 export type SessionState = SessionSnapshot & {
   title: string;
@@ -31,13 +28,19 @@ export type SessionState = SessionSnapshot & {
 };
 
 export type ControllerDeps = {
-  clock: Clock;
+  clock: SessionClock | Clock;
   scheduler: Scheduler;
   player: CuePlayer;
   background: BackgroundHost;
   store: KeyValueStore;
   modes: ModeRegistry;
 };
+
+let sessionCounter = 0;
+function newSessionId(now: number): string {
+  sessionCounter += 1;
+  return `${now.toString(36)}-${sessionCounter.toString(36)}`;
+}
 
 type Active = {
   engine: Engine;
@@ -48,7 +51,10 @@ type Active = {
   cancelWindDown: (() => void) | null;
   /** Stops the periodic record refresh. */
   cancelRefresh: () => void;
+  cancelHeartbeat: () => void;
   unsubscribe: () => void;
+  unsubTaskRemoved: () => void;
+  unsubAction: () => void;
 };
 
 /**
@@ -57,6 +63,7 @@ type Active = {
  */
 export class SessionController {
   private active: Active | null = null;
+  private lastActive: Active | null = null;
   private state: SessionState | null = null;
   private readonly listeners = new Set<(s: SessionState | null) => void>();
 
@@ -86,7 +93,14 @@ export class SessionController {
 
   /** On launch: is there a session that was killed mid-way (FR-024, FR-025)? */
   checkForInterrupted(): RecoveryResult {
-    return assessRecord(parseRecord(this.deps.store.getSync(RECORD_KEY)), this.deps.clock.now());
+    const record = parseRecord(this.deps.store.getSync(RECORD_KEY));
+    if (!record) return { kind: 'none' };
+    const wallNow = this.deps.clock.now();
+    const clock = this.deps.clock;
+    const elapsed = 'elapsed' in clock && typeof clock.elapsed === 'function' ? clock.elapsed() : null;
+    const bootCount = 'bootCount' in clock && typeof clock.bootCount === 'function' ? clock.bootCount() : null;
+    const now = recoveryNow(record, { elapsed, bootCount, wallNow });
+    return assessRecord(record, now);
   }
 
   /** Forgets an interrupted session: after Discard, or once the user has seen it was lost. */
@@ -115,7 +129,7 @@ export class SessionController {
       definition.phases,
       mode.cueFor(definition),
       {
-        onCue: (cue, at, phase) => player.play(cue, at, phase),
+        onCue: (cue, at, phase, phaseStart) => player.play(cue, at, phase, phaseStart),
         onCancelPending: () => player.silence(),
         // The first phase's title goes out with background.start().
         onPhaseChange: () => {
@@ -136,11 +150,43 @@ export class SessionController {
       },
       { clock, scheduler },
     );
-    const firstText = phaseText(definition.phases[position?.index ?? 0]);
+    const initialIndex = position?.index ?? 0;
+    const initialPhase = definition.phases[initialIndex];
+    const initialDurationMs = initialPhase?.durationSec == null ? null : initialPhase.durationSec * 1_000;
+    const initialRemainingMs =
+      initialDurationMs === null ? null : Math.max(0, initialDurationMs - (position?.phaseElapsedMs ?? 0));
+    const initialSnapshot: SessionSnapshot = {
+      status: position?.paused ? 'paused' : 'running',
+      index: initialIndex,
+      phase: initialPhase,
+      phaseElapsedMs: position?.phaseElapsedMs ?? 0,
+      phaseRemainingMs: initialRemainingMs,
+      totalElapsedMs: 0,
+    };
+    const initialNotification = notificationState(definition, initialSnapshot)!;
+    const route = typeof mode.route === 'string' ? mode.route : (mode.route.pathname ?? '/');
+    const sessionId = newSessionId(clock.now());
     const serviceStarted = await background.start({
-      title: definition.title,
-      text: position?.paused ? `Paused · ${firstText}` : firstText,
+      sessionId,
+      route,
+      notification: initialNotification,
       keepAliveUntil,
+    });
+
+    const cancelHeartbeat = scheduler.every(2_000, () => background.heartbeat());
+    const unsubTaskRemoved = background.onTaskRemoved(() => {
+      this.stop();
+    });
+    const unsubAction = background.onAction((action) => {
+      const state = this.getState();
+      if (!state) return;
+      if (action === 'pause') {
+        if (state.status === 'running') this.pause();
+      } else if (action === 'resume') {
+        if (state.status === 'paused') this.resume();
+      } else if (action === 'skip') {
+        this.skip();
+      }
     });
 
     const active: Active = {
@@ -150,7 +196,10 @@ export class SessionController {
       release,
       cancelWindDown: null,
       cancelRefresh: () => {},
+      cancelHeartbeat,
       unsubscribe: () => {},
+      unsubTaskRemoved,
+      unsubAction,
     };
     this.active = active;
     active.unsubscribe = engine.subscribe((snapshot) => this.publish(active, snapshot));
@@ -185,24 +234,35 @@ export class SessionController {
     const active = this.active;
     if (!active) return;
     active.engine.stop();
+    this.active = null;
+    this.lastActive = null;
+    active.unsubscribe();
     active.cancelRefresh();
+    active.cancelHeartbeat();
+    active.unsubTaskRemoved();
+    active.unsubAction();
     active.cancelWindDown?.();
     active.cancelWindDown = null;
     active.release();
     void this.deps.background.stop();
   }
 
-  /** Stops the current session (if any) without stopping the service: a new one replaces it. */
+  /** Stops the current session (if any) and its service: a new one replaces it. */
   private replaceActive() {
     const previous = this.active;
     if (!previous) return;
     this.active = null;
+    this.lastActive = null;
     previous.unsubscribe();
     previous.cancelRefresh();
+    previous.cancelHeartbeat();
+    previous.unsubTaskRemoved();
+    previous.unsubAction();
     previous.cancelWindDown?.();
     previous.engine.stop();
     this.deps.player.silence();
     previous.release();
+    void this.deps.background.stop();
   }
 
   /**
@@ -211,15 +271,22 @@ export class SessionController {
    */
   private updateNotification(engine: Engine) {
     if (this.active?.engine !== engine) return;
-    const { status, phase } = engine.snapshot();
-    if (!phase || (status !== 'running' && status !== 'paused')) return;
-    this.deps.background.update(status === 'paused' ? `Paused · ${phaseText(phase)}` : phaseText(phase));
+    const notification = notificationState(this.active.definition, engine.snapshot());
+    if (notification) {
+      this.deps.background.update(notification);
+    }
   }
 
   private saveRecord(engine: Engine) {
     const active = this.active;
     if (active?.engine !== engine) return;
-    const record = toRecord(active.definition, engine.snapshot(), this.deps.clock.now());
+    const clock = this.deps.clock;
+    const elapsed = 'elapsed' in clock && typeof clock.elapsed === 'function' ? clock.elapsed() : null;
+    const bootCount = 'bootCount' in clock && typeof clock.bootCount === 'function' ? clock.bootCount() : null;
+    const record = toRecord(active.definition, engine.snapshot(), clock.now(), {
+      elapsedAt: elapsed ?? undefined,
+      bootCount: bootCount ?? undefined,
+    });
     this.deps.store.set(RECORD_KEY, JSON.stringify(record)).catch((e: unknown) => {
       console.warn('Could not save the session record', e);
     });
@@ -237,16 +304,50 @@ export class SessionController {
     active.cancelRefresh();
     const cancel = this.deps.scheduler.every(WIND_DOWN_MS, () => {
       cancel();
+      active.cancelHeartbeat();
+      active.unsubTaskRemoved();
+      active.unsubAction();
+      active.unsubscribe();
       active.cancelWindDown = null;
       active.release();
-      if (this.active === active) void this.deps.background.stop();
+      if (this.active === active) {
+        this.active = null;
+        this.lastActive = null;
+        void this.deps.background.stop();
+      }
     });
     active.cancelWindDown = cancel;
   }
 
   private publish(active: Active, snapshot: SessionSnapshot) {
     if (this.active !== active) return;
-    this.state = { ...snapshot, title: active.definition.title, definition: active.definition, backgroundWarning: active.backgroundWarning };
-    this.listeners.forEach((fn) => fn(this.state));
+    const nextState: SessionState = {
+      ...snapshot,
+      title: active.definition.title,
+      definition: active.definition,
+      backgroundWarning: active.backgroundWarning,
+    };
+    if (this.lastActive !== active || hasVisibleChange(this.state, nextState)) {
+      this.lastActive = active;
+      this.state = nextState;
+      this.listeners.forEach((fn) => fn(this.state));
+    }
   }
 }
+
+function toRemainingSec(ms: number | null): number | null {
+  return ms === null ? null : Math.ceil(ms / 1_000);
+}
+
+function hasVisibleChange(prev: SessionState | null, next: SessionState): boolean {
+  if (!prev) return true;
+  return (
+    prev.status !== next.status ||
+    prev.index !== next.index ||
+    prev.backgroundWarning !== next.backgroundWarning ||
+    Math.floor(prev.phaseElapsedMs / 1_000) !== Math.floor(next.phaseElapsedMs / 1_000) ||
+    toRemainingSec(prev.phaseRemainingMs) !== toRemainingSec(next.phaseRemainingMs) ||
+    Math.floor(prev.totalElapsedMs / 1_000) !== Math.floor(next.totalElapsedMs / 1_000)
+  );
+}
+

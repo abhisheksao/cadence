@@ -1,5 +1,7 @@
 import * as Speech from 'expo-speech';
 
+import { FakeAudioFocus } from '@/test-utils/fakes';
+
 import { createCuePlayer } from './cuePlayer';
 
 type MockPlayer = {
@@ -129,13 +131,34 @@ describe('cue player: scheduling', () => {
 
     expect(log).toHaveBeenCalledWith('CADENCE_CUE v=1 type=say planned=10400 actual=10380 err=-20 phase=3');
   });
+
+  it('CP1: uses the injected clock for start delays and timing log actual times', async () => {
+    let clockTime = 50_000;
+    const fakeClock = { now: () => clockTime };
+    const player = createCuePlayer({ log, clock: fakeClock });
+    await player.init();
+
+    // Cue is planned for 51_000. Beep latency is 120 ms, so planned start is 50_880.
+    // fakeClock is at 50_000, so delay is 880 ms regardless of system Date.now() (which is at 10_000).
+    player.play({ type: 'beep' }, 51_000, 1);
+
+    jest.advanceTimersByTime(879);
+    expect(mockPlayers[BEEP].play).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(1);
+    expect(mockPlayers[BEEP].play).toHaveBeenCalledTimes(1);
+
+    // When reporting playback, actual time should be clock.now()
+    clockTime = 50_900;
+    mockPlayers[BEEP].emit({ playing: true });
+    expect(log).toHaveBeenCalledWith('CADENCE_CUE v=1 type=beep planned=51000 actual=50900 err=-100 phase=1');
+  });
 });
 
-/** The looping silent clip is the fourth player created in init(). */
-const HOLD = 3;
-
-describe('cue player: ducking', () => {
+describe('cue player: focus and ducking (CP2–CP8)', () => {
   let log: jest.Mock;
+  let focus: FakeAudioFocus;
+  let vibrate: jest.Mock;
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -143,138 +166,129 @@ describe('cue player: ducking', () => {
     jest.clearAllMocks();
     mockPlayers.length = 0;
     log = jest.fn();
+    focus = new FakeAudioFocus();
+    vibrate = jest.fn();
   });
 
   afterEach(() => jest.useRealTimers());
 
-  async function ready() {
-    const player = createCuePlayer({ log });
+  async function ready(interruptionMode?: 'duckOthers' | 'mixWithOthers') {
+    const player = createCuePlayer({ log, focus, vibrate, interruptionMode });
     await player.init();
     return player;
   }
 
   const lastSpeech = () => speech.speak.mock.calls[speech.speak.mock.calls.length - 1][1] as Speech.SpeechOptions;
 
-  it('asks for ducking audio focus, background playback and silent-mode playback', async () => {
-    const { setAudioModeAsync } = jest.requireMock('expo-audio') as { setAudioModeAsync: jest.Mock };
-    await ready();
-    expect(setAudioModeAsync).toHaveBeenCalledWith({
-      interruptionMode: 'duckOthers',
-      shouldPlayInBackground: true,
-      playsInSilentMode: true,
-    });
-    expect(mockPlayers[HOLD].loop).toBe(true);
+  it('CP2: requests focus before each cue unless focus is already held', async () => {
+    const player = await ready();
+    expect(focus.requestCalls).toBe(0);
+
+    player.play({ type: 'beep' }, 10_000, 0);
+    expect(focus.requestCalls).toBe(1);
+
+    // Another cue immediately while focus is held does not re-request focus
+    player.play({ type: 'beep' }, 10_050, 0);
+    expect(focus.requestCalls).toBe(1);
   });
 
-  it('holds focus with the silent clip from just before speech until 1 s after it', async () => {
+  it('CP3: refused focus → cue not played, not queued, CADENCE_SKIP line logged', async () => {
     const player = await ready();
-    player.play({ type: 'say', text: 'Get ready' }, 10_000, 0);
+    focus.shouldGrant = false;
 
-    expect(mockPlayers[HOLD].play).toHaveBeenCalledTimes(1);
-    expect(mockPlayers[HOLD].play.mock.invocationCallOrder[0]).toBeLessThan(
-      speech.speak.mock.invocationCallOrder[0],
-    );
+    player.play({ type: 'beep' }, 10_000, 0);
+    expect(mockPlayers[BEEP].play).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith('CADENCE_SKIP v=1 type=beep planned=10000 reason=focus phase=0');
+
+    player.play({ type: 'say', text: 'Hello' }, 10_000, 1);
+    expect(speech.speak).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith('CADENCE_SKIP v=1 type=say planned=10000 reason=focus phase=1');
+  });
+
+  it('CP4: refused focus + phaseStart → vibrate(200) once; refused without phaseStart → no vibration', async () => {
+    const player = await ready();
+    focus.shouldGrant = false;
+
+    // Refused + phaseStart = true
+    player.play({ type: 'say', text: 'Phase 2' }, 10_000, 2, true);
+    expect(vibrate).toHaveBeenCalledTimes(1);
+    expect(vibrate).toHaveBeenCalledWith(200);
+
+    // Refused + phaseStart = false
+    vibrate.mockClear();
+    player.play({ type: 'beep' }, 11_000, 2, false);
+    expect(vibrate).not.toHaveBeenCalled();
+  });
+
+  it('CP5: abandons focus 1 s after speech/sounds end; cues within 1 s reuse the hold', async () => {
+    const player = await ready();
+    player.play({ type: 'say', text: 'Run' }, 10_000, 0);
+    expect(focus.requestCalls).toBe(1);
+
+    lastSpeech().onDone?.();
+    jest.advanceTimersByTime(500);
+    expect(focus.abandonCalls).toBe(0);
+
+    // Within 1 s window:
+    player.play({ type: 'say', text: 'Faster' }, 10_500, 0);
+    expect(focus.requestCalls).toBe(1); // reused hold
 
     lastSpeech().onDone?.();
     jest.advanceTimersByTime(999);
-    expect(mockPlayers[HOLD].pause).not.toHaveBeenCalled();
+    expect(focus.abandonCalls).toBe(0);
+
     jest.advanceTimersByTime(1);
-    expect(mockPlayers[HOLD].pause).toHaveBeenCalledTimes(1);
+    expect(focus.abandonCalls).toBe(1); // abandoned 1 s later
   });
 
-  it.each(['onStopped', 'onError'] as const)('releases the hold after %s too', async (callback) => {
-    const player = await ready();
-    player.play({ type: 'say', text: 'Halfway' }, 10_000, 0);
-    (lastSpeech()[callback] as () => void)();
-    jest.advanceTimersByTime(1_000);
-    expect(mockPlayers[HOLD].pause).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps one hold across phrases less than 1 s apart', async () => {
-    const player = await ready();
-    player.play({ type: 'say', text: 'One' }, 10_000, 0);
-    lastSpeech().onDone?.();
-    jest.advanceTimersByTime(600);
-    player.play({ type: 'say', text: 'Two' }, Date.now(), 0);
-    jest.advanceTimersByTime(600);
-    expect(mockPlayers[HOLD].pause).not.toHaveBeenCalled();
-
-    lastSpeech().onDone?.();
-    jest.advanceTimersByTime(1_000);
-    expect(mockPlayers[HOLD].pause).toHaveBeenCalledTimes(1);
-  });
-
-  it('silence() releases the hold at once', async () => {
-    const player = await ready();
-    player.play({ type: 'say', text: 'Get ready' }, 10_000, 0);
-    player.silence();
-    expect(mockPlayers[HOLD].pause).toHaveBeenCalled();
-  });
-
-  it('stops speech when another app takes focus mid-phrase, and skips speech until focus returns', async () => {
+  it('CP6: onFocusLost cuts off current speech and sounds; next cue requests focus again', async () => {
     const player = await ready();
     player.play({ type: 'say', text: 'Interval' }, 10_000, 0);
-    mockPlayers[HOLD].emit({ playing: true });
-    speech.stop.mockClear();
+    expect(speech.speak).toHaveBeenCalled();
 
-    mockPlayers[HOLD].emit({ playing: false }); // e.g. a phone call took focus
-    expect(speech.stop).toHaveBeenCalledTimes(1);
+    focus.emitLoss();
+    expect(speech.stop).toHaveBeenCalled();
 
+    // Next cue requests focus again
     speech.speak.mockClear();
-    player.play({ type: 'say', text: 'Halfway' }, Date.now(), 0);
-    expect(speech.speak).not.toHaveBeenCalled();
-
-    mockPlayers[HOLD].emit({ playing: true }); // expo-audio resumed it itself: focus is back
-    expect(mockPlayers[HOLD].pause).toHaveBeenCalled();
-
-    player.play({ type: 'say', text: 'Cool down' }, Date.now(), 0);
-    expect(speech.speak).toHaveBeenCalledWith('Cool down', expect.any(Object));
+    player.play({ type: 'say', text: 'Next' }, 10_000, 0);
+    expect(focus.requestCalls).toBe(2);
+    expect(speech.speak).toHaveBeenCalledWith('Next', expect.any(Object));
   });
 
-  it('speaks again after 15 s if focus never comes back (another app took it for good)', async () => {
+  it('CP6: onFocusLost abandons the request so other audio regains focus after the interruption', async () => {
     const player = await ready();
     player.play({ type: 'say', text: 'Interval' }, 10_000, 0);
-    mockPlayers[HOLD].emit({ playing: true });
-    mockPlayers[HOLD].emit({ playing: false }); // e.g. the user pressed play in a music app
-    speech.speak.mockClear();
+    expect(focus.abandonCalls).toBe(0);
 
-    jest.advanceTimersByTime(14_000);
-    player.play({ type: 'say', text: 'Still lost' }, Date.now(), 0);
-    expect(speech.speak).not.toHaveBeenCalled();
+    focus.emitLoss();
+    expect(focus.abandonCalls).toBe(1);
 
-    jest.advanceTimersByTime(1_000);
-    player.play({ type: 'say', text: 'Cool down' }, Date.now(), 0);
-    expect(speech.speak).toHaveBeenCalledWith('Cool down', expect.any(Object));
+    // No second abandon from a pending hold release.
+    jest.advanceTimersByTime(2_000);
+    expect(focus.abandonCalls).toBe(1);
   });
 
-  it('does not treat the late status of its own pause as lost focus after Skip or Back mid-phrase', async () => {
+  it('CP7: granted focus after an earlier loss plays at once with no 15 s give-up timer', async () => {
     const player = await ready();
-    player.play({ type: 'say', text: 'Halfway' }, 10_000, 0);
-    mockPlayers[HOLD].emit({ playing: true });
+    player.play({ type: 'say', text: 'First' }, 10_000, 0);
+    focus.emitLoss();
 
-    // Skip: the session silences, then plays the next phase's start cue straight away.
-    player.silence();
-    player.play({ type: 'say', text: 'Cool down', interrupt: true }, Date.now(), 1);
-    speech.stop.mockClear();
-    speech.speak.mockClear();
-    mockPlayers[HOLD].emit({ playing: false }); // the pause from silence() reports late
-    mockPlayers[HOLD].emit({ playing: true }); // then the new play() starts
-
-    expect(speech.stop).not.toHaveBeenCalled();
-    player.play({ type: 'say', text: '10 seconds' }, Date.now(), 1);
-    expect(speech.speak).toHaveBeenCalledWith('10 seconds', expect.any(Object));
+    // Focus is granted on the next request right away
+    focus.shouldGrant = true;
+    player.play({ type: 'say', text: 'Second' }, 10_100, 0);
+    expect(speech.speak).toHaveBeenCalledWith('Second', expect.any(Object));
   });
 
-  it('does not treat its own pause as lost focus', async () => {
-    const player = await ready();
-    player.play({ type: 'say', text: 'One' }, 10_000, 0);
-    mockPlayers[HOLD].emit({ playing: true });
-    lastSpeech().onDone?.();
-    jest.advanceTimersByTime(1_000);
-    mockPlayers[HOLD].emit({ playing: false });
-
-    speech.speak.mockClear();
-    player.play({ type: 'say', text: 'Two' }, Date.now(), 0);
-    expect(speech.speak).toHaveBeenCalledTimes(1);
+  it('CP8: no silent clip created; Android init sets mixWithOthers', async () => {
+    const { setAudioModeAsync } = jest.requireMock('expo-audio') as { setAudioModeAsync: jest.Mock };
+    await ready('mixWithOthers');
+    expect(setAudioModeAsync).toHaveBeenCalledWith({
+      interruptionMode: 'mixWithOthers',
+      shouldPlayInBackground: true,
+      playsInSilentMode: true,
+    });
+    // Exactly 3 sound players created (beep, beepLast, chime), NO silent clip!
+    expect(mockPlayers).toHaveLength(3);
   });
 });
