@@ -4,6 +4,12 @@
 
 Spoken-cue timers that keep working with the screen off: a morning routine, run/walk intervals, and guided breathing. Cadence is built with Expo / React Native. It targets Android first and is ready to port to iOS.
 
+<p align="center">
+  <img src="docs/screenshots/01-home.png" alt="Home screen with the Morning routine, Run / walk, and Breathe modes" width="240">
+  <img src="docs/screenshots/02-run-walk.png" alt="Run / walk session in a walk interval, round 1 of 8" width="240">
+  <img src="docs/screenshots/03-breathe.png" alt="Breathe session with the breath pacer during an inhale" width="240">
+</p>
+
 > **Status:** early rebuild. Features are being specified and implemented one at a time. See [docs/roadmap.md](docs/roadmap.md).
 
 ## What works today
